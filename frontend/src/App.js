@@ -2104,7 +2104,7 @@ function TeamManagement() {
                       Rol: {invitation.role === 'auditor' ? 'Auditor' : 'Observador'}
                     </p>
                   </div>
-                  <Badge variant="outline">Pending</Badge>
+                  <Badge variant="outline">{language === 'en' ? 'Pending' : 'Pendiente'}</Badge>
                 </div>
               ))}
             </div>
