@@ -2028,8 +2028,8 @@ function TeamManagement() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="auditor">Auditor - Puede crear y editar auditorías</SelectItem>
-                      <SelectItem value="viewer">Observador - Solo puede ver auditorías</SelectItem>
+                      <SelectItem value="auditor">Auditor - Can create and edit audits</SelectItem>
+                      <SelectItem value="viewer">Observer - Can only view audits</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
