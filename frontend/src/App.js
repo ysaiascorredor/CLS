@@ -2892,6 +2892,7 @@ function App() {
             <Route path="/test" element={<TestAudit />} />
             <Route path="/subscription-success" element={<SubscriptionSuccess />} />
             <Route path="/demo-checkout" element={<DemoCheckout />} />
+            <Route path="/join-team/:invitationId" element={<JoinTeamPage />} />
           </Routes>
           <Toaster />
         </SessionHandler>
