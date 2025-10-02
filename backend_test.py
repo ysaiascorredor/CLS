@@ -1751,6 +1751,14 @@ class CSABackendTester:
         self.test_demo_login()
         self.test_admin_login()
         self.test_test_user_login()  # Test the reported user
+        
+        # URGENT: Owner login tests (user reported issue)
+        print("\n🚨 URGENT: Testing Owner Login (User Reported Issue)...")
+        self.test_owner_login()
+        self.test_owner_password_validation()
+        self.test_owner_jwt_token_generation()
+        self.test_owner_user_data_response()
+        
         self.test_invalid_login()
         self.test_password_hashing()
         self.test_jwt_token_structure()
