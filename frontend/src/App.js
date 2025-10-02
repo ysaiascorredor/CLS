@@ -1687,34 +1687,56 @@ function TeamManagement() {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadTeamData();
-    loadInvitations();
+    loadAllTeamData();
   }, []);
 
-  const loadTeamData = async () => {
+  const loadAllTeamData = async () => {
     try {
-      console.log('🔍 Loading team data for user:', {
+      setLoading(true);
+      console.log('🔍 Loading all team data for user:', {
         userId: user?.id,
         organizationId: user?.organization_id,
         organizationRole: user?.organization_role
       });
       
       if (user?.organization_id) {
-        console.log('📡 Fetching organization team data...');
-        const response = await axios.get(`${API}/organization/team`);
-        console.log('✅ Team data loaded:', response.data);
-        setTeamData(response.data);
+        console.log('📡 Fetching organization team data and invitations...');
+        
+        const [teamResponse, invitationsResponse] = await Promise.allSettled([
+          axios.get(`${API}/organization/team`),
+          axios.get(`${API}/organization/invitations`)
+        ]);
+
+        if (teamResponse.status === 'fulfilled') {
+          console.log('✅ Team data loaded:', teamResponse.value.data);
+          setTeamData(teamResponse.value.data);
+        } else {
+          console.error('❌ Error loading team data:', teamResponse.reason);
+        }
+
+        if (invitationsResponse.status === 'fulfilled') {
+          console.log('✅ Invitations loaded:', invitationsResponse.value.data);
+          setInvitations(invitationsResponse.value.data);
+        } else {
+          console.log('⚠️ No pending invitations or error loading them');
+        }
       } else {
         console.log('⚠️ User has no organization_id, showing create organization UI');
       }
     } catch (error) {
-      console.error("❌ Error loading team data:", error);
+      console.error("❌ Unexpected error loading team data:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadTeamData = async () => {
+    // Keep for manual refresh calls
+    await loadAllTeamData();
+  };
+
   const loadInvitations = async () => {
+    // Keep for manual refresh calls
     try {
       const response = await axios.get(`${API}/organization/invitations`);
       setInvitations(response.data);
