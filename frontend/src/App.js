@@ -625,6 +625,17 @@ function LandingPage() {
             </div>
           </CardContent>
         </Card>
+        
+        {/* Legal Footer */}
+        <div className="mt-8 text-center text-xs text-blue-200 space-x-4">
+          <TermsOfService />
+          <span>•</span>
+          <PrivacyPolicy />
+          <br />
+          <div className="mt-2">
+            © 2024 Construction Labor Solution LLC. All rights reserved.
+          </div>
+        </div>
       </div>
     </div>
   );
