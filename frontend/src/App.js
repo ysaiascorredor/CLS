@@ -715,8 +715,8 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
   };
 
   const handleStartAudit = async () => {
-    if (formData.selectedWorkTypes.length !== 3) {
-      toast({ title: "Must select exactly 3 work types", variant: "destructive" });
+    if (formData.selectedWorkTypes.length === 0) {
+      toast({ title: "Debe seleccionar al menos 1 tipo de trabajo", variant: "destructive" });
       return;
     }
 
