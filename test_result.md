@@ -168,6 +168,30 @@ backend:
           agent: "testing"
           comment: "FIXED: GET /api/admin/support-tickets endpoint now working correctly. Fixed MongoDB ObjectId serialization issue by removing _id fields and password_hash fields. Returns proper JSON with failed_payments, active_users_no_subscription, and heavy_users_no_upgrade data structures. Proper authentication required (admin role only)."
 
+  - task: "Statistics Charts Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "GET /api/statistics/charts endpoint fully tested and working. Returns comprehensive chart data with audit_trends (monthly/weekly trends with month, total_audits, avg_score), compliance_trends (compliant vs non-compliant over time with month, compliant, non_compliant, compliance_rate), work_type_performance (performance by work type with work_type, avg_score, total_audits, compliance_rate), and monthly_summary (last 6 months data). Date/timestamp processing is correct for graphical display with YYYY-MM format for trends and human-readable format for monthly summary. All data structures validated and suitable for charts."
+
+  - task: "Original Statistics Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "GET /api/statistics endpoint fully tested and working. Returns all required fields: total_audits, compliant_audits, non_compliant_audits, average_compliance_score, most_common_findings, work_type_statistics. All data types are correct and endpoint maintains backward compatibility while new charts endpoint provides enhanced functionality."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
