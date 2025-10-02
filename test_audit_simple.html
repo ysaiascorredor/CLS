@@ -296,9 +296,13 @@
                 return;
             }
 
+            const currentQ = questions[currentQuestionIndex];
             const questionHtml = `
+                <div style="background: rgba(59, 130, 246, 0.2); padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>Tipo de Trabajo: ${currentQ.work_type.toUpperCase()}</strong>
+                </div>
                 <h3>Pregunta ${currentQuestionIndex + 1} de ${questions.length}</h3>
-                <p><strong>${questions[currentQuestionIndex]}</strong></p>
+                <p><strong>${currentQ.question}</strong></p>
                 <div class="question-buttons">
                     <button class="compliant" onclick="answerQuestion(true)">✅ Cumple</button>
                     <button class="non-compliant" onclick="answerQuestion(false)">❌ No Cumple</button>
