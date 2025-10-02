@@ -1217,6 +1217,12 @@ async def get_organization_audits(current_user: User = Depends(require_auth)):
     
     return audits
 
+# Test page endpoint
+@app.get("/test")
+async def serve_test_page():
+    """Serve the simple test page"""
+    return FileResponse("/app/test_audit_simple.html")
+
 # Include the router in the main app
 app.include_router(api_router)
 
