@@ -1943,13 +1943,23 @@ async def get_team_members(current_user: User = Depends(require_auth)):
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
     
+    # Remove MongoDB ObjectId from organization
+    org.pop("_id", None)
+    
     # Obtener miembros del equipo
     team_members = await db.team_members.find({"organization_id": current_user.organization_id}).to_list(100)
     
     # Agregar información del usuario
     for member in team_members:
+        # Remove MongoDB ObjectId from member
+        member.pop("_id", None)
+        
         user_info = await db.users.find_one({"id": member["user_id"]})
-        member["user"] = user_info
+        if user_info:
+            # Remove sensitive fields from user info
+            user_info.pop("_id", None)
+            user_info.pop("password_hash", None)
+            member["user"] = user_info
         
         # Estadísticas del miembro
         member["audit_count"] = await db.audits.count_documents({"user_id": member["user_id"]})
@@ -1964,6 +1974,10 @@ async def get_team_members(current_user: User = Depends(require_auth)):
         "status": "pending",
         "expires_at": {"$gt": datetime.now(timezone.utc)}
     }).to_list(50)
+    
+    # Remove MongoDB ObjectId from invitations
+    for invitation in pending_invitations:
+        invitation.pop("_id", None)
     
     return {
         "organization": org,
