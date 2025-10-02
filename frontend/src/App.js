@@ -91,7 +91,17 @@ const translations = {
     supportTools: "Support Tools",
     failedPayments: "Failed Payments",
     activeUsersNoSubscription: "Active Users Without Subscription",
-    heavyUsersNoUpgrade: "Heavy Users (No Upgrade)"
+    heavyUsersNoUpgrade: "Heavy Users (No Upgrade)",
+    auditTrends: "Audit Trends",
+    complianceTrends: "Compliance Over Time",
+    workTypePerformance: "Work Type Performance",
+    monthlyStats: "Monthly Statistics",
+    compliantAudits: "Compliant",
+    nonCompliantAudits: "Non-Compliant",
+    month: "Month",
+    auditCount: "Audit Count",
+    complianceRate: "Compliance Rate",
+    avgScore: "Average Score"
   },
   es: {
     appName: "CSA Auditoría de Seguridad en Construcción",
