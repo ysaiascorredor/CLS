@@ -1779,22 +1779,30 @@ function TeamManagement() {
       // Show invitation link for easy copying
       const invitationLink = response.data.invitation_link;
       
-      // Copy to clipboard automatically
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(invitationLink);
+      // Try to copy to clipboard, but don't fail if it's blocked
+      let clipboardSuccess = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(invitationLink);
+          clipboardSuccess = true;
+        }
+      } catch (clipError) {
+        console.log('📋 Clipboard access denied, showing link in console instead');
       }
       
-      // Show success message with the link
+      // Show success message
+      const successMessage = clipboardSuccess 
+        ? (language === 'en' ? "✅ Invitation sent! Link copied to clipboard." : "✅ ¡Invitación enviada! Enlace copiado al portapapeles.")
+        : (language === 'en' ? "✅ Invitation sent! Check Pending Invitations list." : "✅ ¡Invitación enviada! Revisa la lista de Invitaciones Pendientes.");
+      
       toast({ 
-        title: language === 'en' ? "✅ Invitation Link Generated!" : "✅ ¡Enlace de Invitación Generado!",
-        description: language === 'en' ? 
-          `Link copied to clipboard! Send to ${inviteForm.name}` : 
-          `¡Enlace copiado! Envíalo a ${inviteForm.name}`
+        title: language === 'en' ? "Invitation Sent" : "Invitación Enviada",
+        description: successMessage
       });
       
-      // Also show in console for easy access
-      console.log('🔗 Invitation Link:', invitationLink);
-      console.log('📋 Link copied to clipboard automatically!');
+      // Always show in console for easy access
+      console.log('🔗 Invitation Link Generated:', invitationLink);
+      console.log('📧 Send this link to', inviteForm.name + ':', invitationLink);
       
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
@@ -1803,9 +1811,10 @@ function TeamManagement() {
     } catch (error) {
       console.error('❌ Invite error:', error);
       
-      const errorMessage = error.response?.data?.detail || "Error enviando invitación";
+      const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error sending invitation" : "Error enviando invitación");
       toast({ 
-        title: errorMessage, 
+        title: language === 'en' ? "Invitation Failed" : "Error en Invitación", 
+        description: errorMessage,
         variant: "destructive" 
       });
     }
