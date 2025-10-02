@@ -195,7 +195,7 @@ function AuthProvider({ children }) {
 
 // Landing Page Component
 function LandingPage() {
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const [language, setLanguage] = useState('en');
   const t = translations[language];
   
