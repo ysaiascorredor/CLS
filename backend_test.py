@@ -1389,9 +1389,14 @@ class CSABackendTester:
         print("\n🔐 Testing Authentication & Security...")
         self.test_demo_login()
         self.test_admin_login()
+        self.test_test_user_login()  # Test the reported user
         self.test_invalid_login()
         self.test_password_hashing()
         self.test_jwt_token_structure()
+        
+        # User session persistence test (reported issue)
+        print("\n🔄 Testing Session Persistence...")
+        self.test_user_session_persistence()
         
         # Protected endpoint tests
         print("\n🛡️ Testing Protected Endpoints...")
@@ -1399,6 +1404,11 @@ class CSABackendTester:
         self.test_auth_me_without_token()
         self.test_auth_me_invalid_token()
         self.test_protected_endpoints_without_auth()
+        
+        # UPGRADE FLOW TESTS (CRITICAL ISSUE)
+        print("\n💳 TESTING UPGRADE FLOW (CRITICAL ISSUE)...")
+        self.test_upgrade_flow_basic_plan()
+        self.test_upgrade_flow_enterprise_plan()
         
         # Error handling tests
         print("\n⚠️ Testing Error Handling...")
