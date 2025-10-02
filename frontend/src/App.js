@@ -200,17 +200,19 @@ function LandingPage() {
   const t = translations[language];
   
   const handleLogin = () => {
-    // Temporary demo mode - simulate login
+    // Demo mode for testing - simulate login with full access
     const demoUser = {
       id: 'demo-user-123',
       email: 'demo@csaaudit.com',
-      name: 'Demo User',
+      name: 'Usuario Prueba',
       picture: 'https://via.placeholder.com/150',
-      subscription_plan: 'professional'
+      subscription_plan: 'professional',
+      role: 'user'
     };
     setUser(demoUser);
-    window.location.hash = '#demo-mode';
-    window.location.pathname = '/dashboard';
+    // Navigate to dashboard in demo mode
+    window.history.pushState({}, '', '/dashboard');
+    window.location.reload();
   };
 
   return (
