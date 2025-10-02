@@ -468,7 +468,6 @@ function LandingPage() {
   const { register, login } = useAuth();
   const [language, setLanguage] = useState('en');
   const [isLogin, setIsLogin] = useState(true);
-  const [showTestMode, setShowTestMode] = useState(false);
   const [formData, setFormData] = useState({ email: '', name: '', password: '' });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
