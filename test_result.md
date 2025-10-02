@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Usuario reporta que el botón 'Crear mi organización' responde pero la interfaz no cambia y la funcionalidad no avanza. Testing urgente de endpoints de organización requerido."
+user_problem_statement: "URGENT: User reports owner login not working - 'no abre mi usuario principal o del dueno' (owner account not opening). Credentials: ysaias.corredor@clsolution.net / Clave.01. Need to test authentication for this specific user."
 
 backend:
   - task: "Fix workTypes prop drilling issue"
