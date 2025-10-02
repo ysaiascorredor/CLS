@@ -1868,6 +1868,87 @@ async def get_pending_invitations(current_user: User = Depends(require_auth)):
     
     return invitations
 
+@api_router.get("/invitations/{invitation_id}")
+async def get_invitation_details(invitation_id: str):
+    """Obtener detalles de invitación por enlace público"""
+    invitation = await db.team_invitations.find_one({
+        "id": invitation_id,
+        "status": "pending",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or expired")
+    
+    # Obtener información de la organización
+    org = await db.organizations.find_one({"id": invitation["organization_id"]})
+    inviter = await db.users.find_one({"id": invitation["inviter_id"]})
+    
+    return {
+        "invitation": invitation,
+        "organization": org,
+        "inviter": inviter
+    }
+
+@api_router.post("/invitations/{invitation_id}/accept")
+async def accept_invitation_by_link(invitation_id: str, user_data: dict):
+    """Aceptar invitación por enlace y crear cuenta automáticamente"""
+    # Verificar que la invitación existe y está válida
+    invitation = await db.team_invitations.find_one({
+        "id": invitation_id,
+        "status": "pending",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or expired")
+    
+    email = user_data.get("email")
+    name = user_data.get("name")
+    password = user_data.get("password")
+    
+    if not email or not name or not password:
+        raise HTTPException(status_code=400, detail="Email, name and password are required")
+    
+    # Verificar que el email coincide con la invitación
+    if email != invitation["invitee_email"]:
+        raise HTTPException(status_code=400, detail="Email doesn't match invitation")
+    
+    # Verificar que el usuario no existe ya
+    existing_user = await db.users.find_one({"email": email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+    
+    # Crear nuevo usuario
+    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    new_user = User(
+        email=email,
+        name=name,
+        password_hash=password_hash,
+        organization_id=invitation["organization_id"],
+        organization_role=invitation["role"]
+    )
+    
+    await db.users.insert_one(new_user.dict())
+    
+    # Crear miembro del equipo
+    team_member = TeamMember(
+        organization_id=invitation["organization_id"],
+        user_id=new_user.id,
+        role=invitation["role"]
+    )
+    
+    await db.team_members.insert_one(team_member.dict())
+    
+    # Marcar invitación como aceptada
+    await db.team_invitations.update_one(
+        {"id": invitation_id},
+        {"$set": {"status": "accepted", "accepted_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"message": "Invitation accepted successfully", "user": new_user}
+
 @api_router.post("/organization/invitations/{invitation_id}/accept")
 async def accept_invitation(invitation_id: str, current_user: User = Depends(require_auth)):
     """Aceptar invitación a organización"""
