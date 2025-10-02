@@ -168,6 +168,7 @@ function LandingPage() {
   
   const handleLogin = () => {
     const redirectUrl = `${window.location.origin}/dashboard`;
+    console.log('Redirect URL:', redirectUrl);
     login(redirectUrl);
   };
 
