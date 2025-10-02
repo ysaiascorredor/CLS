@@ -965,6 +965,7 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
       currentQuestion={currentQuestionIndex}
       onAnswer={handleAnswerQuestion}
       language={language}
+      workTypes={workTypes}
     />;
   }
 
