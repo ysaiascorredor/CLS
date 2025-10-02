@@ -2050,6 +2050,11 @@ class CSABackendTester:
         self.test_pending_invitations_endpoint()
         self.test_team_invitation_in_team_list()
         
+        # REVIEW REQUEST SPECIFIC TESTS
+        print("\n🔍 TESTING SPECIFIC REVIEW REQUEST REQUIREMENTS...")
+        self.test_team_invitation_duplicate_prevention()
+        self.test_team_invitation_comprehensive_flow()
+        
         # Error handling tests
         print("\n⚠️ Testing Error Handling...")
         self.test_error_handling()
