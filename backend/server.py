@@ -915,6 +915,185 @@ async def get_chart_data(current_user: User = Depends(require_auth)):
         monthly_summary=monthly_summary
     )
 
+@api_router.get("/audits/{audit_id}/pdf")
+async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require_auth)):
+    """Generate comprehensive PDF report for an audit"""
+    
+    # Get audit data
+    audit = await db.audits.find_one({"id": audit_id, "user_id": current_user.id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    # Get user/company info
+    user = await db.users.find_one({"id": current_user.id})
+    company_name = user.get("company_name", "Construction Labor Solution LLC")
+    company_logo = user.get("company_logo")
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1*inch, bottomMargin=1*inch)
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontSize=24,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.darkblue
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=12,
+        textColor=colors.darkblue,
+        borderWidth=1,
+        borderColor=colors.darkblue,
+        borderPadding=5
+    )
+    
+    # Story elements
+    story = []
+    
+    # Header with company logo (if exists)
+    if company_logo:
+        # For now, add placeholder for logo
+        story.append(Paragraph(f"<b>{company_name}</b>", styles['Title']))
+    else:
+        story.append(Paragraph(f"<b>{company_name}</b>", title_style))
+    
+    story.append(Spacer(1, 20))
+    
+    # Title
+    story.append(Paragraph("SAFETY AUDIT REPORT", title_style))
+    story.append(Spacer(1, 30))
+    
+    # Audit Information
+    story.append(Paragraph("AUDIT INFORMATION", heading_style))
+    
+    audit_info_data = [
+        ['Site Name:', audit.get('site_name', 'N/A')],
+        ['Auditor:', audit.get('auditor_name', 'N/A')],
+        ['Date Created:', audit.get('created_at', datetime.now()).strftime('%B %d, %Y') if audit.get('created_at') else 'N/A'],
+        ['Date Completed:', audit.get('completed_at', datetime.now()).strftime('%B %d, %Y') if audit.get('completed_at') else 'N/A'],
+        ['Status:', audit.get('status', 'N/A').title()],
+        ['Overall Score:', f"{audit.get('overall_compliance_score', 0):.1f}%"],
+        ['Language:', 'English' if audit.get('language', 'en') == 'en' else 'Spanish']
+    ]
+    
+    audit_table = Table(audit_info_data, colWidths=[2*inch, 4*inch])
+    audit_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.darkblue),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(audit_table)
+    story.append(Spacer(1, 20))
+    
+    # Work Types
+    work_types = audit.get('selected_work_types', [])
+    if work_types:
+        story.append(Paragraph("WORK TYPES AUDITED", heading_style))
+        work_types_text = ", ".join(work_types)
+        story.append(Paragraph(work_types_text, styles['Normal']))
+        story.append(Spacer(1, 20))
+    
+    # Findings Summary
+    findings = audit.get('findings', [])
+    if findings:
+        story.append(Paragraph("FINDINGS SUMMARY", heading_style))
+        
+        compliant_count = sum(1 for f in findings if f.get('is_compliant', True))
+        non_compliant_count = len(findings) - compliant_count
+        
+        summary_data = [
+            ['Total Questions:', str(len(findings))],
+            ['Compliant:', str(compliant_count)],
+            ['Non-Compliant:', str(non_compliant_count)],
+            ['Compliance Rate:', f"{(compliant_count/len(findings)*100):.1f}%" if findings else "0%"]
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[2*inch, 2*inch])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.lightblue),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.darkblue),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        
+        story.append(summary_table)
+        story.append(Spacer(1, 20))
+    
+    # Detailed Findings
+    if findings:
+        story.append(Paragraph("DETAILED FINDINGS", heading_style))
+        
+        for i, finding in enumerate(findings, 1):
+            # Finding header
+            compliance_status = "✓ COMPLIANT" if finding.get('is_compliant', True) else "✗ NON-COMPLIANT"
+            status_color = colors.green if finding.get('is_compliant', True) else colors.red
+            
+            finding_title = f"<font color='{status_color.hexval() if hasattr(status_color, 'hexval') else 'black'}'><b>Finding #{i}: {compliance_status}</b></font>"
+            story.append(Paragraph(finding_title, styles['Heading2']))
+            
+            # Question
+            question_text = f"<b>Question:</b> {finding.get('question', 'N/A')}"
+            story.append(Paragraph(question_text, styles['Normal']))
+            
+            # Non-compliant details
+            if not finding.get('is_compliant', True):
+                if finding.get('comment'):
+                    comment_text = f"<b>Issue Description:</b> {finding.get('comment')}"
+                    story.append(Paragraph(comment_text, styles['Normal']))
+                
+                if finding.get('action_taken'):
+                    action_text = f"<b>Corrective Action:</b> {finding.get('action_taken')}"
+                    story.append(Paragraph(action_text, styles['Normal']))
+            
+            story.append(Spacer(1, 15))
+    
+    # Footer
+    story.append(Spacer(1, 30))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        alignment=TA_CENTER,
+        textColor=colors.grey
+    )
+    
+    story.append(Paragraph("---", footer_style))
+    story.append(Paragraph(f"Report generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", footer_style))
+    story.append(Paragraph(f"Construction Labor Solution LLC | Safety Audit System", footer_style))
+    story.append(Paragraph("This report contains confidential information", footer_style))
+    
+    # Build PDF
+    doc.build(story)
+    
+    # Get PDF data
+    pdf_data = buffer.getvalue()
+    buffer.close()
+    
+    # Return PDF as file response
+    return Response(
+        content=pdf_data,
+        media_type='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename="safety_audit_{audit_id}_{audit.get("site_name", "report").replace(" ", "_")}.pdf"'
+        }
+    )
+
 # Payment endpoints
 @api_router.get("/payments/packages")
 async def get_subscription_packages():
