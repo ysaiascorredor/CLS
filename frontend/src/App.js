@@ -457,22 +457,7 @@ function AuthForm() {
           </CardContent>
         </Card>
         
-        {/* Demo Users */}
-        <Card className="mt-4 bg-white/5 backdrop-blur-md border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white text-sm">
-              {language === 'en' ? 'Demo Accounts' : 'Cuentas Demo'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-blue-200 space-y-2">
-            <div>
-              <strong>{language === 'en' ? 'Admin:' : 'Administrador:'}</strong> admin@csaaudit.com / admin123
-            </div>
-            <div>
-              <strong>{language === 'en' ? 'User:' : 'Usuario:'}</strong> demo@csaaudit.com / demo123
-            </div>
-          </CardContent>
-        </Card>
+        {/* Production ready - no demo accounts displayed */}
       </div>
     </div>
   );
@@ -628,22 +613,7 @@ function LandingPage() {
           </CardContent>
         </Card>
         
-        {/* Demo Users */}
-        <Card className="mt-4 bg-white/5 backdrop-blur-md border-white/10">
-          <CardHeader>
-            <CardTitle className="text-white text-sm">
-              {language === 'en' ? 'Demo Accounts' : 'Cuentas Demo'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-blue-200 space-y-2">
-            <div>
-              <strong>{language === 'en' ? 'Admin:' : 'Administrador:'}</strong> admin@csaaudit.com / admin123
-            </div>
-            <div>
-              <strong>{language === 'en' ? 'User:' : 'Usuario:'}</strong> demo@csaaudit.com / demo123
-            </div>
-          </CardContent>
-        </Card>
+        {/* Production ready - no demo accounts displayed */}
         
         {/* Legal Footer */}
         <div className="mt-8 text-center text-xs text-blue-200 space-x-4">
