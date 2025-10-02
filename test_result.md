@@ -264,6 +264,21 @@ backend:
           agent: "testing"
           comment: "CRITICAL UPGRADE ISSUE RESOLVED: Comprehensive testing of upgrade flow completed successfully. Created test user (test@csaaudit.com/test123) with basic plan. All upgrade scenarios tested: 1) Upgrade to Professional plan - ✅ Working, 2) Upgrade to Enterprise plan - ✅ Working, 3) Stripe integration with LIVE keys - ✅ Working, 4) Session persistence during upgrade - ✅ Working, 5) Authentication validation - ✅ Working, 6) Error handling for invalid packages - ✅ Working. Backend upgrade functionality is FULLY OPERATIONAL. If users report upgrade button not working, issue is likely frontend-related (JavaScript errors, button not connected to API, browser issues, or expired frontend sessions)."
 
+  - task: "Organization Creation and Team Management"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL USER REPORTED ISSUE: User reports 'Crear mi organización' button responds but interface doesn't change. Initial testing revealed 500 error in GET /api/organization/team endpoint due to MongoDB ObjectId serialization issue."
+        - working: true
+          agent: "testing"
+          comment: "ORGANIZATION ISSUE RESOLVED: Fixed MongoDB ObjectId serialization bug in GET /api/organization/team endpoint. Comprehensive testing completed: 1) POST /api/organization/create - ✅ Working (properly fails when user already has org), 2) GET /api/organization/team - ✅ Working (returns organization, team members, pending invitations), 3) User test@csaaudit.com already has organization 'Construcciones Test LLC' with owner role, 4) All organization endpoints working correctly. DIAGNOSIS: Backend organization functionality is FULLY OPERATIONAL. Issue is likely FRONTEND not properly reading user.organization_id from login response and not displaying organization UI. Frontend should check user.organization_id and show organization interface when present."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
