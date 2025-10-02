@@ -397,7 +397,7 @@ function Dashboard() {
 
         <div className="container mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-6' : 'grid-cols-4'} mb-8`}>
               <TabsTrigger value="dashboard" className="flex items-center space-x-2">
                 <BarChart3 className="w-4 h-4" />
                 <span>{t.dashboard}</span>
@@ -414,6 +414,18 @@ function Dashboard() {
                 <Settings className="w-4 h-4" />
                 <span>{t.settings}</span>
               </TabsTrigger>
+              {user?.role === 'admin' && (
+                <>
+                  <TabsTrigger value="admin" className="flex items-center space-x-2">
+                    <Users className="w-4 h-4" />
+                    <span>Admin</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="support" className="flex items-center space-x-2">
+                    <Shield className="w-4 h-4" />
+                    <span>Support</span>
+                  </TabsTrigger>
+                </>
+              )}
             </TabsList>
 
             {/* Dashboard Tab */}
