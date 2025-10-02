@@ -25,6 +25,31 @@ const API = `${BACKEND_URL}/api`;
 // Stripe Configuration - TEST/LIVE MIX (Check with your Stripe account)
 const STRIPE_PUBLIC_KEY = "pk_test_51SDjkW1VJAmV9ieirFljSCEDZMhdcDJ3qKfX2zXpRfBRsjQIVhb9m4HNMEiAkDuQAWZPnw9J2WMEJcNn7LqVg5Ry00hkQNjfam";
 
+// Configure axios interceptors for authentication
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Subscription packages reference (should match backend)
 const SUBSCRIPTION_PACKAGES = {
   "basic": {"price": 29.99, "name": "Basic Plan", "audits_per_month": 50, "team_members": 3},
