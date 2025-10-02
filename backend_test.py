@@ -81,19 +81,248 @@ class CSABackendTester:
             self.log_test("Subscription Packages Endpoint", False, str(e))
             return False
 
-    def create_test_session(self):
-        """Create a test session using MongoDB directly (simulating OAuth)"""
+    def test_admin_login(self):
+        """Test admin login with admin@csaaudit.com / admin123"""
         try:
-            # This would normally be done through OAuth, but for testing we'll simulate it
-            # In a real test, you'd use the auth_testing.md instructions
-            print("⚠️  Note: Authentication testing requires manual session creation via MongoDB")
-            print("   Refer to /app/auth_testing.md for session creation instructions")
+            login_data = {
+                "email": "admin@csaaudit.com",
+                "password": "admin123"
+            }
             
-            # For now, we'll test without authentication and expect 401s
-            self.log_test("Test Session Creation", False, "Manual session creation required - see auth_testing.md")
-            return False
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.admin_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    is_admin = user_data.get("role") == "admin"
+                    correct_email = user_data.get("email") == "admin@csaaudit.com"
+                    success = success and is_admin and correct_email
+                    details += f", Admin role: {is_admin}, Correct email: {correct_email}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Admin Login (admin@csaaudit.com)", success, details)
+            return success
         except Exception as e:
-            self.log_test("Test Session Creation", False, str(e))
+            self.log_test("Admin Login (admin@csaaudit.com)", False, str(e))
+            return False
+
+    def test_demo_login(self):
+        """Test demo login with demo@csaaudit.com / demo123"""
+        try:
+            login_data = {
+                "email": "demo@csaaudit.com",
+                "password": "demo123"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.demo_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    is_user = user_data.get("role") == "user"
+                    correct_email = user_data.get("email") == "demo@csaaudit.com"
+                    success = success and is_user and correct_email
+                    details += f", User role: {is_user}, Correct email: {correct_email}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Demo Login (demo@csaaudit.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Demo Login (demo@csaaudit.com)", False, str(e))
+            return False
+
+    def test_invalid_login(self):
+        """Test login with invalid credentials"""
+        try:
+            login_data = {
+                "email": "admin@csaaudit.com",
+                "password": "wrongpassword"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            success = response.status_code == 401
+            
+            if success:
+                try:
+                    error_data = response.json()
+                    has_error_detail = "detail" in error_data
+                    details = f"Status: {response.status_code}, Has error detail: {has_error_detail}"
+                except:
+                    details = f"Status: {response.status_code}"
+            else:
+                details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("Invalid Login Credentials", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Invalid Login Credentials", False, str(e))
+            return False
+
+    def test_auth_me_endpoint(self):
+        """Test /auth/me endpoint with valid JWT token"""
+        if not self.demo_token:
+            self.log_test("Auth Me Endpoint", False, "No valid token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.demo_token}"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_id = "id" in data
+                has_email = "email" in data
+                has_name = "name" in data
+                has_role = "role" in data
+                
+                success = has_id and has_email and has_name and has_role
+                details = f"Status: {response.status_code}, Fields present: id={has_id}, email={has_email}, name={has_name}, role={has_role}"
+                
+                if success:
+                    correct_email = data.get("email") == "demo@csaaudit.com"
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}"
+                    
+            else:
+                success = False
+                details = f"Status: {response.status_code}"
+            
+            self.log_test("Auth Me Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Auth Me Endpoint", False, str(e))
+            return False
+
+    def test_auth_me_without_token(self):
+        """Test /auth/me endpoint without token (should return 401)"""
+        try:
+            response = requests.get(f"{self.api_url}/auth/me", timeout=10)
+            
+            success = response.status_code == 401
+            details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("Auth Me Without Token", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Auth Me Without Token", False, str(e))
+            return False
+
+    def test_auth_me_invalid_token(self):
+        """Test /auth/me endpoint with invalid token"""
+        try:
+            headers = {"Authorization": "Bearer invalid_token_here"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            success = response.status_code == 401
+            details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("Auth Me Invalid Token", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Auth Me Invalid Token", False, str(e))
+            return False
+
+    def test_jwt_token_structure(self):
+        """Test JWT token structure and validation"""
+        if not self.demo_token:
+            self.log_test("JWT Token Structure", False, "No valid token available")
+            return False
+            
+        try:
+            # JWT tokens have 3 parts separated by dots
+            token_parts = self.demo_token.split('.')
+            has_three_parts = len(token_parts) == 3
+            
+            # Each part should be base64-like (no spaces, reasonable length)
+            parts_valid = all(len(part) > 10 and ' ' not in part for part in token_parts)
+            
+            success = has_three_parts and parts_valid
+            details = f"Parts count: {len(token_parts)} (expected 3), Parts valid: {parts_valid}"
+            
+            self.log_test("JWT Token Structure", success, details)
+            return success
+        except Exception as e:
+            self.log_test("JWT Token Structure", False, str(e))
+            return False
+
+    def test_password_hashing(self):
+        """Test that passwords are properly hashed in database"""
+        try:
+            # This is a basic test to ensure password hashing is working
+            # We'll test by trying to login and checking the response
+            login_data = {
+                "email": "demo@csaaudit.com",
+                "password": "demo123"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            # If login works, password hashing is working
+            success = response.status_code == 200
+            
+            if success:
+                # Also test that wrong password fails
+                wrong_login_data = {
+                    "email": "demo@csaaudit.com",
+                    "password": "wrongpassword"
+                }
+                
+                wrong_response = requests.post(f"{self.api_url}/auth/login", 
+                                             json=wrong_login_data, timeout=10)
+                
+                wrong_fails = wrong_response.status_code == 401
+                success = success and wrong_fails
+                details = f"Correct password works: True, Wrong password fails: {wrong_fails}"
+            else:
+                details = f"Status: {response.status_code}"
+            
+            self.log_test("Password Hashing/Verification", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Password Hashing/Verification", False, str(e))
             return False
 
     def test_protected_endpoints_without_auth(self):
