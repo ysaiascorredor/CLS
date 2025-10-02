@@ -1610,7 +1610,7 @@ class CSABackendTester:
         
         # ORGANIZATION FLOW TESTS (CRITICAL USER REPORTED ISSUE)
         print("\n🏢 TESTING ORGANIZATION FLOW (USER REPORTED ISSUE)...")
-        self.test_organization_flow_complete()
+        self.test_organization_flow_existing_user()
         
         # Error handling tests
         print("\n⚠️ Testing Error Handling...")
