@@ -83,7 +83,14 @@ const translations = {
     teamManagement: "Team Management",
     inviteMember: "Invite Member",
     createOrganization: "Create Organization",
-    acceptInvitation: "Accept Invitation"
+    acceptInvitation: "Accept Invitation",
+    createAdmin: "Create Administrator",
+    supportManual: "Support Manual", 
+    systemLogs: "System Logs",
+    supportTools: "Support Tools",
+    failedPayments: "Failed Payments",
+    activeUsersNoSubscription: "Active Users Without Subscription",
+    heavyUsersNoUpgrade: "Heavy Users (No Upgrade)"
   },
   es: {
     appName: "CSA Auditoría de Seguridad en Construcción",
