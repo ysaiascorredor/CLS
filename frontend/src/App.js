@@ -890,7 +890,12 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
         <Progress value={(currentQuestion / questions.length) * 100} />
         
         <div>
-          <h3 className="text-lg font-medium mb-4">{questions[currentQuestion]}</h3>
+          <div className="mb-2">
+            <Badge variant="outline" className="mb-2">
+              {workTypes.find(wt => wt.id === questions[currentQuestion]?.work_type)?.[language === 'es' ? 'name_es' : 'name_en'] || 'General'}
+            </Badge>
+          </div>
+          <h3 className="text-lg font-medium mb-4">{questions[currentQuestion]?.question || questions[currentQuestion]}</h3>
           
           <div className="flex space-x-4 mb-4">
             <Button
