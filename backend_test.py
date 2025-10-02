@@ -427,14 +427,29 @@ class CSABackendTester:
             return False
         
         # Public endpoint tests
+        print("\n📡 Testing Public Endpoints...")
         self.test_work_types_endpoint()
         self.test_subscription_packages_endpoint()
         self.test_api_route_prefix()
         self.test_cors_headers()
         
         # Authentication tests
-        self.create_test_session()
+        print("\n🔐 Testing Authentication...")
+        self.test_demo_login()
+        self.test_admin_login()
+        self.test_invalid_login()
+        self.test_password_hashing()
+        self.test_jwt_token_structure()
+        
+        # Protected endpoint tests
+        print("\n🛡️ Testing Protected Endpoints...")
+        self.test_auth_me_endpoint()
+        self.test_auth_me_without_token()
+        self.test_auth_me_invalid_token()
         self.test_protected_endpoints_without_auth()
+        
+        # Error handling tests
+        print("\n⚠️ Testing Error Handling...")
         self.test_error_handling()
         
         # Summary
