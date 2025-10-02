@@ -737,8 +737,14 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
       
       console.log('Audit created:', response.data);
       
+      // Generate dynamic questions based on selected work types
+      const questionsResponse = await axios.post(`${API}/audits/questions`, {
+        work_types: formData.selectedWorkTypes,
+        language: language
+      });
+      
       setCurrentAudit(response.data);
-      setAuditQuestions(questions[language]);
+      setAuditQuestions(questionsResponse.data.questions);
       setCurrentQuestionIndex(0);
       setFindings([]);
       
