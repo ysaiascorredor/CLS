@@ -1808,6 +1808,254 @@ function TeamManagement() {
   );
 }
 
+// Statistics Charts Component
+function StatisticsCharts({ language }) {
+  const { t } = React.useContext(LanguageContext);
+  const [statistics, setStatistics] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadStatisticsData();
+  }, []);
+
+  const loadStatisticsData = async () => {
+    try {
+      setLoading(true);
+      const [statsResponse, chartsResponse] = await Promise.all([
+        axios.get(`${API}/statistics`),
+        axios.get(`${API}/statistics/charts`)
+      ]);
+      
+      setStatistics(statsResponse.data);
+      setChartData(chartsResponse.data);
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+      toast({ title: "Error loading statistics", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!statistics || !chartData) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">
+          {language === 'en' ? 'No data available. Complete some audits to see statistics.' : 'No hay datos disponibles. Completa algunas auditorías para ver estadísticas.'}
+        </p>
+      </div>
+    );
+  }
+
+  // Color scheme
+  const colors = {
+    compliant: '#22c55e',
+    nonCompliant: '#ef4444',
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    accent: '#f59e0b'
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t.totalAudits}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statistics.total_audits}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t.compliantAudits}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{statistics.compliant_audits}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t.nonCompliantAudits}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{statistics.non_compliant_audits}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{t.averageScore}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{statistics.average_compliance_score.toFixed(1)}%</div>
+            <Progress value={statistics.average_compliance_score} className="h-2 mt-2" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Audit Trends */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.auditTrends}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData.monthly_summary}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="total_audits" 
+                  stroke={colors.primary}
+                  name={t.auditCount}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Compliance Over Time */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.complianceTrends}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData.compliance_trends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area 
+                  type="monotone" 
+                  dataKey="compliant" 
+                  stackId="1"
+                  stroke={colors.compliant}
+                  fill={colors.compliant}
+                  name={t.compliantAudits}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="non_compliant" 
+                  stackId="1"
+                  stroke={colors.nonCompliant}
+                  fill={colors.nonCompliant}
+                  name={t.nonCompliantAudits}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Work Type Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.workTypePerformance}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData.work_type_performance}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="work_type" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar 
+                  dataKey="avg_score" 
+                  fill={colors.accent}
+                  name={t.avgScore}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Compliance Rate Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.overallScore}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: t.compliantAudits, value: statistics.compliant_audits, fill: colors.compliant },
+                    { name: t.nonCompliantAudits, value: statistics.non_compliant_audits, fill: colors.nonCompliant }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Summary Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.monthlyStats}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">{t.month}</th>
+                  <th className="text-right p-2">{t.totalAudits}</th>
+                  <th className="text-right p-2">{t.compliantAudits}</th>
+                  <th className="text-right p-2">{t.nonCompliantAudits}</th>
+                  <th className="text-right p-2">{t.avgScore}</th>
+                  <th className="text-right p-2">{t.complianceRate}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartData.monthly_summary.map((month, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-2 font-medium">{month.month}</td>
+                    <td className="text-right p-2">{month.total_audits}</td>
+                    <td className="text-right p-2 text-green-600">{month.compliant}</td>
+                    <td className="text-right p-2 text-red-600">{month.non_compliant}</td>
+                    <td className="text-right p-2">{month.avg_score}%</td>
+                    <td className="text-right p-2">
+                      {month.total_audits > 0 ? Math.round((month.compliant / month.total_audits) * 100) : 0}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Support Dashboard Component
 function SupportDashboard() {
   const { t } = React.useContext(LanguageContext);
