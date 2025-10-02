@@ -356,8 +356,8 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
                     raise HTTPException(status_code=403, detail="Monthly audit limit reached")
     
     # Validate selected work types
-    if len(audit_data.selected_work_types) != 3:
-        raise HTTPException(status_code=400, detail="Must select exactly 3 work types")
+    if len(audit_data.selected_work_types) == 0:
+        raise HTTPException(status_code=400, detail="Must select at least 1 work type")
     
     audit = Audit(
         user_id=current_user.id,
