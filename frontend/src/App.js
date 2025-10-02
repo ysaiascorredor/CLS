@@ -140,7 +140,7 @@ function AuthProvider({ children }) {
   };
 
   const login = (redirectUrl) => {
-    const authUrl = `${process.env.REACT_APP_AUTH_URL}/?redirect=${encodeURIComponent(redirectUrl)}`;
+    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
     window.location.href = authUrl;
   };
 
