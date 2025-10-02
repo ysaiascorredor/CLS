@@ -116,22 +116,28 @@ function TestAudit() {
         question: currentQ.question,
         work_type: currentQ.work_type,
         is_compliant: isCompliant,
-        comment: comment,
-        action_taken: actionTaken
+        comment: comment || '',
+        action_taken: actionTaken || ''
       };
 
+      console.log('Sending finding:', finding);
+
       await axios.post(`${API}/audits/${currentAudit.id}/findings`, finding);
-      setFindings([...findings, finding]);
+      
+      const newFindings = [...findings, finding];
+      setFindings(newFindings);
 
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         // Complete audit
+        console.log('Completing audit...');
         await axios.put(`${API}/audits/${currentAudit.id}/complete`);
         showMessage('¡Auditoría completada exitosamente!');
         setStep('results');
       }
     } catch (error) {
+      console.error('Error in handleAnswerQuestion:', error);
       showMessage(`Error guardando respuesta: ${error.response?.data?.detail || error.message}`, 'error');
     }
   };
