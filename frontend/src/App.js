@@ -804,35 +804,7 @@ function Dashboard() {
 
             {/* Statistics Tab */}
             <TabsContent value="statistics" className="space-y-6">
-              {statistics && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t.overallScore}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-4xl font-bold mb-2">{statistics.average_compliance_score.toFixed(1)}%</div>
-                      <Progress value={statistics.average_compliance_score} className="h-2" />
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t.workTypeStats}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {statistics.work_type_statistics.map((stat) => (
-                          <div key={stat.work_type} className="flex justify-between">
-                            <span className="text-sm">{stat.work_type}</span>
-                            <Badge variant="secondary">{stat.count}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+              <StatisticsCharts language={language} />
             </TabsContent>
 
             {/* Team Tab */}
