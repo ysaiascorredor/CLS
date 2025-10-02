@@ -412,9 +412,9 @@ function AuthForm() {
   );
 }
 
-// Landing Page Component (now just returns AuthForm)
+// Landing Page Component (temporarily using TestLogin)
 function LandingPage() {
-  return <AuthForm />;
+  return <TestLogin />;
 }
 
 // Main Dashboard Component  
