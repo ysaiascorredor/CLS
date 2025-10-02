@@ -1831,14 +1831,15 @@ class CSABackendTester:
             headers = {"Authorization": f"Bearer {self.owner_token}"}
             
             # Test inviting a new member as specified in the request
-            invitation_data = {
+            # The endpoint expects query parameters, not JSON body
+            params = {
                 "invitee_email": "empleado@ejemplo.com",
                 "invitee_name": "Juan Empleado", 
                 "role": "auditor"
             }
             
             response = requests.post(f"{self.api_url}/organization/invite", 
-                                   json=invitation_data, headers=headers, timeout=10)
+                                   params=params, headers=headers, timeout=10)
             
             if response.status_code == 200:
                 data = response.json()
