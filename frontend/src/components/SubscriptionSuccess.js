@@ -253,3 +253,4 @@ function SubscriptionSuccess() {
 }
 
 export default SubscriptionSuccess;
+export { JoinTeamPage };
