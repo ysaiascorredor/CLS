@@ -908,54 +908,86 @@ async def get_subscription_packages():
 @api_router.post("/payments/checkout/session")
 async def create_checkout_session(
     request: Request,
-    package_id: str,
-    origin_url: str,
+    package_data: dict,
     current_user: User = Depends(require_auth)
 ):
     """Create Stripe checkout session for subscription"""
+    package_id = package_data.get("package_id")
+    origin_url = package_data.get("origin_url")
+    
     if package_id not in SUBSCRIPTION_PACKAGES:
         raise HTTPException(status_code=400, detail="Invalid package")
     
     package = SUBSCRIPTION_PACKAGES[package_id]
     amount = package["price"]
     
-    # Create success and cancel URLs
-    success_url = f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin_url}/pricing"
+    # Check if we're in demo mode (no real Stripe key)
+    stripe_api_key = os.environ.get('STRIPE_API_KEY')
+    is_demo_mode = not stripe_api_key or stripe_api_key == "sk_test_emergent"
     
-    # Initialize Stripe
-    host_url = str(request.base_url).rstrip('/')
-    webhook_url = f"{host_url}/api/payments/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
-    
-    # Create checkout session
-    checkout_request = CheckoutSessionRequest(
-        amount=amount,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "user_id": current_user.id,
-            "package_id": package_id,
-            "package_name": package["name"]
+    if is_demo_mode:
+        # Demo mode - simulate checkout
+        session_id = f"cs_demo_{uuid.uuid4().hex[:16]}"
+        
+        # Store demo payment transaction
+        transaction = PaymentTransaction(
+            user_id=current_user.id,
+            session_id=session_id,
+            amount=amount,
+            currency="usd",
+            package_type=package_id,
+            payment_status="pending",
+            metadata={
+                "user_id": current_user.id,
+                "package_id": package_id,
+                "package_name": package["name"],
+                "demo_mode": True
+            }
+        )
+        await db.payment_transactions.insert_one(transaction.dict())
+        
+        # Return demo checkout URL
+        return {
+            "session_id": session_id,
+            "url": f"{origin_url}/demo-checkout?session_id={session_id}&package={package_id}&amount={amount}"
         }
-    )
     
-    session = await stripe_checkout.create_checkout_session(checkout_request)
-    
-    # Store payment transaction
-    transaction = PaymentTransaction(
-        user_id=current_user.id,
-        session_id=session.session_id,
-        amount=amount,
-        currency="usd",
-        package_type=package_id,
-        payment_status="pending",
-        metadata=checkout_request.metadata
-    )
-    await db.payment_transactions.insert_one(transaction.dict())
-    
-    return session
+    else:
+        # Real Stripe mode
+        success_url = f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{origin_url}/pricing"
+        
+        webhook_url = f"{request.base_url}api/stripe/webhook"
+        stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
+        
+        # Create checkout session
+        checkout_request = CheckoutSessionRequest(
+            amount=amount,
+            currency="usd",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": current_user.id,
+                "package_id": package_id,
+                "package_name": package["name"]
+            }
+        )
+        
+        session = await stripe_checkout.create_checkout_session(checkout_request)
+        
+        # Store payment transaction
+        transaction = PaymentTransaction(
+            user_id=current_user.id,
+            session_id=session.session_id,
+            amount=amount,
+            currency="usd",
+            package_type=package_id,
+            payment_status="pending",
+            metadata=checkout_request.metadata
+        )
+        await db.payment_transactions.insert_one(transaction.dict())
+        
+        return session
 
 @api_router.get("/payments/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str, current_user: User = Depends(require_auth)):
