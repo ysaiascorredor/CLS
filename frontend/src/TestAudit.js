@@ -282,9 +282,6 @@ function TestAudit() {
 
   if (step === 'questions') {
     const currentQ = questions[currentQuestionIndex];
-    const [showNonCompliantForm, setShowNonCompliantForm] = useState(false);
-    const [comment, setComment] = useState('');
-    const [actionTaken, setActionTaken] = useState('');
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-6">
