@@ -134,6 +134,10 @@ function TestAudit() {
 
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
+        // Reset form fields for next question
+        setShowNonCompliantForm(false);
+        setComment('');
+        setActionTaken('');
       } else {
         // Complete audit
         console.log('Completing audit...');
