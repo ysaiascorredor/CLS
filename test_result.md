@@ -326,8 +326,8 @@ frontend:
           comment: "Fixed by adding workTypes prop to AuditProgressForm component call and updating component function signature to accept workTypes parameter. Application now loads without JavaScript errors."
 
   - task: "Fix Send Invitation Button Functionality"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
@@ -336,6 +336,9 @@ frontend:
         - working: false
           agent: "main"
           comment: "User reports send invitation button not working. Manual testing confirms dialog opens, form fills correctly, but button click doesn't complete successfully - dialog stays open, no toast notification. Need to debug inviteMember function."
+        - working: true
+          agent: "main"
+          comment: "FIXED: Root cause was clipboard permission error blocking entire function. Updated inviteMember function to handle clipboard failures gracefully with try/catch, shows success toast notification regardless of clipboard status, and logs invitation link to console. Function now completes successfully even when clipboard is blocked."
 
   - task: "Replace Spanish Text with English Translation"
     implemented: false
