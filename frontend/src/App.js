@@ -2091,7 +2091,7 @@ function TeamManagement() {
       {teamData?.pending_invitations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Invitaciones Pendientes ({teamData.pending_invitations.length})</CardTitle>
+            <CardTitle>Pending Invitations ({teamData.pending_invitations.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
