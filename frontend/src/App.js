@@ -2087,7 +2087,7 @@ function TeamManagement() {
         </CardContent>
       </Card>
 
-      {/* Invitaciones Pendientes */}
+      {/* Pending Invitations */}
       {teamData?.pending_invitations.length > 0 && (
         <Card>
           <CardHeader>
