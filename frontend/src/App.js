@@ -63,7 +63,14 @@ const translations = {
     currentPlan: "Current Plan",
     upgradeNow: "Upgrade Now",
     recentAudits: "Recent Audits",
-    viewAudit: "View Audit"
+    viewAudit: "View Audit",
+    adminDashboard: "Admin Dashboard",
+    supportPanel: "Support Panel",
+    totalUsers: "Total Users",
+    activeSubscribers: "Active Subscribers",
+    totalRevenue: "Total Revenue",
+    userManagement: "User Management",
+    changePlan: "Change Plan"
   },
   es: {
     appName: "CSA Auditoría de Seguridad en Construcción",
