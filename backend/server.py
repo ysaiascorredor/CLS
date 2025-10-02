@@ -989,6 +989,48 @@ async def create_checkout_session(
         
         return session
 
+@api_router.post("/payments/demo/complete/{session_id}")
+async def complete_demo_payment(session_id: str, current_user: User = Depends(require_auth)):
+    """Complete demo payment and activate subscription"""
+    
+    # Find the demo transaction
+    transaction = await db.payment_transactions.find_one({
+        "session_id": session_id,
+        "user_id": current_user.id
+    })
+    
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    if not transaction.get("metadata", {}).get("demo_mode"):
+        raise HTTPException(status_code=400, detail="Not a demo transaction")
+    
+    # Mark transaction as paid
+    await db.payment_transactions.update_one(
+        {"session_id": session_id},
+        {"$set": {"payment_status": "paid", "stripe_status": "demo_completed"}}
+    )
+    
+    # Activate subscription
+    package_id = transaction["package_type"]
+    expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+    
+    await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "subscription_plan": package_id,
+                "subscription_expires": expires_at,
+                "audits_used_this_month": 0
+            }
+        }
+    )
+    
+    return {
+        "message": "Demo subscription activated successfully",
+        "subscription_plan": package_id,
+        "expires_at": expires_at
+    }
 @api_router.get("/payments/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str, current_user: User = Depends(require_auth)):
     """Check payment status"""
