@@ -20,7 +20,7 @@ function TestAudit() {
     password: 'demo123',
     siteName: 'Obra de Prueba',
     auditorName: 'Auditor Demo',
-    selectedWorkTypes: ['excavation']
+    selectedWorkTypes: ['excavation', 'height_work']
   });
   const [currentAudit, setCurrentAudit] = useState(null);
   const [questions, setQuestions] = useState([]);
