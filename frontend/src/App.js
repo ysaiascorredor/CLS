@@ -46,7 +46,7 @@ const translations = {
     createAudit: "Create New Audit",
     siteName: "Site Name",
     auditorName: "Auditor Name",
-    selectWorkTypes: "Select 3 Work Types",
+    selectWorkTypes: "Select Work Types (minimum 1)",
     startAudit: "Start Audit",
     auditProgress: "Audit Progress",
     question: "Question",
