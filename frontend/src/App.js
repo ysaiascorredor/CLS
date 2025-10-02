@@ -320,6 +320,11 @@ function AuthProvider({ children }) {
 function AuthForm() {
   const { register, login } = useAuth();
   const [language, setLanguage] = useState('en');
+  
+  // Force English language for all interface
+  React.useEffect(() => {
+    setLanguage('en');
+  }, []);
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', name: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -468,6 +473,11 @@ function AuthForm() {
 function LandingPage() {
   const { register, login } = useAuth();
   const [language, setLanguage] = useState('en');
+  
+  // Force English language for all interface
+  React.useEffect(() => {
+    setLanguage('en');
+  }, []);
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', name: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -631,6 +641,11 @@ function LandingPage() {
 function Dashboard() {
   const { user, logout } = useAuth();
   const [language, setLanguage] = useState('en');
+  
+  // Force English language for all interface
+  React.useEffect(() => {
+    setLanguage('en');
+  }, []);
   const t = translations[language];
   const [activeTab, setActiveTab] = useState('dashboard');
   const [workTypes, setWorkTypes] = useState([]);
