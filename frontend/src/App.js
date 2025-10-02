@@ -1773,11 +1773,36 @@ function TeamManagement() {
         role: inviteForm.role
       });
       
-      await axios.post(`${API}/organization/invite?${params}`);
+      const response = await axios.post(`${API}/organization/invite?${params}`);
       
+      // Show invitation link for easy copying
+      const invitationLink = response.data.invitation_link;
+      
+      // Create a modal or dialog to show the link
+      const copyToClipboard = () => {
+        navigator.clipboard.writeText(invitationLink);
+        toast({ title: language === 'en' ? "Link copied!" : "¡Enlace copiado!" });
+      };
+      
+      // Show success message with copy option
       toast({ 
-        title: language === 'en' ? "Invitation sent successfully!" : "¡Invitación enviada exitosamente!" 
+        title: language === 'en' ? "✅ Invitation Link Generated!" : "✅ ¡Enlace de Invitación Generado!",
+        description: language === 'en' ? 
+          `Send this link to ${inviteForm.name}: ${invitationLink}` : 
+          `Envía este enlace a ${inviteForm.name}: ${invitationLink}`,
+        action: (
+          <Button 
+            onClick={copyToClipboard}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {language === 'en' ? '📋 Copy Link' : '📋 Copiar Enlace'}
+          </Button>
+        )
       });
+      
+      // Also show in console for easy access
+      console.log('🔗 Invitation Link:', invitationLink);
       
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
