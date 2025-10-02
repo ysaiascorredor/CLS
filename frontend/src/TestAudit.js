@@ -28,6 +28,11 @@ function TestAudit() {
   const [findings, setFindings] = useState([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Estados para el formulario de preguntas (deben estar en el nivel superior)
+  const [showNonCompliantForm, setShowNonCompliantForm] = useState(false);
+  const [comment, setComment] = useState('');
+  const [actionTaken, setActionTaken] = useState('');
 
   const workTypes = [
     { id: 'excavation', name: 'Excavation Work (Trabajo de Excavación)' },
