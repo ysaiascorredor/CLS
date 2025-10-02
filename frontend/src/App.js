@@ -155,7 +155,24 @@ const translations = {
     teamManagement: "Gestión de Equipo",
     inviteMember: "Invitar Miembro",
     createOrganization: "Crear Organización",
-    acceptInvitation: "Aceptar Invitación"
+    acceptInvitation: "Aceptar Invitación",
+    createAdmin: "Crear Administrador",
+    supportManual: "Manual de Soporte", 
+    systemLogs: "Logs del Sistema",
+    supportTools: "Herramientas de Soporte",
+    failedPayments: "Pagos Fallidos",
+    activeUsersNoSubscription: "Usuarios Activos Sin Suscripción",
+    heavyUsersNoUpgrade: "Usuarios con Muchas Auditorías",
+    auditTrends: "Tendencias de Auditorías",
+    complianceTrends: "Cumplimiento a lo Largo del Tiempo",
+    workTypePerformance: "Rendimiento por Tipo de Trabajo",
+    monthlyStats: "Estadísticas Mensuales",
+    compliantAudits: "Conformes",
+    nonCompliantAudits: "No Conformes",
+    month: "Mes",
+    auditCount: "Cantidad de Auditorías",
+    complianceRate: "Tasa de Cumplimiento",
+    avgScore: "Puntaje Promedio"
   }
 };
 
