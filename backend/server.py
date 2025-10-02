@@ -468,6 +468,12 @@ class Statistics(BaseModel):
     most_common_findings: List[Dict[str, Any]]
     work_type_statistics: List[Dict[str, Any]]
 
+class ChartData(BaseModel):
+    audit_trends: List[Dict[str, Any]]  # Monthly/weekly trends
+    compliance_trends: List[Dict[str, Any]]  # Compliant vs non-compliant over time
+    work_type_performance: List[Dict[str, Any]]  # Performance by work type
+    monthly_summary: List[Dict[str, Any]]  # Summary by month
+
 # Password helpers
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
