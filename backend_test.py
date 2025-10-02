@@ -1436,6 +1436,169 @@ class CSABackendTester:
             self.log_test("Organization Create Endpoint", False, str(e))
             return False
 
+    def test_owner_login(self):
+        """Test owner login with ysaias.corredor@clsolution.net / Clave.01 - URGENT USER REPORTED ISSUE"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@clsolution.net",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@clsolution.net"
+                    user_role = user_data.get("role", "")
+                    subscription_plan = user_data.get("subscription_plan", "")
+                    organization_id = user_data.get("organization_id", "")
+                    
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Role: {user_role}, Plan: {subscription_plan}, Org ID: {organization_id}"
+                    
+                    # Store owner token for further testing
+                    if has_token:
+                        self.owner_token = data["access_token"]
+                        self.owner_user_data = user_data
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("URGENT: Owner Login (ysaias.corredor@clsolution.net)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("URGENT: Owner Login (ysaias.corredor@clsolution.net)", False, str(e))
+            return False
+
+    def test_owner_password_validation(self):
+        """Test password validation for owner account - check for special characters handling"""
+        try:
+            # Test with correct password
+            correct_login = {
+                "email": "ysaias.corredor@clsolution.net",
+                "password": "Clave.01"
+            }
+            
+            correct_response = requests.post(f"{self.api_url}/auth/login", 
+                                           json=correct_login, timeout=10)
+            
+            # Test with wrong password to ensure validation works
+            wrong_login = {
+                "email": "ysaias.corredor@clsolution.net",
+                "password": "WrongPassword"
+            }
+            
+            wrong_response = requests.post(f"{self.api_url}/auth/login", 
+                                         json=wrong_login, timeout=10)
+            
+            correct_works = correct_response.status_code == 200
+            wrong_fails = wrong_response.status_code == 401
+            
+            success = correct_works and wrong_fails
+            details = f"Correct password works: {correct_works}, Wrong password fails: {wrong_fails}"
+            
+            # Additional check for special character handling
+            if correct_works:
+                # Test that the password with special characters (. and numbers) is handled correctly
+                details += ", Special characters in password handled correctly"
+            
+            self.log_test("Owner Password Validation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Password Validation", False, str(e))
+            return False
+
+    def test_owner_jwt_token_generation(self):
+        """Test JWT token generation for owner account"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Owner JWT Token Generation", False, "No owner token available")
+            return False
+            
+        try:
+            # Test JWT token structure
+            token_parts = self.owner_token.split('.')
+            has_three_parts = len(token_parts) == 3
+            
+            # Test token validation by using it
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            token_valid = response.status_code == 200
+            
+            success = has_three_parts and token_valid
+            details = f"Token parts: {len(token_parts)} (expected 3), Token valid: {token_valid}"
+            
+            if token_valid:
+                user_data = response.json()
+                correct_email = user_data.get("email") == "ysaias.corredor@clsolution.net"
+                details += f", Correct user returned: {correct_email}"
+                success = success and correct_email
+            
+            self.log_test("Owner JWT Token Generation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner JWT Token Generation", False, str(e))
+            return False
+
+    def test_owner_user_data_response(self):
+        """Test user data response format for owner account"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Owner User Data Response", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check required fields
+                required_fields = ["id", "email", "name", "role", "created_at"]
+                has_required_fields = all(field in data for field in required_fields)
+                
+                # Check specific owner data
+                correct_email = data.get("email") == "ysaias.corredor@clsolution.net"
+                has_role = "role" in data
+                has_subscription = "subscription_plan" in data
+                has_organization = "organization_id" in data
+                
+                success = has_required_fields and correct_email
+                details = f"Status: {response.status_code}, Required fields: {has_required_fields}, Correct email: {correct_email}"
+                details += f", Role: {data.get('role', 'N/A')}, Plan: {data.get('subscription_plan', 'N/A')}"
+                details += f", Org ID: {data.get('organization_id', 'N/A')}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Owner User Data Response", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner User Data Response", False, str(e))
+            return False
+
     def test_organization_team_endpoint(self):
         """Test GET /api/organization/team endpoint after organization creation"""
         if not hasattr(self, 'test_user_token') or not self.test_user_token:
