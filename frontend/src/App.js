@@ -492,10 +492,7 @@ function LandingPage() {
     setLoading(false);
   };
 
-  // Show test mode if requested
-  if (showTestMode) {
-    return <TestAudit />;
-  }
+  // Production mode - no test components
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center px-6">
