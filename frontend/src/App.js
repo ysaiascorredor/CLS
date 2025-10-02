@@ -1169,6 +1169,109 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
   );
 }
 
+// Company Settings Component
+function CompanySettings() {
+  const { t } = React.useContext(LanguageContext);
+  const [companyData, setCompanyData] = useState({
+    company_name: '',
+    company_logo: null
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadCompanySettings();
+  }, []);
+
+  const loadCompanySettings = async () => {
+    try {
+      const response = await axios.get(`${API}/company/settings`);
+      setCompanyData(response.data);
+    } catch (error) {
+      console.error('Error loading company settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCompanyData({...companyData, company_logo: e.target.result});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const saveSettings = async () => {
+    try {
+      await axios.post(`${API}/admin/company/settings`, companyData);
+      toast({ title: t.language === 'en' ? "Settings saved successfully!" : "Configuración guardada exitosamente!" });
+    } catch (error) {
+      toast({ title: "Error saving settings", variant: "destructive" });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {t.language === 'en' ? 'Company Settings' : 'Configuración de Empresa'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>
+              {t.language === 'en' ? 'Company Name' : 'Nombre de Empresa'}
+            </Label>
+            <Input
+              value={companyData.company_name}
+              onChange={(e) => setCompanyData({...companyData, company_name: e.target.value})}
+              placeholder="Construction Labor Solution LLC"
+            />
+          </div>
+          
+          <div>
+            <Label>
+              {t.language === 'en' ? 'Company Logo' : 'Logo de Empresa'}
+            </Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="mt-2"
+            />
+            {companyData.company_logo && (
+              <div className="mt-2">
+                <img 
+                  src={companyData.company_logo} 
+                  alt="Company Logo" 
+                  className="max-w-32 max-h-32 object-contain border"
+                />
+              </div>
+            )}
+          </div>
+          
+          <Button onClick={saveSettings} className="bg-blue-600 hover:bg-blue-700">
+            {t.language === 'en' ? 'Save Settings' : 'Guardar Configuración'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Subscription Settings Component
 function SubscriptionSettings() {
   const { t } = React.useContext(LanguageContext);
