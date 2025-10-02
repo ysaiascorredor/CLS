@@ -1827,7 +1827,7 @@ async def invite_team_member(
     if existing_user and existing_user.get("organization_id") == current_user.organization_id:
         raise HTTPException(status_code=400, detail="User already part of the team")
     
-    # Crear invitación
+    # Crear invitación con token único
     invitation = TeamInvitation(
         organization_id=current_user.organization_id,
         inviter_id=current_user.id,
@@ -1838,7 +1838,15 @@ async def invite_team_member(
     
     await db.team_invitations.insert_one(invitation.dict())
     
-    return {"message": "Invitation sent successfully", "invitation": invitation}
+    # Generar enlace único de invitación
+    invitation_link = f"https://safeinspect-2.preview.emergentagent.com/join-team/{invitation.id}"
+    
+    return {
+        "message": "Invitation created successfully", 
+        "invitation": invitation,
+        "invitation_link": invitation_link,
+        "instructions": "Copy this link and send it via WhatsApp, Email, or any messaging app"
+    }
 
 @api_router.get("/organization/invitations")
 async def get_pending_invitations(current_user: User = Depends(require_auth)):
