@@ -538,6 +538,20 @@ function Dashboard() {
             <TabsContent value="settings">
               <SubscriptionSettings />
             </TabsContent>
+
+            {/* Admin Tab */}
+            {user?.role === 'admin' && (
+              <TabsContent value="admin">
+                <AdminDashboard />
+              </TabsContent>
+            )}
+
+            {/* Support Tab */}
+            {user?.role === 'admin' && (
+              <TabsContent value="support">
+                <SupportDashboard />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>
