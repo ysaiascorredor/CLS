@@ -117,6 +117,21 @@ backend:
           agent: "main"
           comment: "Fixed workTypes prop passing from NewAuditForm to AuditProgressForm component. The workTypes array is now properly passed down as a prop."
 
+  - task: "Owner Login Authentication Issue"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "URGENT USER REPORTED ISSUE: Owner login failing with credentials ysaias.corredor@clsolution.net / Clave.01. User reports 'no abre mi usuario principal o del dueno' (owner account not opening)."
+        - working: true
+          agent: "testing"
+          comment: "ISSUE RESOLVED: Owner user was missing from database. Created user account via registration endpoint, then updated to admin role with enterprise plan using admin/user endpoint. Login now working correctly: 1) POST /api/auth/login with ysaias.corredor@clsolution.net/Clave.01 returns 200 with valid JWT token, 2) User has admin role and enterprise plan, 3) Password validation working with special characters (Clave.01), 4) JWT token generation and validation working correctly, 5) /api/auth/me endpoint returns correct user data. All owner authentication functionality is now FULLY OPERATIONAL."
+
   - task: "Backend authentication system"
     implemented: true
     working: true
