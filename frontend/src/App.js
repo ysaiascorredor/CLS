@@ -1946,7 +1946,7 @@ function TeamManagement() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Crear Organización</CardTitle>
+            <CardTitle>Create Organization</CardTitle>
             <CardDescription>
               Create your organization to invite team members to collaborate on audits
             </CardDescription>
