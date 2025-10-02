@@ -1694,7 +1694,7 @@ function TeamManagement() {
   const loadTeamData = async () => {
     try {
       if (user?.organization_id) {
-        const response = await axios.get(`${API}/organization/team`, { withCredentials: true });
+        const response = await axios.get(`${API}/organization/team`);
         setTeamData(response.data);
       }
     } catch (error) {
@@ -1706,7 +1706,7 @@ function TeamManagement() {
 
   const loadInvitations = async () => {
     try {
-      const response = await axios.get(`${API}/organization/invitations`, { withCredentials: true });
+      const response = await axios.get(`${API}/organization/invitations`);
       setInvitations(response.data);
     } catch (error) {
       console.log("No pending invitations");
