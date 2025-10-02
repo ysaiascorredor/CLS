@@ -1769,6 +1769,267 @@ class CSABackendTester:
             self.log_test("Owner Login (ysaias.corredor@clsolution.net)", False, str(e))
             return False
 
+    def test_owner_subscription_status(self):
+        """CRITICAL: Test owner subscription status via /auth/me endpoint"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Owner Subscription Status", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                subscription_plan = data.get("subscription_plan")
+                subscription_expires = data.get("subscription_expires")
+                subscription_status = data.get("subscription_status")  # May not exist
+                audits_used = data.get("audits_used_this_month", 0)
+                
+                # Check if user has active subscription
+                has_active_subscription = subscription_plan is not None and subscription_plan != "free"
+                
+                success = True  # We're just diagnosing, not failing
+                details = f"Plan: {subscription_plan}, Expires: {subscription_expires}, Status: {subscription_status}, Audits used: {audits_used}, Has active: {has_active_subscription}"
+                
+                # Additional checks
+                if subscription_expires:
+                    from datetime import datetime, timezone
+                    try:
+                        if isinstance(subscription_expires, str):
+                            expires_dt = datetime.fromisoformat(subscription_expires.replace('Z', '+00:00'))
+                        else:
+                            expires_dt = subscription_expires
+                        now = datetime.now(timezone.utc)
+                        is_expired = expires_dt < now
+                        details += f", Expired: {is_expired}"
+                    except:
+                        details += ", Expires parsing failed"
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Owner Subscription Status (/auth/me)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Subscription Status (/auth/me)", False, str(e))
+            return False
+
+    def test_owner_database_record(self):
+        """CRITICAL: Check owner's database record via admin endpoint"""
+        if not self.admin_token:
+            self.log_test("Owner Database Record", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Search for the owner user
+            response = requests.get(f"{self.api_url}/admin/users?search=ysaias.corredor@clsolution.net", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                users = data.get("users", [])
+                
+                if users:
+                    owner_user = users[0]  # Should be the first match
+                    user_id = owner_user.get("id")
+                    subscription_plan = owner_user.get("subscription_plan")
+                    subscription_expires = owner_user.get("subscription_expires")
+                    total_audits = owner_user.get("total_audits", 0)
+                    last_payment = owner_user.get("last_payment")
+                    total_paid = owner_user.get("total_paid", 0)
+                    
+                    success = True  # Diagnostic test
+                    details = f"Found user ID: {user_id}, Plan: {subscription_plan}, Expires: {subscription_expires}, Audits: {total_audits}, Last payment: {last_payment}, Total paid: ${total_paid}"
+                    
+                    # Get detailed user info
+                    if user_id:
+                        detail_response = requests.get(f"{self.api_url}/admin/user/{user_id}", 
+                                                     headers=headers, timeout=10)
+                        if detail_response.status_code == 200:
+                            detail_data = detail_response.json()
+                            user_detail = detail_data.get("user", {})
+                            payments = detail_data.get("payments", [])
+                            
+                            details += f", Payment history: {len(payments)} transactions"
+                            
+                            # Check recent payments
+                            if payments:
+                                recent_payment = payments[0]  # Most recent
+                                payment_status = recent_payment.get("payment_status")
+                                payment_amount = recent_payment.get("amount")
+                                package_type = recent_payment.get("package_type")
+                                details += f", Recent payment: ${payment_amount} for {package_type}, Status: {payment_status}"
+                else:
+                    success = False
+                    details = "Owner user not found in database"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Owner Database Record", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Database Record", False, str(e))
+            return False
+
+    def test_stripe_webhook_endpoint(self):
+        """CRITICAL: Test Stripe webhook endpoint configuration"""
+        try:
+            # Test GET request to webhook endpoint (should return method not allowed or similar)
+            response = requests.get(f"{self.api_url}/payments/webhook/stripe", timeout=10)
+            
+            # Webhook endpoints typically don't accept GET requests
+            webhook_configured = response.status_code in [405, 404, 400]  # Method not allowed, not found, or bad request
+            
+            success = webhook_configured
+            details = f"GET Status: {response.status_code} (webhook endpoints typically reject GET)"
+            
+            # Test POST with invalid data (should return error but not 404)
+            try:
+                post_response = requests.post(f"{self.api_url}/payments/webhook/stripe", 
+                                            json={"test": "data"}, timeout=10)
+                post_status = post_response.status_code
+                details += f", POST Status: {post_status}"
+                
+                # Webhook should be accessible but reject invalid data
+                webhook_accessible = post_status != 404
+                success = success and webhook_accessible
+                
+            except Exception as post_e:
+                details += f", POST Error: {str(post_e)}"
+            
+            self.log_test("Stripe Webhook Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Webhook Endpoint", False, str(e))
+            return False
+
+    def test_payment_processing_logs(self):
+        """CRITICAL: Check for payment processing errors in system logs"""
+        if not self.admin_token:
+            self.log_test("Payment Processing Logs", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.api_url}/admin/logs", 
+                                  headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                logs_content = data.get("logs", "").lower()
+                
+                # Look for payment/stripe related errors
+                payment_keywords = ["stripe", "payment", "webhook", "subscription", "checkout"]
+                error_keywords = ["error", "failed", "exception", "traceback"]
+                
+                payment_mentions = sum(1 for keyword in payment_keywords if keyword in logs_content)
+                error_mentions = sum(1 for keyword in error_keywords if keyword in logs_content)
+                
+                # Look for specific error patterns
+                has_stripe_errors = "stripe" in logs_content and any(err in logs_content for err in error_keywords)
+                has_webhook_errors = "webhook" in logs_content and any(err in logs_content for err in error_keywords)
+                
+                success = True  # Diagnostic test
+                details = f"Payment mentions: {payment_mentions}, Error mentions: {error_mentions}, Stripe errors: {has_stripe_errors}, Webhook errors: {has_webhook_errors}"
+                
+                # Extract relevant log lines (simplified)
+                log_lines = logs_content.split('\n')
+                relevant_lines = [line for line in log_lines if any(keyword in line for keyword in payment_keywords + error_keywords)]
+                
+                if relevant_lines:
+                    details += f", Relevant log entries: {len(relevant_lines)}"
+                    # Show first few relevant lines
+                    sample_lines = relevant_lines[:3]
+                    for i, line in enumerate(sample_lines):
+                        if len(line) > 100:
+                            line = line[:100] + "..."
+                        details += f", Log{i+1}: {line}"
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Payment Processing Logs", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Payment Processing Logs", False, str(e))
+            return False
+
+    def test_subscription_update_flow(self):
+        """CRITICAL: Test if subscription update flow is working"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Subscription Update Flow", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test creating a checkout session (this should work even if user has subscription)
+            checkout_data = {
+                "package_id": "enterprise",
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_session_id = "session_id" in data
+                has_url = "url" in data
+                
+                success = has_session_id and has_url
+                details = f"Status: {response.status_code}, Session ID: {has_session_id}, URL: {has_url}"
+                
+                if success:
+                    session_id = data.get("session_id", "")
+                    url = data.get("url", "")
+                    
+                    # Check if it's live mode (real Stripe) or demo mode
+                    is_live_mode = session_id.startswith("cs_live_") or not session_id.startswith("cs_demo_")
+                    is_demo_mode = session_id.startswith("cs_demo_")
+                    
+                    details += f", Live mode: {is_live_mode}, Demo mode: {is_demo_mode}"
+                    
+                    # For live mode, URL should be Stripe's checkout
+                    if is_live_mode:
+                        is_stripe_url = "checkout.stripe.com" in url
+                        details += f", Stripe URL: {is_stripe_url}"
+                        success = success and is_stripe_url
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Subscription Update Flow", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Subscription Update Flow", False, str(e))
+            return False
+
     def test_organization_team_endpoint_owner(self):
         """Test GET /api/organization/team endpoint with owner credentials"""
         if not hasattr(self, 'owner_token') or not self.owner_token:
