@@ -274,12 +274,23 @@ async def get_work_types():
 @api_router.post("/audits", response_model=Audit)
 async def create_audit(audit_data: AuditCreate, current_user: User = Depends(require_auth)):
     """Create a new safety audit"""
-    # Check subscription limits
-    if current_user.subscription_plan:
-        package = SUBSCRIPTION_PACKAGES.get(current_user.subscription_plan)
-        if package and package["audits_per_month"] != -1:
-            if current_user.audits_used_this_month >= package["audits_per_month"]:
-                raise HTTPException(status_code=403, detail="Monthly audit limit reached")
+    
+    # Check subscription limits (individual or organization)
+    if current_user.organization_id:
+        # User is part of an organization - check org limits
+        org = await db.organizations.find_one({"id": current_user.organization_id})
+        if org and org.get("subscription_plan"):
+            package = SUBSCRIPTION_PACKAGES.get(org["subscription_plan"])
+            if package and package["audits_per_month"] != -1:
+                if org["audits_used_this_month"] >= package["audits_per_month"]:
+                    raise HTTPException(status_code=403, detail="Organization monthly audit limit reached")
+    else:
+        # Individual user - check personal limits
+        if current_user.subscription_plan:
+            package = SUBSCRIPTION_PACKAGES.get(current_user.subscription_plan)
+            if package and package["audits_per_month"] != -1:
+                if current_user.audits_used_this_month >= package["audits_per_month"]:
+                    raise HTTPException(status_code=403, detail="Monthly audit limit reached")
     
     # Validate selected work types
     if len(audit_data.selected_work_types) != 3:
@@ -295,11 +306,17 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
     
     await db.audits.insert_one(audit.dict())
     
-    # Update user audit count
-    await db.users.update_one(
-        {"id": current_user.id},
-        {"$inc": {"audits_used_this_month": 1}}
-    )
+    # Update audit count (individual or organization)
+    if current_user.organization_id:
+        await db.organizations.update_one(
+            {"id": current_user.organization_id},
+            {"$inc": {"audits_used_this_month": 1}}
+        )
+    else:
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$inc": {"audits_used_this_month": 1}}
+        )
     
     return audit
 
