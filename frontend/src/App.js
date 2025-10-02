@@ -412,42 +412,9 @@ function AuthForm() {
   );
 }
 
-// Landing Page Component 
+// Landing Page Component (now shows TestAudit directly)
 function LandingPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center px-6">
-      <div className="max-w-md w-full text-center">
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <Shield className="w-8 h-8 text-blue-400" />
-              <h1 className="text-2xl font-bold text-white">CSA Safety Audit</h1>
-            </div>
-            <CardTitle className="text-white text-2xl mb-4">Elige tu método de prueba</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={() => window.location.href = '/test'}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 text-lg"
-            >
-              🧪 Página de Prueba Simple
-            </Button>
-            <p className="text-blue-200 text-sm">
-              Página HTML simple para probar todas las funciones de auditoría
-            </p>
-            
-            <div className="pt-4 border-t border-white/20">
-              <p className="text-blue-200 text-sm mb-2">Credenciales Demo:</p>
-              <div className="text-xs text-blue-300 space-y-1">
-                <div>Admin: admin@csaaudit.com / admin123</div>
-                <div>User: demo@csaaudit.com / demo123</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  return <TestAudit />;
 }
 
 // Main Dashboard Component  
