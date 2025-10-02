@@ -353,9 +353,6 @@ function TestAudit() {
                     onClick={() => {
                       if (comment && actionTaken) {
                         handleAnswerQuestion(false, comment, actionTaken);
-                        setShowNonCompliantForm(false);
-                        setComment('');
-                        setActionTaken('');
                       }
                     }}
                     disabled={!comment || !actionTaken}
