@@ -1033,7 +1033,7 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
 }
 
 // Audit Progress Form Component
-function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, language }) {
+function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, language, workTypes }) {
   const { t } = React.useContext(LanguageContext);
   const [isCompliant, setIsCompliant] = useState(null);
   const [photo, setPhoto] = useState('');
