@@ -170,6 +170,11 @@ async def require_auth(
         raise HTTPException(status_code=401, detail="Authentication required")
     return user
 
+async def require_admin(current_user: User = Depends(require_auth)) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
 # Auth endpoints
 @api_router.get("/auth/session")
 async def get_session_data(session_id: str):
