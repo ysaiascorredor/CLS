@@ -912,6 +912,393 @@ function SubscriptionSettings() {
   );
 }
 
+// Admin Dashboard Component
+function AdminDashboard() {
+  const { t } = React.useContext(LanguageContext);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadAdminData();
+  }, []);
+
+  const loadAdminData = async () => {
+    try {
+      setLoading(true);
+      const [dashboardRes, usersRes] = await Promise.all([
+        axios.get(`${API}/admin/dashboard`, { withCredentials: true }),
+        axios.get(`${API}/admin/users?limit=20`, { withCredentials: true })
+      ]);
+      
+      setDashboardData(dashboardRes.data);
+      setUsers(usersRes.data.users);
+    } catch (error) {
+      toast({ title: "Error loading admin data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserPlan = async (userId, newPlan) => {
+    try {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      
+      await axios.put(`${API}/admin/user/${userId}`, {
+        subscription_plan: newPlan,
+        subscription_expires: expiresAt.toISOString(),
+        audits_used_this_month: 0
+      }, { withCredentials: true });
+      
+      toast({ title: "User plan updated successfully!" });
+      loadAdminData();
+    } catch (error) {
+      toast({ title: "Error updating user plan", variant: "destructive" });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-3xl font-bold text-slate-800">Panel de Administración</h2>
+      
+      {/* Métricas Principales */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.metrics.total_users || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              +{dashboardData?.metrics.new_users_week || 0} esta semana
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Suscriptores Activos</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{dashboardData?.metrics.active_subscribers || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardData?.metrics.conversion_rate.toFixed(1)}% conversión
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Revenue Total</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${dashboardData?.metrics.total_revenue.toFixed(2) || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              ${dashboardData?.metrics.current_month_revenue.toFixed(2) || 0} este mes
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Auditorías Totales</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.metrics.total_audits || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardData?.metrics.monthly_audits || 0} este mes
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Usuarios por Plan */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Usuarios por Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {dashboardData?.users_by_plan.map((plan) => (
+                <div key={plan._id || 'free'} className="flex justify-between items-center">
+                  <span className="text-sm font-medium">
+                    {plan._id || 'Free'}
+                  </span>
+                  <Badge variant="secondary">{plan.count}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Usuarios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {dashboardData?.top_users.slice(0, 5).map((user, index) => (
+                <div key={index} className="flex justify-between items-center p-2 border rounded">
+                  <div>
+                    <p className="font-medium text-sm">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">{user.audit_count} auditorías</p>
+                    <Badge variant={user.plan ? 'default' : 'secondary'} className="text-xs">
+                      {user.plan || 'free'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lista de Usuarios */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gestión de Usuarios</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {users.slice(0, 10).map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src={user.picture || 'https://via.placeholder.com/40'} 
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-medium">{user.name}</h4>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.total_audits} auditorías • 
+                      ${user.total_paid?.toFixed(2) || 0} pagado
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={user.subscription_plan ? 'default' : 'secondary'}>
+                    {user.subscription_plan || 'free'}
+                  </Badge>
+                  {user.role === 'admin' && (
+                    <Badge variant="destructive">Admin</Badge>
+                  )}
+                  
+                  <Select onValueChange={(plan) => updateUserPlan(user.id, plan)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Cambiar Plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                      <SelectItem value="">Remove Plan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Support Dashboard Component
+function SupportDashboard() {
+  const [supportData, setSupportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadSupportData();
+  }, []);
+
+  const loadSupportData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/admin/support-tickets`, { withCredentials: true });
+      setSupportData(response.data);
+    } catch (error) {
+      toast({ title: "Error loading support data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createAdminUser = async () => {
+    const email = prompt("Email del nuevo administrador:");
+    const name = prompt("Nombre del nuevo administrador:");
+    
+    if (email && name) {
+      try {
+        await axios.post(`${API}/admin/create-admin`, { email, name }, { withCredentials: true });
+        toast({ title: "Administrador creado exitosamente!" });
+      } catch (error) {
+        toast({ title: "Error creando administrador", variant: "destructive" });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-slate-800">Panel de Soporte</h2>
+        <Button onClick={createAdminUser} className="bg-blue-600 hover:bg-blue-700">
+          Crear Administrador
+        </Button>
+      </div>
+      
+      {/* Pagos Fallidos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <XCircle className="w-5 h-5 text-red-500" />
+            <span>Pagos Fallidos ({supportData?.failed_payments.length || 0})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {supportData?.failed_payments.slice(0, 5).map((payment) => (
+              <div key={payment.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded">
+                <div>
+                  <p className="font-medium">User ID: {payment.user_id}</p>
+                  <p className="text-sm text-muted-foreground">
+                    ${payment.amount} • {payment.package_type}
+                  </p>
+                </div>
+                <Badge variant="destructive">Failed</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Usuarios Activos Sin Suscripción */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Users className="w-5 h-5 text-yellow-500" />
+            <span>Usuarios Activos Sin Suscripción ({supportData?.active_users_no_subscription.length || 0})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {supportData?.active_users_no_subscription.slice(0, 8).map((user) => (
+              <div key={user.id} className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Registrado: {new Date(user.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <Badge variant="secondary">No Plan</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Usuarios Heavy Sin Upgrade */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5 text-blue-500" />
+            <span>Usuarios con Muchas Auditorías (Sin Upgrade)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {supportData?.heavy_users_no_upgrade.slice(0, 5).map((item, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded">
+                <div>
+                  <p className="font-medium">{item.user.name}</p>
+                  <p className="text-sm text-muted-foreground">{item.user.email}</p>
+                </div>
+                <div className="text-right">
+                  <Badge variant="outline">{item.audit_count} auditorías</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">¡Candidato a upgrade!</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Comandos de Soporte */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Herramientas de Soporte</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-50 rounded border">
+              <h4 className="font-medium mb-2">Comandos MongoDB Útiles:</h4>
+              <code className="text-sm bg-slate-100 p-2 rounded block">
+                {`// Ver usuario por email
+db.users.findOne({email: "usuario@email.com"});
+
+// Extender suscripción 30 días
+db.users.updateOne(
+  {email: "usuario@email.com"},
+  {$set: {subscription_expires: new Date(Date.now() + 30*24*60*60*1000)}}
+);
+
+// Reset auditorías mensuales
+db.users.updateOne(
+  {email: "usuario@email.com"},
+  {$set: {audits_used_this_month: 0}}
+);`}
+              </code>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button variant="outline" className="justify-start">
+                <Shield className="w-4 h-4 mr-2" />
+                Manual de Soporte
+              </Button>
+              <Button variant="outline" className="justify-start">
+                <FileText className="w-4 h-4 mr-2" />
+                Logs del Sistema
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Session Handler Component
 function SessionHandler({ children }) {
   const { setUser } = useAuth();
