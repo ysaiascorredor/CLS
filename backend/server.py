@@ -1171,11 +1171,20 @@ async def get_support_info(admin_user: User = Depends(require_admin)):
         "payment_status": "failed"
     }).sort("created_at", -1).to_list(20)
     
+    # Remove MongoDB _id field to avoid JSON serialization issues
+    for payment in users_with_failed_payments:
+        payment.pop("_id", None)
+    
     # Usuarios activos sin suscripción (pueden necesitar ayuda)
     active_users_no_sub = await db.users.find({
         "subscription_plan": None,
         "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(days=7)}
     }).to_list(50)
+    
+    # Remove MongoDB _id field to avoid JSON serialization issues
+    for user in active_users_no_sub:
+        user.pop("_id", None)
+        user.pop("password_hash", None)  # Also remove password hash for security
     
     # Usuarios con muchas auditorías pero sin upgrade
     heavy_users_no_upgrade = await db.audits.aggregate([
@@ -1189,6 +1198,9 @@ async def get_support_info(admin_user: User = Depends(require_admin)):
     for user_data in heavy_users_no_upgrade:
         user = await db.users.find_one({"id": user_data["_id"]})
         if user and not user.get("subscription_plan"):
+            # Remove MongoDB _id field and password hash
+            user.pop("_id", None)
+            user.pop("password_hash", None)
             heavy_users_info.append({
                 "user": user,
                 "audit_count": user_data["audit_count"]
