@@ -255,61 +255,76 @@ async def require_admin(current_user: User = Depends(require_auth)) -> User:
     return current_user
 
 # Auth endpoints
-@api_router.get("/auth/session")
-async def get_session_data(session_id: str):
-    """Get user data from session ID after OAuth"""
-    url = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
-    headers = {"X-Session-ID": session_id}
+@api_router.post("/auth/register")
+async def register_user(user_data: UserRegister):
+    """Register a new user with email and password"""
     
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Invalid session")
-    
-    user_data = response.json()
-    
-    # Check if user exists
-    existing_user = await db.users.find_one({"email": user_data["email"]})
-    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
-        user = User(**existing_user)
-    else:
-        # Create new user
-        user = User(
-            email=user_data["email"],
-            name=user_data["name"],
-            picture=user_data.get("picture")
-        )
-        await db.users.insert_one(user.dict())
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create session
-    session = UserSession(
-        user_id=user.id,
-        session_token=user_data["session_token"],
-        expires_at=datetime.now(timezone.utc) + timedelta(days=7)
+    # Hash password
+    hashed_password = hash_password(user_data.password)
+    
+    # Create new user
+    user = User(
+        email=user_data.email,
+        name=user_data.name,
+        password_hash=hashed_password,
+        picture="https://via.placeholder.com/150"
     )
-    await db.user_sessions.insert_one(session.dict())
     
-    return {"user": user, "session_token": user_data["session_token"]}
+    await db.users.insert_one(user.dict())
+    
+    # Create access token
+    access_token = create_access_token(user.id)
+    
+    # Return user info without password
+    user_response = UserResponse(**user.dict())
+    
+    return {
+        "message": "User registered successfully",
+        "user": user_response,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
 
-@api_router.get("/auth/me")
+@api_router.post("/auth/login")
+async def login_user(user_data: UserLogin):
+    """Login user with email and password"""
+    
+    # Find user by email
+    user_doc = await db.users.find_one({"email": user_data.email})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Verify password
+    if not verify_password(user_data.password, user_doc["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Create access token
+    access_token = create_access_token(user_doc["id"])
+    
+    # Return user info without password
+    user_doc.pop("password_hash", None)
+    user_response = UserResponse(**user_doc)
+    
+    return {
+        "message": "Login successful",
+        "user": user_response,
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+@api_router.get("/auth/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(require_auth)):
     """Get current authenticated user info"""
-    return current_user
+    return UserResponse(**current_user.dict())
 
 @api_router.post("/auth/logout")
-async def logout(
-    response: Response,
-    session_token: Optional[str] = Cookie(None),
-    authorization: str = Depends(HTTPBearer(auto_error=False))
-):
-    """Logout user"""
-    auth_header = authorization.credentials if authorization else None
-    token = session_token or (auth_header if auth_header else None)
-    
-    if token:
-        await db.user_sessions.delete_one({"session_token": token})
-    
-    response.delete_cookie("session_token")
+async def logout():
+    """Logout user (client should discard token)"""
     return {"message": "Logged out successfully"}
 
 # Work types endpoint
