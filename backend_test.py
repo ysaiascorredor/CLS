@@ -415,6 +415,219 @@ class CSABackendTester:
             self.log_test("Error Handling", False, str(e))
             return False
 
+    def test_admin_create_user_endpoint(self):
+        """Test POST /api/admin/create-admin endpoint"""
+        if not self.admin_token:
+            self.log_test("Admin Create User Endpoint", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test creating a new admin user
+            create_data = {
+                "email": f"testadmin_{datetime.now().strftime('%Y%m%d_%H%M%S')}@csaaudit.com",
+                "name": "Test Admin User"
+            }
+            
+            response = requests.post(f"{self.api_url}/admin/create-admin", 
+                                   json=create_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_admin = "admin" in data
+                message_contains_password = "temporary password" in data.get("message", "").lower()
+                
+                success = has_message and has_admin and message_contains_password
+                details = f"Status: {response.status_code}, Message: {has_message}, Admin: {has_admin}, Password in message: {message_contains_password}"
+                
+                if has_admin:
+                    admin_data = data["admin"]
+                    correct_email = admin_data.get("email") == create_data["email"]
+                    correct_name = admin_data.get("name") == create_data["name"]
+                    is_admin_role = admin_data.get("role") == "admin"
+                    has_password_hash = admin_data.get("password_hash") is not None
+                    
+                    success = success and correct_email and correct_name and is_admin_role and has_password_hash
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {is_admin_role}, Hash: {has_password_hash}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Create User Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Create User Endpoint", False, str(e))
+            return False
+
+    def test_admin_create_user_without_auth(self):
+        """Test POST /api/admin/create-admin without admin auth (should fail)"""
+        try:
+            create_data = {
+                "email": "test@example.com",
+                "name": "Test User"
+            }
+            
+            # Test without token
+            response = requests.post(f"{self.api_url}/admin/create-admin", 
+                                   json=create_data, timeout=10)
+            
+            success = response.status_code == 401
+            details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("Admin Create User Without Auth", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Create User Without Auth", False, str(e))
+            return False
+
+    def test_admin_create_user_with_user_token(self):
+        """Test POST /api/admin/create-admin with regular user token (should fail)"""
+        if not self.demo_token:
+            self.log_test("Admin Create User With User Token", False, "No demo token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.demo_token}"}
+            create_data = {
+                "email": "test@example.com",
+                "name": "Test User"
+            }
+            
+            response = requests.post(f"{self.api_url}/admin/create-admin", 
+                                   json=create_data, headers=headers, timeout=10)
+            
+            success = response.status_code == 403
+            details = f"Status: {response.status_code} (expected 403)"
+            
+            self.log_test("Admin Create User With User Token", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Create User With User Token", False, str(e))
+            return False
+
+    def test_system_logs_endpoint(self):
+        """Test GET /api/admin/logs endpoint"""
+        if not self.admin_token:
+            self.log_test("System Logs Endpoint", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.api_url}/admin/logs", 
+                                  headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_logs = "logs" in data
+                
+                success = has_logs
+                details = f"Status: {response.status_code}, Has logs: {has_logs}"
+                
+                if has_logs:
+                    logs_content = data["logs"]
+                    has_timestamp = "timestamp" in logs_content.lower()
+                    has_system_info = "system" in logs_content.lower()
+                    logs_length = len(logs_content)
+                    
+                    success = success and has_timestamp and logs_length > 0
+                    details += f", Has timestamp: {has_timestamp}, Has system info: {has_system_info}, Length: {logs_length}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("System Logs Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("System Logs Endpoint", False, str(e))
+            return False
+
+    def test_system_logs_without_auth(self):
+        """Test GET /api/admin/logs without admin auth (should fail)"""
+        try:
+            response = requests.get(f"{self.api_url}/admin/logs", timeout=10)
+            
+            success = response.status_code == 401
+            details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("System Logs Without Auth", success, details)
+            return success
+        except Exception as e:
+            self.log_test("System Logs Without Auth", False, str(e))
+            return False
+
+    def test_support_tickets_endpoint(self):
+        """Test GET /api/admin/support-tickets endpoint"""
+        if not self.admin_token:
+            self.log_test("Support Tickets Endpoint", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.api_url}/admin/support-tickets", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_failed_payments = "failed_payments" in data
+                has_active_users_no_sub = "active_users_no_subscription" in data
+                has_heavy_users = "heavy_users_no_upgrade" in data
+                
+                success = has_failed_payments and has_active_users_no_sub and has_heavy_users
+                details = f"Status: {response.status_code}, Failed payments: {has_failed_payments}, Active users no sub: {has_active_users_no_sub}, Heavy users: {has_heavy_users}"
+                
+                if success:
+                    # Check data structure
+                    failed_payments = data.get("failed_payments", [])
+                    active_users = data.get("active_users_no_subscription", [])
+                    heavy_users = data.get("heavy_users_no_upgrade", [])
+                    
+                    is_list_failed = isinstance(failed_payments, list)
+                    is_list_active = isinstance(active_users, list)
+                    is_list_heavy = isinstance(heavy_users, list)
+                    
+                    success = success and is_list_failed and is_list_active and is_list_heavy
+                    details += f", Lists valid: failed={is_list_failed}, active={is_list_active}, heavy={is_list_heavy}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Support Tickets Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Support Tickets Endpoint", False, str(e))
+            return False
+
+    def test_support_tickets_without_auth(self):
+        """Test GET /api/admin/support-tickets without admin auth (should fail)"""
+        try:
+            response = requests.get(f"{self.api_url}/admin/support-tickets", timeout=10)
+            
+            success = response.status_code == 401
+            details = f"Status: {response.status_code} (expected 401)"
+            
+            self.log_test("Support Tickets Without Auth", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Support Tickets Without Auth", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
