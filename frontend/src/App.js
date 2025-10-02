@@ -721,10 +721,21 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
     }
 
     try {
-      const response = await axios.post(`${API}/audits`, {
-        ...formData,
+      console.log('Sending audit data:', {
+        site_name: formData.siteName,
+        auditor_name: formData.auditorName,
+        selected_work_types: formData.selectedWorkTypes,
         language
-      }, { withCredentials: true });
+      });
+      
+      const response = await axios.post(`${API}/audits`, {
+        site_name: formData.siteName,
+        auditor_name: formData.auditorName,
+        selected_work_types: formData.selectedWorkTypes,
+        language
+      });
+      
+      console.log('Audit created:', response.data);
       
       setCurrentAudit(response.data);
       setAuditQuestions(questions[language]);
@@ -733,7 +744,8 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
       
       toast({ title: "Audit started successfully!" });
     } catch (error) {
-      toast({ title: "Error creating audit", variant: "destructive" });
+      console.error('Error creating audit:', error);
+      toast({ title: `Error creating audit: ${error.response?.data?.detail || error.message}`, variant: "destructive" });
     }
   };
 
