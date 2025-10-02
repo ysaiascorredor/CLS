@@ -855,6 +855,315 @@ class CSABackendTester:
             self.log_test("Create Test Audit for Statistics", False, str(e))
             return False
 
+    def test_stripe_payment_checkout_session(self):
+        """Test POST /api/payments/checkout/session with live Stripe keys"""
+        if not self.admin_token:
+            self.log_test("Stripe Payment Checkout Session", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test checkout session creation
+            checkout_data = {
+                "package_id": "basic",
+                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_session_id = "session_id" in data
+                has_url = "url" in data
+                
+                success = has_session_id and has_url
+                details = f"Status: {response.status_code}, Session ID: {has_session_id}, URL: {has_url}"
+                
+                if success:
+                    session_id = data.get("session_id", "")
+                    url = data.get("url", "")
+                    
+                    # Check if it's live mode (real Stripe) or demo mode
+                    is_live_mode = session_id.startswith("cs_live_") or not session_id.startswith("cs_demo_")
+                    is_demo_mode = session_id.startswith("cs_demo_")
+                    
+                    details += f", Live mode: {is_live_mode}, Demo mode: {is_demo_mode}"
+                    
+                    # For live mode, URL should be Stripe's checkout
+                    if is_live_mode:
+                        is_stripe_url = "checkout.stripe.com" in url
+                        details += f", Stripe URL: {is_stripe_url}"
+                        success = success and is_stripe_url
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Stripe Payment Checkout Session", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Payment Checkout Session", False, str(e))
+            return False
+
+    def test_pdf_generation(self):
+        """Test GET /api/audits/{audit_id}/pdf for completed audits"""
+        if not self.admin_token or not self.test_audit_id:
+            self.log_test("PDF Generation", False, "No admin token or test audit available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            response = requests.get(f"{self.api_url}/audits/{self.test_audit_id}/pdf", 
+                                  headers=headers, timeout=20)
+            
+            if response.status_code == 200:
+                # Check if response is PDF
+                content_type = response.headers.get('content-type', '')
+                is_pdf = 'application/pdf' in content_type
+                
+                # Check content disposition header
+                content_disposition = response.headers.get('content-disposition', '')
+                has_filename = 'filename=' in content_disposition
+                has_attachment = 'attachment' in content_disposition
+                
+                # Check PDF content length
+                content_length = len(response.content)
+                has_content = content_length > 1000  # PDF should be substantial
+                
+                # Check if content starts with PDF signature
+                pdf_signature = response.content[:4] == b'%PDF'
+                
+                success = is_pdf and has_filename and has_attachment and has_content and pdf_signature
+                details = f"Status: {response.status_code}, PDF type: {is_pdf}, Filename: {has_filename}, Attachment: {has_attachment}, Size: {content_length} bytes, PDF signature: {pdf_signature}"
+                
+                # Check if filename contains company name
+                if has_filename and 'Construction_Labor_Solution' in content_disposition:
+                    details += ", Company name in filename: True"
+                elif has_filename:
+                    details += ", Company name in filename: False"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("PDF Generation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("PDF Generation", False, str(e))
+            return False
+
+    def test_company_settings_get(self):
+        """Test GET /api/company/settings to retrieve company data"""
+        if not self.admin_token:
+            self.log_test("Company Settings GET", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            response = requests.get(f"{self.api_url}/company/settings", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_company_name = "company_name" in data
+                has_company_logo = "company_logo" in data
+                
+                success = has_company_name
+                details = f"Status: {response.status_code}, Company name: {has_company_name}, Company logo: {has_company_logo}"
+                
+                if has_company_name:
+                    company_name = data.get("company_name", "")
+                    is_correct_company = "Construction Labor Solution LLC" in company_name
+                    details += f", Correct company: {is_correct_company}"
+                    success = success and is_correct_company
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Company Settings GET", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Company Settings GET", False, str(e))
+            return False
+
+    def test_company_settings_post(self):
+        """Test POST /api/admin/company/settings for logo/company name updates"""
+        if not self.admin_token:
+            self.log_test("Company Settings POST", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test updating company settings
+            settings_data = {
+                "company_name": "Construction Labor Solution LLC",
+                "company_logo": "https://example.com/logo.png"
+            }
+            
+            response = requests.post(f"{self.api_url}/admin/company/settings", 
+                                   json=settings_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_success = "success" in data.get("message", "").lower()
+                
+                success = has_message and has_success
+                details = f"Status: {response.status_code}, Message: {has_message}, Success: {has_success}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Company Settings POST", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Company Settings POST", False, str(e))
+            return False
+
+    def test_bilingual_support(self):
+        """Test bilingual support (EN/ES) in responses"""
+        if not self.admin_token:
+            self.log_test("Bilingual Support", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test English questions
+            en_request = {
+                "work_types": ["excavation", "height_work"],
+                "language": "en"
+            }
+            
+            en_response = requests.post(f"{self.api_url}/audits/questions", 
+                                      json=en_request, headers=headers, timeout=10)
+            
+            # Test Spanish questions
+            es_request = {
+                "work_types": ["excavation", "height_work"],
+                "language": "es"
+            }
+            
+            es_response = requests.post(f"{self.api_url}/audits/questions", 
+                                      json=es_request, headers=headers, timeout=10)
+            
+            if en_response.status_code == 200 and es_response.status_code == 200:
+                en_data = en_response.json()
+                es_data = es_response.json()
+                
+                en_questions = en_data.get("questions", [])
+                es_questions = es_data.get("questions", [])
+                
+                has_en_questions = len(en_questions) > 0
+                has_es_questions = len(es_questions) > 0
+                same_count = len(en_questions) == len(es_questions)
+                
+                # Check if questions are actually different (bilingual)
+                different_content = False
+                if en_questions and es_questions and same_count:
+                    en_text = en_questions[0].get("question", "")
+                    es_text = es_questions[0].get("question", "")
+                    different_content = en_text != es_text and len(es_text) > 0
+                
+                success = has_en_questions and has_es_questions and same_count and different_content
+                details = f"EN questions: {len(en_questions)}, ES questions: {len(es_questions)}, Same count: {same_count}, Different content: {different_content}"
+                
+            else:
+                success = False
+                details = f"EN Status: {en_response.status_code}, ES Status: {es_response.status_code}"
+            
+            self.log_test("Bilingual Support", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Bilingual Support", False, str(e))
+            return False
+
+    def test_database_connectivity(self):
+        """Test database connectivity through API endpoints"""
+        try:
+            # Test database connectivity by checking work types (should come from database or constants)
+            response = requests.get(f"{self.api_url}/work-types", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_data = len(data) > 0
+                has_structure = all('id' in item and 'name_en' in item for item in data)
+                
+                success = has_data and has_structure
+                details = f"Status: {response.status_code}, Data count: {len(data)}, Structure valid: {has_structure}"
+                
+            else:
+                success = False
+                details = f"Status: {response.status_code}"
+            
+            self.log_test("Database Connectivity", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Database Connectivity", False, str(e))
+            return False
+
+    def test_critical_endpoints_response_time(self):
+        """Test response times for critical endpoints"""
+        critical_endpoints = [
+            ("GET", "/work-types", "Work Types"),
+            ("GET", "/payments/packages", "Payment Packages"),
+            ("POST", "/auth/login", "Login", {"email": "admin@csaaudit.com", "password": "admin123"}),
+        ]
+        
+        all_passed = True
+        for method, endpoint, name, *data in critical_endpoints:
+            try:
+                start_time = datetime.now()
+                
+                if method == "GET":
+                    response = requests.get(f"{self.api_url}{endpoint}", timeout=10)
+                elif method == "POST":
+                    payload = data[0] if data else {}
+                    response = requests.post(f"{self.api_url}{endpoint}", 
+                                           json=payload, timeout=10)
+                
+                end_time = datetime.now()
+                response_time = (end_time - start_time).total_seconds()
+                
+                # Consider under 3 seconds as acceptable for launch
+                fast_enough = response_time < 3.0
+                success = response.status_code == 200 and fast_enough
+                
+                details = f"Status: {response.status_code}, Response time: {response_time:.2f}s"
+                self.log_test(f"Response Time - {name}", success, details)
+                
+                if not success:
+                    all_passed = False
+                    
+            except Exception as e:
+                self.log_test(f"Response Time - {name}", False, str(e))
+                all_passed = False
+        
+        return all_passed
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
