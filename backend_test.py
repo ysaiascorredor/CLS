@@ -902,6 +902,13 @@ class CSABackendTester:
         self.test_support_tickets_endpoint()
         self.test_support_tickets_without_auth()
         
+        # Statistics Endpoints
+        print("\n📊 Testing Statistics Endpoints...")
+        self.test_create_test_audit_for_statistics()
+        self.test_statistics_endpoint()
+        self.test_statistics_charts_endpoint()
+        self.test_statistics_without_auth()
+        
         # Summary
         print("=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
