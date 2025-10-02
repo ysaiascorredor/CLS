@@ -759,14 +759,14 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
     };
 
     try {
-      await axios.post(`${API}/audits/${currentAudit.id}/findings`, finding, { withCredentials: true });
+      await axios.post(`${API}/audits/${currentAudit.id}/findings`, finding);
       setFindings([...findings, finding]);
       
       if (currentQuestionIndex < auditQuestions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         // Complete audit
-        await axios.put(`${API}/audits/${currentAudit.id}/complete`, {}, { withCredentials: true });
+        await axios.put(`${API}/audits/${currentAudit.id}/complete`, {});
         toast({ title: "Audit completed successfully!" });
         setCurrentAudit(null);
         onAuditCreated();
