@@ -70,7 +70,12 @@ const translations = {
     activeSubscribers: "Active Subscribers",
     totalRevenue: "Total Revenue",
     userManagement: "User Management",
-    changePlan: "Change Plan"
+    changePlan: "Change Plan",
+    team: "Team",
+    teamManagement: "Team Management",
+    inviteMember: "Invite Member",
+    createOrganization: "Create Organization",
+    acceptInvitation: "Accept Invitation"
   },
   es: {
     appName: "CSA Auditoría de Seguridad en Construcción",
