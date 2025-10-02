@@ -2131,7 +2131,7 @@ function TeamManagement() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Miembros del equipo</p>
+              <p className="text-sm text-muted-foreground">Team members</p>
               <p className="text-2xl font-bold">
                 {teamData?.organization.team_members_count || 0}
                 {teamData?.organization.subscription_plan && 
