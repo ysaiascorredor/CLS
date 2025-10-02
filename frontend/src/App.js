@@ -665,6 +665,29 @@ function Dashboard() {
     }
   };
 
+  const downloadAuditPDF = async (auditId, siteName) => {
+    try {
+      const response = await axios.get(`${API}/audits/${auditId}/pdf`, {
+        responseType: 'blob', // Important for file downloads
+      });
+      
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `audit_${siteName.replace(/\s+/g, '_')}_${auditId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({ title: language === 'en' ? "PDF downloaded successfully!" : "PDF descargado exitosamente!" });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({ title: language === 'en' ? "Error downloading PDF" : "Error descargando PDF", variant: "destructive" });
+    }
+  };
+
   const loadStatistics = async () => {
     try {
       const response = await axios.get(`${API}/statistics`);
