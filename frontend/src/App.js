@@ -1324,7 +1324,7 @@ function CompanySettings() {
 
 // Subscription Settings Component
 function SubscriptionSettings() {
-  const { t } = React.useContext(LanguageContext);
+  const { t, language } = React.useContext(LanguageContext);
   const [packages, setPackages] = useState({});
   const { user } = useAuth();
   const { toast } = useToast();
