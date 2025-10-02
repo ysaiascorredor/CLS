@@ -849,6 +849,294 @@ async def create_admin_user(
     
     return {"message": f"Admin user created successfully", "admin": new_admin}
 
+# ===== ENDPOINTS DE ORGANIZACIONES Y EQUIPOS =====
+
+@api_router.post("/organization/create")
+async def create_organization(
+    name: str,
+    current_user: User = Depends(require_auth)
+):
+    """Crear organización para el usuario (convierte suscripción personal en organizacional)"""
+    
+    # Verificar que el usuario no esté ya en una organización
+    if current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User already belongs to an organization")
+    
+    # Crear la organización
+    organization = Organization(
+        name=name,
+        owner_id=current_user.id,
+        subscription_plan=current_user.subscription_plan,
+        subscription_expires=current_user.subscription_expires,
+        audits_used_this_month=current_user.audits_used_this_month
+    )
+    
+    await db.organizations.insert_one(organization.dict())
+    
+    # Actualizar el usuario para que sea owner de la organización
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "organization_id": organization.id,
+            "organization_role": "owner"
+        }}
+    )
+    
+    # Crear registro de miembro del equipo
+    team_member = TeamMember(
+        organization_id=organization.id,
+        user_id=current_user.id,
+        role="owner",
+        invited_by=current_user.id
+    )
+    
+    await db.team_members.insert_one(team_member.dict())
+    
+    return {"message": "Organization created successfully", "organization": organization}
+
+@api_router.post("/organization/invite")
+async def invite_team_member(
+    invitee_email: EmailStr,
+    invitee_name: str,
+    role: str = "auditor",
+    current_user: User = Depends(require_auth)
+):
+    """Invitar un miembro al equipo"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    if current_user.organization_role not in ["owner"]:
+        raise HTTPException(status_code=403, detail="Only organization owners can invite members")
+    
+    # Verificar límites del plan
+    org = await db.organizations.find_one({"id": current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    if org["subscription_plan"]:
+        package = SUBSCRIPTION_PACKAGES.get(org["subscription_plan"])
+        if package and package["team_members"] != -1:
+            current_members = await db.team_members.count_documents({"organization_id": org["id"]})
+            if current_members >= package["team_members"]:
+                raise HTTPException(status_code=403, detail="Team member limit reached for current plan")
+    
+    # Verificar que el email no esté ya invitado
+    existing_invitation = await db.team_invitations.find_one({
+        "organization_id": current_user.organization_id,
+        "invitee_email": invitee_email,
+        "status": "pending"
+    })
+    
+    if existing_invitation:
+        raise HTTPException(status_code=400, detail="User already invited")
+    
+    # Verificar que el email no esté ya en el equipo
+    existing_user = await db.users.find_one({"email": invitee_email})
+    if existing_user and existing_user.get("organization_id") == current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User already part of the team")
+    
+    # Crear invitación
+    invitation = TeamInvitation(
+        organization_id=current_user.organization_id,
+        inviter_id=current_user.id,
+        invitee_email=invitee_email,
+        invitee_name=invitee_name,
+        role=role
+    )
+    
+    await db.team_invitations.insert_one(invitation.dict())
+    
+    return {"message": "Invitation sent successfully", "invitation": invitation}
+
+@api_router.get("/organization/invitations")
+async def get_pending_invitations(current_user: User = Depends(require_auth)):
+    """Ver invitaciones pendientes para el usuario actual"""
+    
+    invitations = await db.team_invitations.find({
+        "invitee_email": current_user.email,
+        "status": "pending",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    }).to_list(10)
+    
+    # Agregar información de la organización
+    for invitation in invitations:
+        org = await db.organizations.find_one({"id": invitation["organization_id"]})
+        invitation["organization"] = org
+        
+        inviter = await db.users.find_one({"id": invitation["inviter_id"]})
+        invitation["inviter"] = inviter
+    
+    return invitations
+
+@api_router.post("/organization/invitations/{invitation_id}/accept")
+async def accept_invitation(invitation_id: str, current_user: User = Depends(require_auth)):
+    """Aceptar invitación a organización"""
+    
+    invitation = await db.team_invitations.find_one({
+        "id": invitation_id,
+        "invitee_email": current_user.email,
+        "status": "pending"
+    })
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or expired")
+    
+    if invitation["expires_at"] < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Invitation has expired")
+    
+    # Verificar que el usuario no esté ya en una organización
+    if current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User already belongs to an organization")
+    
+    # Aceptar invitación
+    await db.team_invitations.update_one(
+        {"id": invitation_id},
+        {"$set": {"status": "accepted"}}
+    )
+    
+    # Agregar usuario a la organización
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {
+            "organization_id": invitation["organization_id"],
+            "organization_role": invitation["role"]
+        }}
+    )
+    
+    # Crear registro de miembro del equipo
+    team_member = TeamMember(
+        organization_id=invitation["organization_id"],
+        user_id=current_user.id,
+        role=invitation["role"],
+        invited_by=invitation["inviter_id"]
+    )
+    
+    await db.team_members.insert_one(team_member.dict())
+    
+    # Actualizar contador de miembros en la organización
+    await db.organizations.update_one(
+        {"id": invitation["organization_id"]},
+        {"$inc": {"team_members_count": 1}}
+    )
+    
+    return {"message": "Invitation accepted successfully"}
+
+@api_router.post("/organization/invitations/{invitation_id}/decline")
+async def decline_invitation(invitation_id: str, current_user: User = Depends(require_auth)):
+    """Rechazar invitación a organización"""
+    
+    result = await db.team_invitations.update_one(
+        {
+            "id": invitation_id,
+            "invitee_email": current_user.email,
+            "status": "pending"
+        },
+        {"$set": {"status": "declined"}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    return {"message": "Invitation declined"}
+
+@api_router.get("/organization/team")
+async def get_team_members(current_user: User = Depends(require_auth)):
+    """Ver miembros del equipo de la organización"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    # Obtener organización
+    org = await db.organizations.find_one({"id": current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Obtener miembros del equipo
+    team_members = await db.team_members.find({"organization_id": current_user.organization_id}).to_list(100)
+    
+    # Agregar información del usuario
+    for member in team_members:
+        user_info = await db.users.find_one({"id": member["user_id"]})
+        member["user"] = user_info
+        
+        # Estadísticas del miembro
+        member["audit_count"] = await db.audits.count_documents({"user_id": member["user_id"]})
+        member["completed_audits"] = await db.audits.count_documents({
+            "user_id": member["user_id"],
+            "status": "completed"
+        })
+    
+    # Obtener invitaciones pendientes
+    pending_invitations = await db.team_invitations.find({
+        "organization_id": current_user.organization_id,
+        "status": "pending",
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    }).to_list(50)
+    
+    return {
+        "organization": org,
+        "team_members": team_members,
+        "pending_invitations": pending_invitations
+    }
+
+@api_router.delete("/organization/team/{member_id}")
+async def remove_team_member(member_id: str, current_user: User = Depends(require_auth)):
+    """Remover miembro del equipo (solo owners)"""
+    
+    if current_user.organization_role != "owner":
+        raise HTTPException(status_code=403, detail="Only organization owners can remove team members")
+    
+    # Encontrar el miembro
+    team_member = await db.team_members.find_one({
+        "id": member_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not team_member:
+        raise HTTPException(status_code=404, detail="Team member not found")
+    
+    if team_member["role"] == "owner":
+        raise HTTPException(status_code=400, detail="Cannot remove organization owner")
+    
+    # Remover miembro del equipo
+    await db.team_members.delete_one({"id": member_id})
+    
+    # Actualizar usuario
+    await db.users.update_one(
+        {"id": team_member["user_id"]},
+        {"$unset": {"organization_id": "", "organization_role": ""}}
+    )
+    
+    # Actualizar contador en organización
+    await db.organizations.update_one(
+        {"id": current_user.organization_id},
+        {"$inc": {"team_members_count": -1}}
+    )
+    
+    return {"message": "Team member removed successfully"}
+
+@api_router.get("/organization/audits")
+async def get_organization_audits(current_user: User = Depends(require_auth)):
+    """Ver todas las auditorías de la organización"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    # Obtener todos los miembros de la organización
+    team_members = await db.team_members.find({"organization_id": current_user.organization_id}).to_list(100)
+    user_ids = [member["user_id"] for member in team_members]
+    
+    # Obtener todas las auditorías de la organización
+    audits = await db.audits.find({"user_id": {"$in": user_ids}}).sort("created_at", -1).to_list(1000)
+    
+    # Agregar información del auditor
+    for audit in audits:
+        user_info = await db.users.find_one({"id": audit["user_id"]})
+        audit["auditor_info"] = user_info
+    
+    return audits
+
 # Include the router in the main app
 app.include_router(api_router)
 
