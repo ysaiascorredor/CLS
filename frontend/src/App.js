@@ -1693,12 +1693,22 @@ function TeamManagement() {
 
   const loadTeamData = async () => {
     try {
+      console.log('🔍 Loading team data for user:', {
+        userId: user?.id,
+        organizationId: user?.organization_id,
+        organizationRole: user?.organization_role
+      });
+      
       if (user?.organization_id) {
+        console.log('📡 Fetching organization team data...');
         const response = await axios.get(`${API}/organization/team`);
+        console.log('✅ Team data loaded:', response.data);
         setTeamData(response.data);
+      } else {
+        console.log('⚠️ User has no organization_id, showing create organization UI');
       }
     } catch (error) {
-      console.log("No organization data or error:", error);
+      console.error("❌ Error loading team data:", error);
     } finally {
       setLoading(false);
     }
