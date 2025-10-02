@@ -296,11 +296,11 @@ backend:
 
   - task: "Team Invitation Functionality"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "testing"
@@ -308,6 +308,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "TEAM INVITATION FUNCTIONALITY FULLY WORKING: Comprehensive testing completed with owner credentials (ysaias.corredor@clsolution.net). All team invitation endpoints working correctly: 1) Owner login - ✅ Working (returns organization_id and owner role), 2) GET /api/organization/team - ✅ Working (returns 'CLS Solution' organization with team members and pending invitations), 3) POST /api/organization/invite - ✅ Working (successfully creates invitations with query parameters: invitee_email, invitee_name, role), 4) GET /api/organization/invitations - ✅ Working (returns pending invitations for user), 5) Invitation validation - ✅ Working (prevents duplicate invitations, validates organization ownership). DIAGNOSIS: Backend team invitation functionality is FULLY OPERATIONAL. Issue is likely FRONTEND not properly handling the invitation form submission or not using correct API parameters (should use query params, not JSON body)."
+        - working: false
+          agent: "main"
+          comment: "USER STILL REPORTS ISSUE: Manual testing shows invitation dialog opens correctly, form can be filled, but 'Send Invitation' button doesn't complete successfully. Dialog remains open after clicking, no toast notification appears. Need to debug inviteMember function in frontend."
 
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
