@@ -129,6 +129,45 @@ backend:
           agent: "testing"
           comment: "Authentication system fully tested and working. Fixed critical issues: 1) Added missing password_hash for admin@csaaudit.com user, 2) Fixed JWT error handling bug. All endpoints working: /api/auth/login, /api/auth/me, JWT token generation/validation, password hashing with bcrypt, CORS configuration. Both admin (admin@csaaudit.com/admin123) and demo (demo@csaaudit.com/demo123) credentials work correctly."
 
+  - task: "Admin Create User Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "POST /api/admin/create-admin endpoint fully tested and working. Creates new admin users with email and name, generates password hash, returns success message with temporary password (admin123). Proper authentication required (admin role only). Tested with admin@csaaudit.com credentials successfully."
+
+  - task: "System Logs Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "GET /api/admin/logs endpoint fully tested and working. Returns system logs from supervisor including backend and frontend logs, shows system status and timestamp. Proper authentication required (admin role only). Returns comprehensive log data with 9000+ characters of system information."
+
+  - task: "Support Data Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "GET /api/admin/support-tickets endpoint initially failed with 500 error due to MongoDB ObjectId JSON serialization issue."
+        - working: true
+          agent: "testing"
+          comment: "FIXED: GET /api/admin/support-tickets endpoint now working correctly. Fixed MongoDB ObjectId serialization issue by removing _id fields and password_hash fields. Returns proper JSON with failed_payments, active_users_no_subscription, and heavy_users_no_upgrade data structures. Proper authentication required (admin role only)."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
