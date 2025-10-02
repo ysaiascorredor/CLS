@@ -2009,7 +2009,7 @@ function TeamManagement() {
                     type="email"
                     value={inviteForm.email}
                     onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
-                    placeholder="usuario@empresa.com"
+                    placeholder="user@company.com"
                   />
                 </div>
                 <div>
