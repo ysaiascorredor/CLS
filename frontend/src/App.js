@@ -198,13 +198,13 @@ const translations = {
     auditTrends: "Audit Trends",
     complianceTrends: "Compliance Over Time",
     workTypePerformance: "Work Type Performance",
-    monthlyStats: "Estadísticas Mensuales",
-    compliantAudits: "Conformes",
-    nonCompliantAudits: "No Conformes",
-    month: "Mes",
-    auditCount: "Cantidad de Auditorías",
-    complianceRate: "Tasa de Cumplimiento",
-    avgScore: "Puntaje Promedio"
+    monthlyStats: "Monthly Statistics",
+    compliantAudits: "Compliant",
+    nonCompliantAudits: "Non-Compliant",
+    month: "Month",
+    auditCount: "Audit Count",
+    complianceRate: "Compliance Rate",
+    avgScore: "Average Score"
   }
 };
 
