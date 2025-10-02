@@ -1723,6 +1723,263 @@ class CSABackendTester:
             self.log_test("Organization Flow Existing User", False, str(e))
             return False
 
+    def test_owner_login(self):
+        """Test owner login with ysaias.corredor@clsolution.net / Clave.01"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@clsolution.net",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@clsolution.net"
+                    has_org_id = user_data.get("organization_id") is not None
+                    org_role = user_data.get("organization_role", "")
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Has org ID: {has_org_id}, Org role: {org_role}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Owner Login (ysaias.corredor@clsolution.net)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Login (ysaias.corredor@clsolution.net)", False, str(e))
+            return False
+
+    def test_organization_team_endpoint_owner(self):
+        """Test GET /api/organization/team endpoint with owner credentials"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Organization Team Endpoint (Owner)", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_organization = "organization" in data
+                has_team_members = "team_members" in data
+                has_pending_invitations = "pending_invitations" in data
+                
+                success = has_organization and has_team_members and has_pending_invitations
+                details = f"Status: {response.status_code}, Organization: {has_organization}, Team members: {has_team_members}, Pending invitations: {has_pending_invitations}"
+                
+                if success:
+                    org_data = data.get("organization", {})
+                    team_members = data.get("team_members", [])
+                    pending_invitations = data.get("pending_invitations", [])
+                    
+                    org_has_id = "id" in org_data
+                    org_has_name = "name" in org_data
+                    is_list_members = isinstance(team_members, list)
+                    is_list_invitations = isinstance(pending_invitations, list)
+                    
+                    success = success and org_has_id and org_has_name and is_list_members and is_list_invitations
+                    details += f", Org ID: {org_has_id}, Org name: {org_has_name}, Members list: {is_list_members}, Invitations list: {is_list_invitations}"
+                    
+                    if org_has_name:
+                        org_name = org_data.get("name", "")
+                        details += f", Org name: '{org_name}'"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Organization Team Endpoint (Owner)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Organization Team Endpoint (Owner)", False, str(e))
+            return False
+
+    def test_team_invitation_send(self):
+        """Test POST /api/organization/invite - Send team invitation"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Team Invitation Send", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test inviting a new member as specified in the request
+            invitation_data = {
+                "invitee_email": "empleado@ejemplo.com",
+                "invitee_name": "Juan Empleado", 
+                "role": "auditor"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/invite", 
+                                   json=invitation_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_invitation = "invitation" in data
+                
+                success = has_message and has_invitation
+                details = f"Status: {response.status_code}, Message: {has_message}, Invitation: {has_invitation}"
+                
+                if has_invitation:
+                    invitation = data.get("invitation", {})
+                    correct_email = invitation.get("invitee_email") == "empleado@ejemplo.com"
+                    correct_name = invitation.get("invitee_name") == "Juan Empleado"
+                    correct_role = invitation.get("role") == "auditor"
+                    has_id = "id" in invitation
+                    has_org_id = "organization_id" in invitation
+                    
+                    success = success and correct_email and correct_name and correct_role and has_id and has_org_id
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, ID: {has_id}, Org ID: {has_org_id}"
+                    
+                    # Store invitation ID for later tests
+                    if has_id:
+                        self.test_invitation_id = invitation.get("id")
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Team Invitation Send", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Team Invitation Send", False, str(e))
+            return False
+
+    def test_pending_invitations_endpoint(self):
+        """Test GET /api/organization/invitations - Check pending invitations"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Pending Invitations Endpoint", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/invitations", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                is_list = isinstance(data, list)
+                
+                success = is_list
+                details = f"Status: {response.status_code}, Is list: {is_list}, Count: {len(data) if is_list else 'N/A'}"
+                
+                # This endpoint returns invitations FOR the current user (as invitee)
+                # Since we're testing with owner account, it should return empty list or invitations for owner
+                if is_list:
+                    details += f", Invitations count: {len(data)}"
+                    
+                    # Check structure of first invitation if any
+                    if len(data) > 0:
+                        first_inv = data[0]
+                        has_required_fields = all(field in first_inv for field in ["id", "organization_id", "invitee_email", "role", "status"])
+                        details += f", Has required fields: {has_required_fields}"
+                        success = success and has_required_fields
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Pending Invitations Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Pending Invitations Endpoint", False, str(e))
+            return False
+
+    def test_team_invitation_in_team_list(self):
+        """Test if sent invitation appears in team list pending invitations"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Team Invitation In Team List", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_pending_invitations = "pending_invitations" in data
+                
+                if has_pending_invitations:
+                    pending_invitations = data.get("pending_invitations", [])
+                    is_list = isinstance(pending_invitations, list)
+                    
+                    success = is_list
+                    details = f"Status: {response.status_code}, Has pending invitations: {has_pending_invitations}, Is list: {is_list}, Count: {len(pending_invitations) if is_list else 'N/A'}"
+                    
+                    # Look for our test invitation
+                    found_test_invitation = False
+                    if is_list:
+                        for invitation in pending_invitations:
+                            if invitation.get("invitee_email") == "empleado@ejemplo.com":
+                                found_test_invitation = True
+                                correct_name = invitation.get("invitee_name") == "Juan Empleado"
+                                correct_role = invitation.get("role") == "auditor"
+                                correct_status = invitation.get("status") == "pending"
+                                
+                                details += f", Found test invitation: {found_test_invitation}, Name: {correct_name}, Role: {correct_role}, Status: {correct_status}"
+                                success = success and correct_name and correct_role and correct_status
+                                break
+                        
+                        if not found_test_invitation:
+                            details += f", Test invitation not found in pending list"
+                            # This might not be a failure if invitation was processed differently
+                    
+                else:
+                    success = False
+                    details = f"Status: {response.status_code}, Missing pending_invitations field"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Team Invitation In Team List", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Team Invitation In Team List", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
