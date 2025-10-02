@@ -500,6 +500,324 @@ async def stripe_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# ===== ENDPOINTS DE ADMINISTRACIÓN =====
+
+@api_router.get("/admin/dashboard")
+async def get_admin_dashboard(admin_user: User = Depends(require_admin)):
+    """Dashboard completo de administración con todas las métricas"""
+    
+    # Métricas básicas
+    total_users = await db.users.count_documents({})
+    total_admins = await db.users.count_documents({"role": "admin"})
+    active_subscribers = await db.users.count_documents({"subscription_plan": {"$ne": None}})
+    
+    # Usuarios por plan
+    users_by_plan = await db.users.aggregate([
+        {"$group": {"_id": "$subscription_plan", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    
+    # Revenue total
+    total_revenue_result = await db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    total_revenue = total_revenue_result[0]["total"] if total_revenue_result else 0
+    
+    # Revenue mensual
+    monthly_revenue = await db.payment_transactions.aggregate([
+        {"$match": {
+            "payment_status": "paid",
+            "created_at": {"$gte": datetime.now(timezone.utc).replace(day=1)}
+        }},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    current_month_revenue = monthly_revenue[0]["total"] if monthly_revenue else 0
+    
+    # Auditorías totales y mensuales
+    total_audits = await db.audits.count_documents({})
+    monthly_audits = await db.audits.count_documents({
+        "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(days=30)}
+    })
+    
+    # Auditorías completadas
+    completed_audits = await db.audits.count_documents({"status": "completed"})
+    
+    # Usuarios nuevos esta semana
+    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    new_users_week = await db.users.count_documents({"created_at": {"$gte": week_ago}})
+    
+    # Revenue por mes (últimos 12 meses)
+    revenue_by_month = await db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m", "date": "$created_at"}},
+            "revenue": {"$sum": "$amount"},
+            "transactions": {"$sum": 1}
+        }},
+        {"$sort": {"_id": -1}},
+        {"$limit": 12}
+    ]).to_list(12)
+    
+    # Top usuarios por auditorías
+    top_users = await db.audits.aggregate([
+        {"$group": {"_id": "$user_id", "audit_count": {"$sum": 1}}},
+        {"$sort": {"audit_count": -1}},
+        {"$limit": 10}
+    ]).to_list(10)
+    
+    # Obtener información de los top users
+    top_users_info = []
+    for user_data in top_users:
+        user_info = await db.users.find_one({"id": user_data["_id"]})
+        if user_info:
+            top_users_info.append({
+                "name": user_info["name"],
+                "email": user_info["email"],
+                "audit_count": user_data["audit_count"],
+                "plan": user_info.get("subscription_plan", "free")
+            })
+    
+    return {
+        "metrics": {
+            "total_users": total_users,
+            "total_admins": total_admins,
+            "active_subscribers": active_subscribers,
+            "total_revenue": total_revenue,
+            "current_month_revenue": current_month_revenue,
+            "total_audits": total_audits,
+            "monthly_audits": monthly_audits,
+            "completed_audits": completed_audits,
+            "new_users_week": new_users_week,
+            "conversion_rate": (active_subscribers / total_users * 100) if total_users > 0 else 0
+        },
+        "users_by_plan": users_by_plan,
+        "revenue_by_month": revenue_by_month,
+        "top_users": top_users_info
+    }
+
+@api_router.get("/admin/users")
+async def get_all_users(
+    skip: int = 0, 
+    limit: int = 100,
+    search: str = None,
+    plan: str = None,
+    admin_user: User = Depends(require_admin)
+):
+    """Lista todos los usuarios con filtros"""
+    
+    filter_criteria = {}
+    
+    if search:
+        filter_criteria["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if plan and plan != "all":
+        if plan == "free":
+            filter_criteria["subscription_plan"] = None
+        else:
+            filter_criteria["subscription_plan"] = plan
+    
+    total_count = await db.users.count_documents(filter_criteria)
+    users = await db.users.find(filter_criteria).skip(skip).limit(limit).sort("created_at", -1).to_list(limit)
+    
+    # Agregar información adicional de cada usuario
+    for user in users:
+        # Número de auditorías
+        user["total_audits"] = await db.audits.count_documents({"user_id": user["id"]})
+        
+        # Último pago
+        last_payment = await db.payment_transactions.find_one(
+            {"user_id": user["id"], "payment_status": "paid"},
+            sort=[("created_at", -1)]
+        )
+        user["last_payment"] = last_payment["created_at"] if last_payment else None
+        user["total_paid"] = 0
+        
+        if last_payment:
+            # Total pagado por el usuario
+            total_paid_result = await db.payment_transactions.aggregate([
+                {"$match": {"user_id": user["id"], "payment_status": "paid"}},
+                {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+            ]).to_list(1)
+            user["total_paid"] = total_paid_result[0]["total"] if total_paid_result else 0
+    
+    return {
+        "users": users,
+        "total_count": total_count,
+        "page": skip // limit + 1,
+        "per_page": limit,
+        "total_pages": (total_count + limit - 1) // limit
+    }
+
+@api_router.get("/admin/user/{user_id}")
+async def get_user_details(user_id: str, admin_user: User = Depends(require_admin)):
+    """Detalles completos de un usuario específico"""
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Auditorías del usuario
+    audits = await db.audits.find({"user_id": user_id}).sort("created_at", -1).to_list(50)
+    
+    # Historial de pagos
+    payments = await db.payment_transactions.find({"user_id": user_id}).sort("created_at", -1).to_list(20)
+    
+    # Sesiones activas
+    active_sessions = await db.user_sessions.find({
+        "user_id": user_id,
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    }).to_list(10)
+    
+    return {
+        "user": user,
+        "audits": audits,
+        "payments": payments,
+        "active_sessions": active_sessions,
+        "stats": {
+            "total_audits": len(audits),
+            "completed_audits": len([a for a in audits if a.get("status") == "completed"]),
+            "total_paid": sum(p["amount"] for p in payments if p["payment_status"] == "paid"),
+            "active_sessions_count": len(active_sessions)
+        }
+    }
+
+@api_router.put("/admin/user/{user_id}")
+async def update_user(
+    user_id: str, 
+    update_data: dict,
+    admin_user: User = Depends(require_admin)
+):
+    """Actualizar información de usuario (plan, rol, etc.)"""
+    
+    allowed_fields = ["subscription_plan", "subscription_expires", "audits_used_this_month", "role"]
+    update_fields = {k: v for k, v in update_data.items() if k in allowed_fields}
+    
+    if "subscription_expires" in update_fields and isinstance(update_fields["subscription_expires"], str):
+        update_fields["subscription_expires"] = datetime.fromisoformat(update_fields["subscription_expires"])
+    
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": update_fields}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "User updated successfully", "updated_fields": list(update_fields.keys())}
+
+@api_router.get("/admin/revenue")
+async def get_revenue_stats(admin_user: User = Depends(require_admin)):
+    """Estadísticas detalladas de ingresos"""
+    
+    # Revenue por mes (últimos 12 meses)
+    revenue_by_month = await db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": "%Y-%m", "date": "$created_at"}},
+            "revenue": {"$sum": "$amount"},
+            "transactions": {"$sum": 1}
+        }},
+        {"$sort": {"_id": -1}},
+        {"$limit": 12}
+    ]).to_list(12)
+    
+    # Revenue por plan
+    revenue_by_plan = await db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {
+            "_id": "$package_type",
+            "revenue": {"$sum": "$amount"},
+            "transactions": {"$sum": 1}
+        }}
+    ]).to_list(10)
+    
+    # Transacciones recientes
+    recent_transactions = await db.payment_transactions.find({}).sort("created_at", -1).limit(20).to_list(20)
+    
+    # MRR (Monthly Recurring Revenue)
+    current_month = datetime.now(timezone.utc).replace(day=1)
+    mrr_result = await db.payment_transactions.aggregate([
+        {"$match": {
+            "payment_status": "paid",
+            "created_at": {"$gte": current_month}
+        }},
+        {"$group": {"_id": None, "mrr": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    mrr = mrr_result[0]["mrr"] if mrr_result else 0
+    
+    return {
+        "revenue_by_month": revenue_by_month,
+        "revenue_by_plan": revenue_by_plan,
+        "recent_transactions": recent_transactions,
+        "mrr": mrr
+    }
+
+@api_router.get("/admin/support-tickets")
+async def get_support_info(admin_user: User = Depends(require_admin)):
+    """Información para soporte al cliente"""
+    
+    # Usuarios con problemas potenciales
+    users_with_failed_payments = await db.payment_transactions.find({
+        "payment_status": "failed"
+    }).sort("created_at", -1).to_list(20)
+    
+    # Usuarios activos sin suscripción (pueden necesitar ayuda)
+    active_users_no_sub = await db.users.find({
+        "subscription_plan": None,
+        "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(days=7)}
+    }).to_list(50)
+    
+    # Usuarios con muchas auditorías pero sin upgrade
+    heavy_users_no_upgrade = await db.audits.aggregate([
+        {"$group": {"_id": "$user_id", "audit_count": {"$sum": 1}}},
+        {"$match": {"audit_count": {"$gte": 10}}},
+        {"$sort": {"audit_count": -1}}
+    ]).to_list(20)
+    
+    # Obtener info de usuarios heavy
+    heavy_users_info = []
+    for user_data in heavy_users_no_upgrade:
+        user = await db.users.find_one({"id": user_data["_id"]})
+        if user and not user.get("subscription_plan"):
+            heavy_users_info.append({
+                "user": user,
+                "audit_count": user_data["audit_count"]
+            })
+    
+    return {
+        "failed_payments": users_with_failed_payments,
+        "active_users_no_subscription": active_users_no_sub,
+        "heavy_users_no_upgrade": heavy_users_info[:10]
+    }
+
+@api_router.post("/admin/create-admin")
+async def create_admin_user(
+    email: str,
+    name: str,
+    current_admin: User = Depends(require_admin)
+):
+    """Crear un nuevo usuario administrador"""
+    
+    # Verificar que el email no exista
+    existing_user = await db.users.find_one({"email": email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    
+    # Crear nuevo admin
+    new_admin = User(
+        email=email,
+        name=name,
+        role="admin",
+        picture="https://via.placeholder.com/150"
+    )
+    
+    await db.users.insert_one(new_admin.dict())
+    
+    return {"message": f"Admin user created successfully", "admin": new_admin}
+
 # Include the router in the main app
 app.include_router(api_router)
 
