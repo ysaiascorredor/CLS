@@ -2045,6 +2045,7 @@ function App() {
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="/test" element={<TestAudit />} />
             <Route path="/subscription-success" element={
               <ProtectedRoute>
                 <Dashboard />
