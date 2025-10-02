@@ -623,15 +623,7 @@ function LandingPage() {
                 }
               </Button>
 
-              {/* Botón para modo de prueba */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowTestMode(true)}
-                className="w-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
-              >
-                🧪 Modo de Prueba Simple
-              </Button>
+              {/* Professional production login - no test mode */}
             </form>
           </CardContent>
         </Card>
