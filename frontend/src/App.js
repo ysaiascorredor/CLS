@@ -1717,11 +1717,28 @@ function TeamManagement() {
     const orgName = prompt("Nombre de tu organización/empresa:");
     if (orgName) {
       try {
-        await axios.post(`${API}/organization/create`, { name: orgName }, { withCredentials: true });
-        toast({ title: "Organización creada exitosamente!" });
-        window.location.reload();
+        console.log('🏢 Creating organization:', orgName);
+        
+        const response = await axios.post(`${API}/organization/create`, { name: orgName });
+        
+        console.log('✅ Organization created:', response.data);
+        
+        toast({ 
+          title: language === 'en' ? "Organization created successfully!" : "¡Organización creada exitosamente!" 
+        });
+        
+        // Reload team data instead of full page
+        loadTeamData();
+        
       } catch (error) {
-        toast({ title: "Error creando organización", variant: "destructive" });
+        console.error('❌ Organization creation error:', error);
+        
+        const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+        toast({ 
+          title: language === 'en' ? "Error creating organization" : "Error creando organización",
+          description: errorMessage,
+          variant: "destructive" 
+        });
       }
     }
   };
