@@ -1745,24 +1745,51 @@ function TeamManagement() {
 
   const inviteMember = async () => {
     try {
-      await axios.post(`${API}/organization/invite`, inviteForm, { withCredentials: true });
-      toast({ title: "Invitación enviada exitosamente!" });
+      console.log('📧 Inviting member:', inviteForm);
+      
+      await axios.post(`${API}/organization/invite`, inviteForm);
+      
+      toast({ 
+        title: language === 'en' ? "Invitation sent successfully!" : "¡Invitación enviada exitosamente!" 
+      });
+      
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
       loadTeamData();
+      
     } catch (error) {
-      toast({ title: error.response?.data?.detail || "Error enviando invitación", variant: "destructive" });
+      console.error('❌ Invite error:', error);
+      
+      const errorMessage = error.response?.data?.detail || "Error enviando invitación";
+      toast({ 
+        title: errorMessage, 
+        variant: "destructive" 
+      });
     }
   };
 
   const removeMember = async (memberId) => {
-    if (window.confirm("¿Estás seguro de que quieres remover este miembro?")) {
+    const confirmMessage = language === 'en' ? 
+      "Are you sure you want to remove this member?" : 
+      "¿Estás seguro de que quieres remover este miembro?";
+      
+    if (window.confirm(confirmMessage)) {
       try {
-        await axios.delete(`${API}/organization/team/${memberId}`, { withCredentials: true });
-        toast({ title: "Miembro removido exitosamente" });
+        await axios.delete(`${API}/organization/team/${memberId}`);
+        
+        toast({ 
+          title: language === 'en' ? "Member removed successfully" : "Miembro removido exitosamente" 
+        });
+        
         loadTeamData();
+        
       } catch (error) {
-        toast({ title: "Error removiendo miembro", variant: "destructive" });
+        console.error('❌ Remove member error:', error);
+        
+        toast({ 
+          title: language === 'en' ? "Error removing member" : "Error removiendo miembro", 
+          variant: "destructive" 
+        });
       }
     }
   };
