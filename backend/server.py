@@ -1839,7 +1839,7 @@ async def invite_team_member(
     await db.team_invitations.insert_one(invitation.dict())
     
     # Generar enlace único de invitación
-    invitation_link = f"https://safeinspect-2.preview.emergentagent.com/join-team/{invitation.id}"
+    invitation_link = f"https://constr-safety.preview.emergentagent.com/join-team/{invitation.id}"
     
     return {
         "message": "Invitation created successfully", 

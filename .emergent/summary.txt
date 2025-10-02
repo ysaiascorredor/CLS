@@ -1,72 +1,70 @@
 <analysis>
-The trajectory outlines the development of a full-stack CSA Construction Safety Audit application. The process began with detailed requirement gathering, where the user specified features like bilingual support (Spanish/English), Stripe integration for payments, and a dynamic audit system. The initial development phase focused on building a Minimum Viable Product (MVP) with a complete UI, backend endpoints, and placeholder data.
+The trajectory details the development and iterative refinement of the CSA Construction Safety Audit application, moving from an MVP to a near-production-ready state. The initial phase focused on building core features like dynamic audits and user authentication. A significant challenge was a pivot from a problematic Google OAuth implementation to a more stable custom JWT-based email/password system.
 
-A significant portion of the work involved iterative debugging based on user feedback. The initial Google OAuth-based authentication proved problematic, leading to a pivot towards a simpler, more robust email/password system using JWT. Subsequent user reports identified issues where the application would get stuck at login or during the audit creation process. These were traced back to incorrect frontend API call configurations (using  instead of JWT headers) and state management bugs within the React components.
+Development was heavily driven by user feedback, leading to a cycle of bug fixing and feature enhancement. Key issues resolved include a React  caused by improper prop drilling (), persistent user session loss due to incorrect API authentication patterns (switching from  to a global Axios JWT interceptor), and backend bugs in user creation and token verification.
 
-The core application logic was refined based on a key user suggestion: making audit questions dynamic and specific to the selected construction work types, rather than enforcing a mandatory selection of three types. This led to a major refactoring of both the frontend and backend.
-
-The most recent work cycle involved fixing a series of React-specific errors, including an improper use of hooks (Rendered more hooks...) and restoring the full application dashboard after a simplified test component had temporarily replaced it. The final state of the trajectory shows the application is non-functional due to a , indicating a state management issue where data is not being correctly passed between components after the latest UI restoration attempt.
+Based on user requests, the application's scope expanded significantly to include an admin dashboard with advanced statistics and charts (using Recharts), PDF report generation, company logo customization, and Stripe payment integration. A critical late-stage discovery was the lack of an email service, prompting a pivot in the team invitation system from automated emails to a manual, link-based sharing mechanism. The final interactions focused on fixing bugs in this new invitation flow and resolving deployment issues related to incorrect environment variable configurations between the preview and production environments.
 </analysis>
 
 <product_requirements>
-The goal is to build a comprehensive SaaS application named CSA Construction Safety Audit for performing safety audits in the construction industry.
+The goal is to build the CSA Construction Safety Audit, a bilingual (English/Spanish) SaaS platform for the construction industry.
 
 **Core Functionality:**
-*   **Dynamic Audits**: Auditors can select any number of specific construction work types (e.g., Excavation, Height Work). The application must then generate a unique checklist of questions tailored specifically to the selected work types.
-*   **Compliance Tracking**: Audit questions require a Yes (compliant) or No (non-compliant) answer.
-*   **Issue Documentation**: A No answer must trigger a mandatory form requiring the user to upload a photo, add a comment describing the issue, and detail the corrective action taken.
-*   **Bilingual Support**: The entire user interface and all content must be available in both English and Spanish.
+*   **Dynamic Audits:** Users select specific construction work types to generate a tailored audit checklist.
+*   **Team Management:** Subscribers create an organization and invite members. A link-based system is used for invitations, where a unique link is generated to be shared manually.
+*   **PDF Reporting:** Generate professional PDF reports of completed audits, including findings, charts, and the subscribing company's logo.
 
-**Business & Administrative Features:**
-*   **Monetization**: The application must be sold as a subscription service using Stripe, with multiple tiers (e.g., Basic, Professional, Enterprise) that have different limits on audits and team members.
-*   **Admin Dashboard**: The app owner requires a super-admin view to monitor key business metrics like total users, active subscribers, revenue, and audit counts.
-*   **Team Collaboration**: Subscribers must be able to create an organization, invite team members with specific roles (e.g., Auditor, Observer), and share subscription limits across the team.
-*   **Authentication**: User registration and login must be handled via email and password.
+**Commercial and Administrative Features:**
+*   **Subscription Model:** Monetization through tiered subscription plans (e.g., Basic, Professional, Enterprise) managed via Stripe. Users can upgrade their plans.
+*   **Company Customization:** Organizations can upload their company logo and set their company name, which appears on reports.
+*   **Admin Dashboard:** A super-admin panel to view system-wide metrics (total users, revenue), manage users, view system logs, and access support tools.
+*   **User Support:** The application must display the owner's contact information (email and phone number) in a support footer visible to all logged-in users.
 </product_requirements>
 
 <key_technical_concepts>
-*   **Tech Stack**: React.js (frontend), FastAPI (backend), MongoDB (database).
-*   **Authentication**: Email/Password authentication using JWT (JSON Web Tokens) for session management and  for password hashing on the backend.
-*   **Payments**: Stripe integration for handling recurring subscription payments.
-*   **UI/UX**: Frontend built with Shadcn UI components and styled with Tailwind CSS.
-*   **Backend Architecture**: Asynchronous API endpoints using  for non-blocking database operations with MongoDB. Data validation is handled by Pydantic models.
+- **Tech Stack**: React.js (frontend), FastAPI (Python backend), MongoDB (database).
+- **Authentication**: Custom email/password system using JSON Web Tokens (JWT). A global Axios interceptor on the frontend automatically attaches the JWT to API requests.
+- **Payments**: Stripe integration for subscription management and checkout sessions.
+- **UI/UX**: Frontend built with Shadcn UI components and styled with Tailwind CSS. Charts are implemented using the Recharts library.
+- **PDF Generation**: Handled on the backend using the ReportLab and Matplotlib libraries.
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a standard monorepo-style structure with separate directories for the frontend and backend.
+The application uses a monorepo structure with distinct frontend and backend directories.
 
 
 
-*   ****
-    *   **Importance**: This is the single-file monolithic backend for the entire application. It contains all API logic, including user authentication, Stripe webhooks, database models (Pydantic), CRUD operations for audits, dynamic question generation, team management, and admin-level data aggregation.
-    *   **Changes**: The file was extensively modified throughout the trajectory. It evolved from a basic template to a feature-rich backend, with major changes including the replacement of Google OAuth with a custom JWT implementation and the addition of numerous endpoints for teams, admin dashboards, and dynamic audit logic.
+- ****
+  - **Importance**: This is the monolithic backend application. It defines all API endpoints, database models (Pydantic), and business logic for authentication, audits, team management, statistics, PDF generation, and Stripe integration.
+  - **Changes**: This file was heavily modified to add endpoints for chart data (), PDF generation (), company settings, and to refactor the team invitation logic to generate unique, token-based URLs instead of sending emails.
 
-*   ****
-    *   **Importance**: This is the main entry point and primary component for the React frontend. It manages routing, global state (like the authenticated user), and renders all other components, including the login form, main dashboard, audit creation flow, and admin panels.
-    *   **Changes**: This file has undergone the most significant churn. It was rewritten to switch from Google OAuth to email/password login, had a temporary test component () integrated and then separated, and was the source of multiple critical bugs, including improper API calls, incorrect hook usage, and state-passing errors. The latest error () originates from a component rendered within this file.
+- ****
+  - **Importance**: This is the monolithic frontend component. It contains the logic for routing, state management, and renders almost every UI view, including the login page, dashboard, audit forms, settings, and admin panels.
+  - **Changes**: This file saw the most significant changes. Key additions include a global Axios interceptor for JWT authentication, the implementation of statistics charts using Recharts, and a complete overhaul of the team invitation UI to support the new link-based system. It also includes new components defined inline like  to handle accepting invitations via a tokenized URL.
 
-*   ****
-    *   **Importance**: This component was created as a debugging tool to isolate and test the end-to-end audit creation flow (from login to completion) without the complexity of the full dashboard UI.
-    *   **Changes**: It was created to solve a blocking issue. Later, it was mistakenly made the main application view, causing a regression where the user lost access to the dashboard. The current effort is to reintegrate its tested logic back into the main  component structure.
+- ****
+  - **Importance**: Stores critical frontend environment variables, most importantly , which dictates which backend the application communicates with.
+  - **Changes**: This file was the source of a critical production bug. It was incorrectly pointing to the preview backend URL. It was updated to point to the production URL, which requires a redeploy to take effect.
 
-*   ****
-    *   **Importance**: A utility script to bootstrap the application by creating the initial administrator user directly in the MongoDB database, bypassing the need for a UI-based registration for the first admin.
-    *   **Changes**: Created once to facilitate testing of the admin dashboard features.
+- ****
+  - **Importance**: A utility script used to create administrative and test users directly in the database, bypassing the UI.
+  - **Changes**: The script was used multiple times to create the initial admin, a test user with a basic plan for testing upgrades, and finally, the owner's official super-admin account.
 </code_architecture>
 
 <pending_tasks>
-*   Restore the full application UI, ensuring the main dashboard with all its tabs (Dashboard, Stats, Team, Admin) is the default view after login.
-*   Finalize the integration of the tested audit logic from  into the main application flow.
-*   Conduct a full, end-to-end test of the user journey: registration, login, selecting a subscription plan (Stripe flow), creating an organization, inviting a team member, and completing a full audit.
-*   Implement the file upload mechanism for photos required in non-compliant audit answers.
+- **Stripe Webhook Configuration**: The user must manually update the webhook endpoint URL in their Stripe dashboard to the final production URL () to fully automate subscription updates after payment.
+- **Final Production Deployment**: The user needs to perform one final  to push the latest fixes (especially the  URL change and the invitation button fix) to the production environment.
+- **End-to-End Production Testing**: A complete user flow test (registration, login, upgrade, audit, team invite) on the production URL after the final redeploy is required.
 </pending_tasks>
 
 <current_work>
-The immediate task is to fix a critical runtime error in the React frontend that is preventing the application from rendering correctly. After restoring the full-featured dashboard UI (which had been accidentally replaced by a simplified test component), a  is being thrown from the  component.
+The most recent task was to fix a bug where the Send Invitation button in the team management section was not working. This issue arose after implementing a new link-based invitation system to work around the absence of an email service. The problem was diagnosed to be an issue with how the  notification component was being used with an  button inside it.
 
-This error occurred because, in the process of reintegrating the complex UI, the  state, which contains the list of all available construction work types, is no longer being passed down as a prop to the  component where it's needed. The backend is functioning correctly, serving all necessary data. The focus is entirely on fixing this state management/prop-drilling issue in the frontend code located in . The user has just reported this error after the AI engineer attempted to restore the full UI, confirming that the application is currently broken.
+The fix involved simplifying the toast notification logic within the  asynchronous function in . Instead of showing a toast with a Copy Link button, the implementation was changed to show a simple success message, with a plan to have the user copy the link from the Pending Invitations list.
+
+The immediate state of the application is that this fix has been applied in the preview environment (), and the system is awaiting user validation before a final redeployment to production. The core problem of the invitation button not functioning has been addressed.
 </current_work>
 
 <optional_next_step>
-I will fix the  in the  component by ensuring the  array is correctly passed as a prop from its parent component in .
+I will ask you to test the corrected invitation flow on the preview URL to confirm that the Send Invitation button now works as expected and that the new invitation appears in the Pending Invitations list.
 </optional_next_step>

@@ -9,7 +9,7 @@ import bcrypt
 from datetime import datetime, timezone, timedelta
 
 def create_test_user():
-    base_url = "https://safeinspect-2.preview.emergentagent.com"
+    base_url = "https://constr-safety.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     # First, login as admin

@@ -5,7 +5,7 @@ from datetime import datetime
 import bcrypt
 
 class CSABackendTester:
-    def __init__(self, base_url="https://safeinspect-2.preview.emergentagent.com"):
+    def __init__(self, base_url="https://constr-safety.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
@@ -362,7 +362,7 @@ class CSABackendTester:
         """Test CORS configuration"""
         try:
             response = requests.options(f"{self.api_url}/work-types", 
-                                      headers={"Origin": "https://safeinspect-2.preview.emergentagent.com"})
+                                      headers={"Origin": "https://constr-safety.preview.emergentagent.com"})
             
             cors_headers = {
                 'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
@@ -913,7 +913,7 @@ class CSABackendTester:
             # Test checkout session creation for upgrade to professional
             checkout_data = {
                 "package_id": "professional",
-                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
             }
             
             response = requests.post(f"{self.api_url}/payments/checkout/session", 
@@ -969,7 +969,7 @@ class CSABackendTester:
             # Test checkout session creation for upgrade to enterprise
             checkout_data = {
                 "package_id": "enterprise",
-                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
             }
             
             response = requests.post(f"{self.api_url}/payments/checkout/session", 
@@ -1025,7 +1025,7 @@ class CSABackendTester:
             # Test checkout session creation
             checkout_data = {
                 "package_id": "basic",
-                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
             }
             
             response = requests.post(f"{self.api_url}/payments/checkout/session", 

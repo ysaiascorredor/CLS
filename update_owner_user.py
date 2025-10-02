@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 
 def update_owner_user():
     """Update the owner user to admin role and enterprise plan"""
-    api_url = "https://safeinspect-2.preview.emergentagent.com/api"
+    api_url = "https://constr-safety.preview.emergentagent.com/api"
     
     print("🔧 Updating Owner User Role and Plan")
     print("=" * 45)
