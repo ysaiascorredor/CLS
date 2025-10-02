@@ -315,6 +315,18 @@ backend:
           agent: "testing"
           comment: "COMPREHENSIVE BACKEND TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: Tested all review request requirements with owner credentials (ysaias.corredor@clsolution.net / Clave.01): ✅ 1) Owner login working perfectly (200 response, valid JWT, correct organization_id and owner role), ✅ 2) POST /api/organization/invite endpoint working correctly with query parameters (invitee_email=test.backend.fixed.{timestamp}@example.com, invitee_name=Backend Test Fixed User, role=auditor), ✅ 3) Invitation appears in GET /api/organization/team pending_invitations list (11 pending invitations found, new invitation correctly added), ✅ 4) invitation_link generated correctly in response (valid HTTPS link to frontend), ✅ 5) Duplicate invitation prevention working (400 error with 'User already invited' message). FRONTEND CLIPBOARD ISSUE RESOLVED: Main agent fixed clipboard permission error. BACKEND TEAM INVITATION FUNCTIONALITY IS 100% OPERATIONAL. Issue was frontend-related and has been resolved."
 
+  - task: "CRITICAL: Subscription Status Issue - User Paid But Shows No Active Subscription"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "CRITICAL SUBSCRIPTION ISSUE DIAGNOSED: User ysaias.corredor@clsolution.net paid for subscription but app shows 'no active subscription'. COMPREHENSIVE TESTING RESULTS: ✅ 1) User login working perfectly (enterprise plan, expires 2026-10-02), ✅ 2) GET /api/auth/me shows active enterprise subscription, ✅ 3) Database record confirms enterprise plan with valid expiration, ❌ 4) ISSUE FOUND: Payment transactions show Status='pending' instead of 'paid' (Amount: $199.99, Package: enterprise, Session IDs: cs_live_a1jdrBwef5rtZrabDjXawuttsNKFVOugslRLQ6surfnO4Dj9EBy2sGRjGs). ROOT CAUSE: Stripe webhook not properly processing payment completion - user has active subscription but payment status not updated. BACKEND SUBSCRIPTION FUNCTIONALITY IS WORKING, but webhook processing needs investigation. Fixed MongoDB ObjectId serialization bug in admin endpoints during testing."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
