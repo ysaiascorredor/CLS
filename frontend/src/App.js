@@ -645,8 +645,17 @@ function Dashboard() {
   // Force English language for all interface
   React.useEffect(() => {
     setLanguage('en');
+    console.log('🌍 Forced language to English, current language:', 'en');
+    console.log('🌍 Translations object:', translations);
   }, []);
   const t = translations[language];
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔍 Current language:', language);
+    console.log('🔍 Current translations (t):', t);
+    console.log('🔍 inviteMember translation:', t?.inviteMember);
+  }, [language, t]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [workTypes, setWorkTypes] = useState([]);
   const [audits, setAudits] = useState([]);
