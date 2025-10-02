@@ -36,7 +36,7 @@ api_router = APIRouter(prefix="/api")
 # Stripe setup
 stripe_api_key = os.environ.get('STRIPE_API_KEY')
 
-# Work types for construction audits
+# Work types for construction audits with specific questions
 WORK_TYPES = [
     {"id": "excavation", "name_en": "Excavation Work", "name_es": "Trabajo de Excavación"},
     {"id": "height_work", "name_en": "Height Work", "name_es": "Trabajo en Altura"},
@@ -54,6 +54,280 @@ WORK_TYPES = [
     {"id": "road_construction", "name_en": "Road Construction", "name_es": "Construcción de Carreteras"},
     {"id": "underground_utilities", "name_en": "Underground Utilities", "name_es": "Servicios Subterráneos"}
 ]
+
+# Specific safety questions for each work type
+SAFETY_QUESTIONS = {
+    "excavation": {
+        "en": [
+            "Is the excavation properly sloped or shored to prevent cave-ins?",
+            "Are workers using proper entry/exit methods (ladders, ramps)?",
+            "Is there adequate ventilation in the excavated area?",
+            "Are underground utilities marked and located before digging?",
+            "Is there proper drainage to prevent water accumulation?",
+            "Are excavated materials stored at safe distances from the edge?"
+        ],
+        "es": [
+            "¿La excavación está apropiadamente inclinada o apuntalada para prevenir derrumbes?",
+            "¿Los trabajadores están usando métodos apropiados de entrada/salida (escaleras, rampas)?",
+            "¿Hay ventilación adecuada en el área excavada?",
+            "¿Están marcados y localizados los servicios subterráneos antes de excavar?",
+            "¿Hay drenaje apropiado para prevenir acumulación de agua?",
+            "¿Los materiales excavados están almacenados a distancias seguras del borde?"
+        ]
+    },
+    "height_work": {
+        "en": [
+            "Are workers wearing proper fall protection equipment (harnesses, lanyards)?",
+            "Are guardrails installed on elevated platforms and walkways?",
+            "Are ladders properly secured and in good condition?",
+            "Is there adequate lighting for work at height?",
+            "Are workers trained in fall protection procedures?",
+            "Are safety nets installed where appropriate?"
+        ],
+        "es": [
+            "¿Los trabajadores están usando equipo apropiado de protección contra caídas (arneses, cables)?",
+            "¿Están instaladas barandillas en plataformas elevadas y pasarelas?",
+            "¿Las escaleras están apropiadamente aseguradas y en buenas condiciones?",
+            "¿Hay iluminación adecuada para trabajo en altura?",
+            "¿Los trabajadores están entrenados en procedimientos de protección contra caídas?",
+            "¿Están instaladas redes de seguridad donde es apropiado?"
+        ]
+    },
+    "welding": {
+        "en": [
+            "Are welders wearing proper protective equipment (helmets, gloves, aprons)?",
+            "Is there adequate ventilation in welding areas?",
+            "Are fire extinguishers readily available near welding operations?",
+            "Are welding screens used to protect nearby workers from arc flash?",
+            "Is the work area free of flammable materials?",
+            "Are welding cables and equipment in good condition?"
+        ],
+        "es": [
+            "¿Los soldadores están usando equipo protector apropiado (cascos, guantes, mandiles)?",
+            "¿Hay ventilación adecuada en las áreas de soldadura?",
+            "¿Están los extintores fácilmente disponibles cerca de operaciones de soldadura?",
+            "¿Se usan pantallas de soldadura para proteger a trabajadores cercanos del arco eléctrico?",
+            "¿El área de trabajo está libre de materiales inflamables?",
+            "¿Los cables y equipos de soldadura están en buenas condiciones?"
+        ]
+    },
+    "heavy_machinery": {
+        "en": [
+            "Are operators certified and trained for the specific machinery?",
+            "Are daily pre-operational inspections being conducted?",
+            "Are proper communication signals established between operators and ground personnel?",
+            "Are exclusion zones marked around operating machinery?",
+            "Is machinery equipped with working warning devices (horns, lights)?",
+            "Are proper maintenance schedules being followed?"
+        ],
+        "es": [
+            "¿Los operadores están certificados y entrenados para la maquinaria específica?",
+            "¿Se están realizando inspecciones preoperacionales diarias?",
+            "¿Están establecidas señales de comunicación apropiadas entre operadores y personal de tierra?",
+            "¿Están marcadas las zonas de exclusión alrededor de la maquinaria en operación?",
+            "¿La maquinaria está equipada con dispositivos de advertencia funcionando (bocinas, luces)?",
+            "¿Se están siguiendo los horarios apropiados de mantenimiento?"
+        ]
+    },
+    "electrical": {
+        "en": [
+            "Are all electrical workers properly trained and certified?",
+            "Is lockout/tagout (LOTO) procedure being followed for electrical work?",
+            "Are ground fault circuit interrupters (GFCI) being used?",
+            "Are electrical panels properly labeled and secured?",
+            "Is appropriate PPE being used for electrical work?",
+            "Are temporary electrical installations properly grounded?"
+        ],
+        "es": [
+            "¿Todos los trabajadores eléctricos están apropiadamente entrenados y certificados?",
+            "¿Se está siguiendo el procedimiento de bloqueo/etiquetado (LOTO) para trabajo eléctrico?",
+            "¿Se están usando interruptores de circuito de falla a tierra (GFCI)?",
+            "¿Los paneles eléctricos están apropiadamente etiquetados y asegurados?",
+            "¿Se está usando EPP apropiado para trabajo eléctrico?",
+            "¿Las instalaciones eléctricas temporales están apropiadamente conectadas a tierra?"
+        ]
+    },
+    "concrete": {
+        "en": [
+            "Are workers wearing appropriate PPE when handling concrete (gloves, boots, eye protection)?",
+            "Are concrete forms properly braced and secured?",
+            "Is there safe access to concrete placement areas?",
+            "Are concrete pumps and equipment properly maintained?",
+            "Is there proper protection against concrete burns and skin contact?",
+            "Are vibration tools being used safely?"
+        ],
+        "es": [
+            "¿Los trabajadores están usando EPP apropiado al manejar concreto (guantes, botas, protección ocular)?",
+            "¿Las formas de concreto están apropiadamente arriostradas y aseguradas?",
+            "¿Hay acceso seguro a las áreas de colocación de concreto?",
+            "¿Las bombas de concreto y equipos están apropiadamente mantenidos?",
+            "¿Hay protección apropiada contra quemaduras de concreto y contacto con la piel?",
+            "¿Las herramientas de vibración se están usando de manera segura?"
+        ]
+    },
+    "scaffolding": {
+        "en": [
+            "Are scaffolds erected by qualified personnel?",
+            "Are scaffolds properly tied off and braced to the structure?",
+            "Are guardrails and toe boards installed on all open sides?",
+            "Is the scaffold platform fully planked with no gaps?",
+            "Are access ladders properly secured and positioned?",
+            "Is the scaffold load capacity clearly marked and not exceeded?"
+        ],
+        "es": [
+            "¿Los andamios están montados por personal calificado?",
+            "¿Los andamios están apropiadamente amarrados y arriostrados a la estructura?",
+            "¿Están instaladas barandillas y rodapiés en todos los lados abiertos?",
+            "¿La plataforma del andamio está completamente entablada sin espacios?",
+            "¿Las escaleras de acceso están apropiadamente aseguradas y posicionadas?",
+            "¿La capacidad de carga del andamio está claramente marcada y no se excede?"
+        ]
+    },
+    "demolition": {
+        "en": [
+            "Is there a detailed demolition plan and sequence?",
+            "Are utilities properly disconnected and capped?",
+            "Is the structure evaluated for hazardous materials (asbestos, lead)?",
+            "Are proper dust control measures in place?",
+            "Is debris removal conducted safely and regularly?",
+            "Are exclusion zones established and maintained around demolition work?"
+        ],
+        "es": [
+            "¿Hay un plan y secuencia detallada de demolición?",
+            "¿Los servicios están apropiadamente desconectados y tapados?",
+            "¿La estructura está evaluada para materiales peligrosos (asbesto, plomo)?",
+            "¿Están en lugar las medidas apropiadas de control de polvo?",
+            "¿La remoción de escombros se conduce de manera segura y regular?",
+            "¿Están establecidas y mantenidas zonas de exclusión alrededor del trabajo de demolición?"
+        ]
+    },
+    "roofing": {
+        "en": [
+            "Are workers wearing proper fall protection when working on roofs?",
+            "Are roof penetrations and openings properly guarded?",
+            "Is there safe access to the roof (stairs, ladders with proper tie-offs)?",
+            "Are weather conditions suitable for roofing work?",
+            "Are materials properly stored and secured on the roof?",
+            "Is there proper edge protection installed?"
+        ],
+        "es": [
+            "¿Los trabajadores están usando protección apropiada contra caídas cuando trabajan en techos?",
+            "¿Las penetraciones y aberturas del techo están apropiadamente protegidas?",
+            "¿Hay acceso seguro al techo (escaleras, escalones con amarres apropiados)?",
+            "¿Las condiciones climáticas son apropiadas para trabajo de techado?",
+            "¿Los materiales están apropiadamente almacenados y asegurados en el techo?",
+            "¿Está instalada protección apropiada de bordes?"
+        ]
+    },
+    "painting": {
+        "en": [
+            "Are workers wearing appropriate respiratory protection when needed?",
+            "Is there adequate ventilation in painting areas?",
+            "Are paint fumes and vapors properly controlled?",
+            "Are flammable materials properly stored away from ignition sources?",
+            "Are workers wearing appropriate skin and eye protection?",
+            "Are spray painting operations conducted in designated areas?"
+        ],
+        "es": [
+            "¿Los trabajadores están usando protección respiratoria apropiada cuando es necesario?",
+            "¿Hay ventilación adecuada en las áreas de pintura?",
+            "¿Los humos y vapores de pintura están apropiadamente controlados?",
+            "¿Los materiales inflamables están apropiadamente almacenados lejos de fuentes de ignición?",
+            "¿Los trabajadores están usando protección apropiada para piel y ojos?",
+            "¿Las operaciones de pintura por aspersión se conducen en áreas designadas?"
+        ]
+    },
+    "plumbing": {
+        "en": [
+            "Are workers trained in proper lifting techniques for heavy pipes and fixtures?",
+            "Is there adequate ventilation when working with solvents and adhesives?",
+            "Are trenches for underground plumbing properly shored or sloped?",
+            "Is hot work (soldering, welding) conducted with proper fire prevention measures?",
+            "Are workers wearing appropriate PPE for chemical exposure?",
+            "Is there proper testing for hazardous gases in confined spaces?"
+        ],
+        "es": [
+            "¿Los trabajadores están entrenados en técnicas apropiadas de levantamiento para tubos y accesorios pesados?",
+            "¿Hay ventilación adecuada cuando se trabaja con solventes y adhesivos?",
+            "¿Las zanjas para plomería subterránea están apropiadamente apuntaladas o inclinadas?",
+            "¿El trabajo en caliente (soldadura) se conduce con medidas apropiadas de prevención de incendios?",
+            "¿Los trabajadores están usando EPP apropiado para exposición química?",
+            "¿Hay pruebas apropiadas para gases peligrosos en espacios confinados?"
+        ]
+    },
+    "hvac": {
+        "en": [
+            "Are workers trained in refrigerant handling and safety procedures?",
+            "Is there proper ventilation when working with HVAC chemicals?",
+            "Are lifting aids used for heavy HVAC equipment installation?",
+            "Is electrical lockout/tagout followed when servicing HVAC systems?",
+            "Are workers wearing appropriate PPE when handling insulation materials?",
+            "Is there safe access to rooftop HVAC equipment?"
+        ],
+        "es": [
+            "¿Los trabajadores están entrenados en manejo de refrigerantes y procedimientos de seguridad?",
+            "¿Hay ventilación apropiada cuando se trabaja con químicos de HVAC?",
+            "¿Se usan ayudas de levantamiento para instalación de equipos HVAC pesados?",
+            "¿Se sigue el bloqueo/etiquetado eléctrico cuando se da servicio a sistemas HVAC?",
+            "¿Los trabajadores están usando EPP apropiado cuando manejan materiales de aislamiento?",
+            "¿Hay acceso seguro a equipos HVAC en azoteas?"
+        ]
+    },
+    "steel_erection": {
+        "en": [
+            "Are steel erectors properly trained and certified for their tasks?",
+            "Is fall protection used throughout all phases of steel erection?",
+            "Are crane operations properly coordinated with steel erection activities?",
+            "Is there proper communication between ground personnel and erectors?",
+            "Are connecting hardware and fasteners properly secured?",
+            "Is there adequate temporary bracing during erection?"
+        ],
+        "es": [
+            "¿Los montadores de acero están apropiadamente entrenados y certificados para sus tareas?",
+            "¿Se usa protección contra caídas durante todas las fases del montaje de acero?",
+            "¿Las operaciones de grúa están apropiadamente coordinadas con actividades de montaje de acero?",
+            "¿Hay comunicación apropiada entre personal de tierra y montadores?",
+            "¿Los herrajes de conexión y sujetadores están apropiadamente asegurados?",
+            "¿Hay arriostrado temporal adecuado durante el montaje?"
+        ]
+    },
+    "road_construction": {
+        "en": [
+            "Is proper traffic control established and maintained?",
+            "Are workers wearing high-visibility clothing in traffic areas?",
+            "Is there adequate protection between workers and vehicular traffic?",
+            "Are flaggers properly trained and positioned?",
+            "Is equipment properly marked with warning devices when operating near traffic?",
+            "Are work zones properly signed and barricaded?"
+        ],
+        "es": [
+            "¿Está establecido y mantenido el control de tráfico apropiado?",
+            "¿Los trabajadores están usando ropa de alta visibilidad en áreas de tráfico?",
+            "¿Hay protección adecuada entre trabajadores y tráfico vehicular?",
+            "¿Los señalizadores están apropiadamente entrenados y posicionados?",
+            "¿El equipo está apropiadamente marcado con dispositivos de advertencia cuando opera cerca del tráfico?",
+            "¿Las zonas de trabajo están apropiadamente señalizadas y con barricadas?"
+        ]
+    },
+    "underground_utilities": {
+        "en": [
+            "Are all underground utilities properly located and marked before work begins?",
+            "Is there proper atmospheric testing in confined spaces?",
+            "Is adequate ventilation provided in underground work areas?",
+            "Are proper entry and exit procedures followed for confined spaces?",
+            "Is there continuous monitoring for hazardous gases?",
+            "Are rescue procedures established for underground work?"
+        ],
+        "es": [
+            "¿Todos los servicios subterráneos están apropiadamente localizados y marcados antes de comenzar el trabajo?",
+            "¿Hay pruebas atmosféricas apropiadas en espacios confinados?",
+            "¿Se proporciona ventilación adecuada en áreas de trabajo subterráneo?",
+            "¿Se siguen procedimientos apropiados de entrada y salida para espacios confinados?",
+            "¿Hay monitoreo continuo para gases peligrosos?",
+            "¿Están establecidos procedimientos de rescate para trabajo subterráneo?"
+        ]
+    }
+}
 
 # Subscription packages with team limits
 SUBSCRIPTION_PACKAGES = {
