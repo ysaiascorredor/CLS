@@ -21,7 +21,7 @@ import './App.css';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Stripe Configuration
+// Stripe Configuration - TEST/LIVE MIX (Check with your Stripe account)
 const STRIPE_PUBLIC_KEY = "pk_test_51SDjkW1VJAmV9ieirFljSCEDZMhdcDJ3qKfX2zXpRfBRsjQIVhb9m4HNMEiAkDuQAWZPnw9J2WMEJcNn7LqVg5Ry00hkQNjfam";
 
 // Subscription packages reference (should match backend)
