@@ -756,8 +756,10 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
   };
 
   const handleAnswerQuestion = async (isCompliant, photo, comment, actionTaken) => {
+    const currentQ = auditQuestions[currentQuestionIndex];
     const finding = {
-      question: auditQuestions[currentQuestionIndex],
+      question: currentQ?.question || currentQ,
+      work_type: currentQ?.work_type || 'general',
       is_compliant: isCompliant,
       photo_url: photo,
       comment: comment,
