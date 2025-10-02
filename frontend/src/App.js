@@ -1796,21 +1796,46 @@ function TeamManagement() {
 
   const acceptInvitation = async (invitationId) => {
     try {
-      await axios.post(`${API}/organization/invitations/${invitationId}/accept`, {}, { withCredentials: true });
-      toast({ title: "Invitación aceptada!" });
+      console.log('✅ Accepting invitation:', invitationId);
+      
+      await axios.post(`${API}/organization/invitations/${invitationId}/accept`, {});
+      
+      toast({ 
+        title: language === 'en' ? "Invitation accepted!" : "¡Invitación aceptada!" 
+      });
+      
+      // Reload to get updated user data with organization
       window.location.reload();
+      
     } catch (error) {
-      toast({ title: "Error aceptando invitación", variant: "destructive" });
+      console.error('❌ Accept invitation error:', error);
+      
+      toast({ 
+        title: language === 'en' ? "Error accepting invitation" : "Error aceptando invitación", 
+        variant: "destructive" 
+      });
     }
   };
 
   const declineInvitation = async (invitationId) => {
     try {
-      await axios.post(`${API}/organization/invitations/${invitationId}/decline`, {}, { withCredentials: true });
-      toast({ title: "Invitación rechazada" });
+      console.log('❌ Declining invitation:', invitationId);
+      
+      await axios.post(`${API}/organization/invitations/${invitationId}/decline`, {});
+      
+      toast({ 
+        title: language === 'en' ? "Invitation declined" : "Invitación rechazada" 
+      });
+      
       loadInvitations();
+      
     } catch (error) {
-      toast({ title: "Error rechazando invitación", variant: "destructive" });
+      console.error('❌ Decline invitation error:', error);
+      
+      toast({ 
+        title: language === 'en' ? "Error declining invitation" : "Error rechazando invitación", 
+        variant: "destructive" 
+      });
     }
   };
 
