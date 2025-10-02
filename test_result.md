@@ -165,8 +165,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test user login functionality"
-    - "Backend authentication endpoint testing"
+    - "Frontend login integration testing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
