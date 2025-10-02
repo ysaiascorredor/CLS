@@ -381,7 +381,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Owner Login Authentication Issue - RESOLVED"
+    - "Team Invitation Functionality - BACKEND VERIFIED"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
