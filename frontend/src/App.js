@@ -1344,15 +1344,61 @@ function SubscriptionSettings() {
 
   const handleUpgrade = async (packageId) => {
     try {
+      console.log('Starting upgrade process for package:', packageId);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({ title: "Please login to continue", variant: "destructive" });
+        return;
+      }
+
       const originUrl = window.location.origin;
-      const response = await axios.post(`${API}/payments/checkout/session`, {
+      const requestData = {
         package_id: packageId,
         origin_url: originUrl
-      }, { withCredentials: true });
+      };
       
-      window.location.href = response.data.url;
+      console.log('Sending request:', requestData);
+      
+      const response = await axios.post(`${API}/payments/checkout/session`, requestData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('Checkout response:', response.data);
+      
+      if (response.data.url) {
+        // Check if it's demo mode
+        if (response.data.url.includes('/demo-checkout')) {
+          toast({ 
+            title: language === 'en' ? "Demo Mode: Payment simulation" : "Modo Demo: Simulación de pago",
+            description: language === 'en' ? "This is a demo payment. In production, this would redirect to Stripe." : "Este es un pago demo. En producción, esto redirigiría a Stripe."
+          });
+          
+          // For demo, simulate successful payment after 2 seconds
+          setTimeout(() => {
+            toast({ 
+              title: language === 'en' ? "Demo payment completed!" : "¡Pago demo completado!",
+              description: language === 'en' ? "Your subscription has been updated (demo mode)" : "Tu suscripción ha sido actualizada (modo demo)"
+            });
+          }, 2000);
+        } else {
+          // Real Stripe redirect
+          window.location.href = response.data.url;
+        }
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (error) {
-      toast({ title: "Error creating checkout session", variant: "destructive" });
+      console.error('Upgrade error:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      toast({ 
+        title: language === 'en' ? "Error creating checkout session" : "Error creando sesión de pago", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
     }
   };
 
