@@ -628,6 +628,233 @@ class CSABackendTester:
             self.log_test("Support Tickets Without Auth", False, str(e))
             return False
 
+    def test_statistics_endpoint(self):
+        """Test GET /api/statistics endpoint (original statistics)"""
+        if not self.admin_token:
+            self.log_test("Statistics Endpoint", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.api_url}/statistics", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = [
+                    "total_audits", "compliant_audits", "non_compliant_audits",
+                    "average_compliance_score", "most_common_findings", "work_type_statistics"
+                ]
+                
+                has_all_fields = all(field in data for field in required_fields)
+                success = has_all_fields
+                details = f"Status: {response.status_code}, Has all required fields: {has_all_fields}"
+                
+                if has_all_fields:
+                    # Validate data types
+                    total_audits = isinstance(data.get("total_audits"), int)
+                    compliant_audits = isinstance(data.get("compliant_audits"), int)
+                    non_compliant_audits = isinstance(data.get("non_compliant_audits"), int)
+                    avg_score = isinstance(data.get("average_compliance_score"), (int, float))
+                    findings_list = isinstance(data.get("most_common_findings"), list)
+                    work_type_list = isinstance(data.get("work_type_statistics"), list)
+                    
+                    types_valid = all([total_audits, compliant_audits, non_compliant_audits, 
+                                     avg_score, findings_list, work_type_list])
+                    
+                    success = success and types_valid
+                    details += f", Data types valid: {types_valid}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Statistics Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Statistics Endpoint", False, str(e))
+            return False
+
+    def test_statistics_charts_endpoint(self):
+        """Test GET /api/statistics/charts endpoint (new charts data)"""
+        if not self.admin_token:
+            self.log_test("Statistics Charts Endpoint", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            response = requests.get(f"{self.api_url}/statistics/charts", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = [
+                    "audit_trends", "compliance_trends", "work_type_performance", "monthly_summary"
+                ]
+                
+                has_all_fields = all(field in data for field in required_fields)
+                success = has_all_fields
+                details = f"Status: {response.status_code}, Has all required fields: {has_all_fields}"
+                
+                if has_all_fields:
+                    # Validate data structure
+                    audit_trends = data.get("audit_trends", [])
+                    compliance_trends = data.get("compliance_trends", [])
+                    work_type_performance = data.get("work_type_performance", [])
+                    monthly_summary = data.get("monthly_summary", [])
+                    
+                    # Check if all are lists
+                    all_lists = all(isinstance(field, list) for field in [
+                        audit_trends, compliance_trends, work_type_performance, monthly_summary
+                    ])
+                    
+                    success = success and all_lists
+                    details += f", All fields are lists: {all_lists}"
+                    
+                    # Check audit_trends structure
+                    if audit_trends and all_lists:
+                        first_trend = audit_trends[0] if audit_trends else {}
+                        trend_fields = ["month", "total_audits", "avg_score"]
+                        has_trend_fields = all(field in first_trend for field in trend_fields)
+                        details += f", Audit trends structure valid: {has_trend_fields}"
+                        success = success and has_trend_fields
+                    
+                    # Check compliance_trends structure
+                    if compliance_trends and all_lists:
+                        first_compliance = compliance_trends[0] if compliance_trends else {}
+                        compliance_fields = ["month", "compliant", "non_compliant", "compliance_rate"]
+                        has_compliance_fields = all(field in first_compliance for field in compliance_fields)
+                        details += f", Compliance trends structure valid: {has_compliance_fields}"
+                        success = success and has_compliance_fields
+                    
+                    # Check work_type_performance structure
+                    if work_type_performance and all_lists:
+                        first_work_type = work_type_performance[0] if work_type_performance else {}
+                        work_type_fields = ["work_type", "avg_score", "total_audits", "compliance_rate"]
+                        has_work_type_fields = all(field in first_work_type for field in work_type_fields)
+                        details += f", Work type performance structure valid: {has_work_type_fields}"
+                        success = success and has_work_type_fields
+                    
+                    # Check monthly_summary structure
+                    if monthly_summary and all_lists:
+                        first_monthly = monthly_summary[0] if monthly_summary else {}
+                        monthly_fields = ["month", "total_audits", "compliant", "non_compliant", "avg_score"]
+                        has_monthly_fields = all(field in first_monthly for field in monthly_fields)
+                        details += f", Monthly summary structure valid: {has_monthly_fields}"
+                        success = success and has_monthly_fields
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Statistics Charts Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Statistics Charts Endpoint", False, str(e))
+            return False
+
+    def test_statistics_without_auth(self):
+        """Test statistics endpoints without authentication (should fail)"""
+        try:
+            # Test original statistics endpoint
+            response1 = requests.get(f"{self.api_url}/statistics", timeout=10)
+            stats_fails = response1.status_code == 401
+            
+            # Test charts endpoint
+            response2 = requests.get(f"{self.api_url}/statistics/charts", timeout=10)
+            charts_fails = response2.status_code == 401
+            
+            success = stats_fails and charts_fails
+            details = f"Statistics: {response1.status_code} (expected 401), Charts: {response2.status_code} (expected 401)"
+            
+            self.log_test("Statistics Without Auth", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Statistics Without Auth", False, str(e))
+            return False
+
+    def test_create_test_audit_for_statistics(self):
+        """Create a test audit to ensure statistics have data"""
+        if not self.admin_token:
+            self.log_test("Create Test Audit for Statistics", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Create a test audit
+            audit_data = {
+                "site_name": "Test Construction Site",
+                "auditor_name": "Test Auditor",
+                "selected_work_types": ["excavation", "height_work", "welding"],
+                "language": "en"
+            }
+            
+            response = requests.post(f"{self.api_url}/audits", 
+                                   json=audit_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                audit_id = data.get("id")
+                
+                if audit_id:
+                    self.test_audit_id = audit_id
+                    
+                    # Add some findings to the audit
+                    findings = [
+                        {
+                            "question": "Is the excavation properly sloped or shored to prevent cave-ins?",
+                            "is_compliant": True,
+                            "comment": "Proper shoring observed"
+                        },
+                        {
+                            "question": "Are workers wearing proper fall protection equipment?",
+                            "is_compliant": False,
+                            "comment": "Missing harnesses on some workers"
+                        },
+                        {
+                            "question": "Are welders wearing proper protective equipment?",
+                            "is_compliant": True,
+                            "comment": "All PPE in place"
+                        }
+                    ]
+                    
+                    # Add findings
+                    for finding in findings:
+                        requests.post(f"{self.api_url}/audits/{audit_id}/findings", 
+                                    json=finding, headers=headers, timeout=10)
+                    
+                    # Complete the audit
+                    complete_response = requests.put(f"{self.api_url}/audits/{audit_id}/complete", 
+                                                   headers=headers, timeout=10)
+                    
+                    success = complete_response.status_code == 200
+                    details = f"Audit created: {audit_id}, Completed: {success}"
+                else:
+                    success = False
+                    details = "No audit ID returned"
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Create Test Audit for Statistics", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Create Test Audit for Statistics", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
