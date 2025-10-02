@@ -2497,7 +2497,43 @@ class CSABackendTester:
             print(f"❌ {failed_tests} test(s) failed - LAUNCH READINESS COMPROMISED")
             return False
 
+    def run_critical_subscription_tests(self):
+        """Run critical subscription-related tests for the reported issue"""
+        print("🚨 CRITICAL SUBSCRIPTION ISSUE TESTING")
+        print("Testing user: ysaias.corredor@clsolution.net / Clave.01")
+        print("Issue: User paid for subscription but app shows 'no active subscription'")
+        print("=" * 80)
+        
+        # First, get admin token for database checks
+        self.test_admin_login()
+        
+        # Test owner login and subscription status
+        self.test_owner_login()
+        self.test_owner_subscription_status()
+        
+        # Check database records
+        self.test_owner_database_record()
+        
+        # Test payment processing components
+        self.test_stripe_webhook_endpoint()
+        self.test_payment_processing_logs()
+        self.test_subscription_update_flow()
+        
+        print("=" * 80)
+        print(f"🏁 Critical Testing Complete: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        return self.tests_passed == self.tests_run
+
 def main():
+    import sys
+    
+    # Check if we should run critical subscription tests only
+    if len(sys.argv) > 1 and sys.argv[1] == "--subscription":
+        tester = CSABackendTester()
+        success = tester.run_critical_subscription_tests()
+        return 0 if success else 1
+    
+    # Run all tests
     tester = CSABackendTester()
     success = tester.run_all_tests()
     
