@@ -1613,6 +1613,10 @@ class CSABackendTester:
         self.test_upgrade_flow_basic_plan()
         self.test_upgrade_flow_enterprise_plan()
         
+        # ORGANIZATION FLOW TESTS (CRITICAL USER REPORTED ISSUE)
+        print("\n🏢 TESTING ORGANIZATION FLOW (USER REPORTED ISSUE)...")
+        self.test_organization_flow_complete()
+        
         # Error handling tests
         print("\n⚠️ Testing Error Handling...")
         self.test_error_handling()
