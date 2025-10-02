@@ -16,6 +16,7 @@ class CSABackendTester:
         self.admin_token = None
         self.demo_token = None
         self.test_user_token = None
+        self.owner_token = None
 
     def log_test(self, name, success, details=""):
         """Log test results"""
