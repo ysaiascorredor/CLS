@@ -821,7 +821,7 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
         </div>
         
         <div>
-          <Label>{t.selectWorkTypes} ({formData.selectedWorkTypes.length}/3)</Label>
+          <Label>{t.selectWorkTypes} ({formData.selectedWorkTypes.length} seleccionados)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {workTypes.map((workType) => (
               <div key={workType.id} className="flex items-center space-x-2">
