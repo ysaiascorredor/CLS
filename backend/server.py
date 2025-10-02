@@ -493,7 +493,9 @@ def verify_token(token: str) -> Optional[str]:
         return user_id
     except jwt.ExpiredSignatureError:
         return None
-    except jwt.JWTError:
+    except jwt.InvalidTokenError:
+        return None
+    except Exception:
         return None
 
 # Authentication helper
