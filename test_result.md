@@ -319,11 +319,35 @@ frontend:
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: true
           agent: "main"
           comment: "Fixed by adding workTypes prop to AuditProgressForm component call and updating component function signature to accept workTypes parameter. Application now loads without JavaScript errors."
+
+  - task: "Fix Send Invitation Button Functionality"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "User reports send invitation button not working. Manual testing confirms dialog opens, form fills correctly, but button click doesn't complete successfully - dialog stays open, no toast notification. Need to debug inviteMember function."
+
+  - task: "Replace Spanish Text with English Translation"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "User wants all Spanish text changed to English. Interface shows mixed Spanish/English: 'Invitar Miembro' should be 'Invite Member', 'Miembros del Equipo' should be 'Team Members', 'Invitaciones Pendientes' should be 'Pending Invitations', etc. Need to update Spanish translations object and replace hardcoded Spanish strings."
 
   - task: "Test user login functionality"
     implemented: true
