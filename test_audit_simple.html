@@ -345,8 +345,10 @@
         }
 
         async function submitFinding(isCompliant, comment, actionTaken) {
+            const currentQ = questions[currentQuestionIndex];
             const finding = {
-                question: questions[currentQuestionIndex],
+                question: currentQ.question,
+                work_type: currentQ.work_type,
                 is_compliant: isCompliant,
                 comment: comment,
                 action_taken: actionTaken
