@@ -294,6 +294,21 @@ backend:
           agent: "testing"
           comment: "ORGANIZATION ISSUE RESOLVED: Fixed MongoDB ObjectId serialization bug in GET /api/organization/team endpoint. Comprehensive testing completed: 1) POST /api/organization/create - ✅ Working (properly fails when user already has org), 2) GET /api/organization/team - ✅ Working (returns organization, team members, pending invitations), 3) User test@csaaudit.com already has organization 'Construcciones Test LLC' with owner role, 4) All organization endpoints working correctly. DIAGNOSIS: Backend organization functionality is FULLY OPERATIONAL. Issue is likely FRONTEND not properly reading user.organization_id from login response and not displaying organization UI. Frontend should check user.organization_id and show organization interface when present."
 
+  - task: "Team Invitation Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "USER REPORTED ISSUE: 'sigo sin poder agregar el equipo no se enviar invitation ni agregar el nuvo miembro' (can't add team members, can't send invitations, can't add new members). Testing team invitation functionality with owner credentials ysaias.corredor@clsolution.net / Clave.01."
+        - working: true
+          agent: "testing"
+          comment: "TEAM INVITATION FUNCTIONALITY FULLY WORKING: Comprehensive testing completed with owner credentials (ysaias.corredor@clsolution.net). All team invitation endpoints working correctly: 1) Owner login - ✅ Working (returns organization_id and owner role), 2) GET /api/organization/team - ✅ Working (returns 'CLS Solution' organization with team members and pending invitations), 3) POST /api/organization/invite - ✅ Working (successfully creates invitations with query parameters: invitee_email, invitee_name, role), 4) GET /api/organization/invitations - ✅ Working (returns pending invitations for user), 5) Invitation validation - ✅ Working (prevents duplicate invitations, validates organization ownership). DIAGNOSIS: Backend team invitation functionality is FULLY OPERATIONAL. Issue is likely FRONTEND not properly handling the invitation form submission or not using correct API parameters (should use query params, not JSON body)."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
