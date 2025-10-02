@@ -855,6 +855,162 @@ class CSABackendTester:
             self.log_test("Create Test Audit for Statistics", False, str(e))
             return False
 
+    def test_test_user_login(self):
+        """Test login with test@csaaudit.com / test123 (reported user with upgrade issue)"""
+        try:
+            login_data = {
+                "email": "test@csaaudit.com",
+                "password": "test123"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.test_user_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "test@csaaudit.com"
+                    subscription_plan = user_data.get("subscription_plan")
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Plan: {subscription_plan}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Test User Login (test@csaaudit.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Test User Login (test@csaaudit.com)", False, str(e))
+            return False
+
+    def test_upgrade_flow_basic_plan(self):
+        """Test upgrade flow for user with basic plan"""
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("Upgrade Flow Basic Plan", False, "No test user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Test checkout session creation for upgrade to professional
+            checkout_data = {
+                "package_id": "professional",
+                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_session_id = "session_id" in data
+                has_url = "url" in data
+                
+                success = has_session_id and has_url
+                details = f"Status: {response.status_code}, Session ID: {has_session_id}, URL: {has_url}"
+                
+                if success:
+                    session_id = data.get("session_id", "")
+                    url = data.get("url", "")
+                    
+                    # Check if it's live mode (real Stripe) or demo mode
+                    is_live_mode = session_id.startswith("cs_live_") or not session_id.startswith("cs_demo_")
+                    is_demo_mode = session_id.startswith("cs_demo_")
+                    
+                    details += f", Live mode: {is_live_mode}, Demo mode: {is_demo_mode}"
+                    
+                    # For live mode, URL should be Stripe's checkout
+                    if is_live_mode:
+                        is_stripe_url = "checkout.stripe.com" in url
+                        details += f", Stripe URL: {is_stripe_url}"
+                        success = success and is_stripe_url
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Upgrade Flow Basic Plan", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Upgrade Flow Basic Plan", False, str(e))
+            return False
+
+    def test_upgrade_flow_enterprise_plan(self):
+        """Test upgrade flow for enterprise plan"""
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("Upgrade Flow Enterprise Plan", False, "No test user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Test checkout session creation for upgrade to enterprise
+            checkout_data = {
+                "package_id": "enterprise",
+                "origin_url": "https://safeinspect-2.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_session_id = "session_id" in data
+                has_url = "url" in data
+                
+                success = has_session_id and has_url
+                details = f"Status: {response.status_code}, Session ID: {has_session_id}, URL: {has_url}"
+                
+                if success:
+                    session_id = data.get("session_id", "")
+                    url = data.get("url", "")
+                    
+                    # Check if it's live mode (real Stripe) or demo mode
+                    is_live_mode = session_id.startswith("cs_live_") or not session_id.startswith("cs_demo_")
+                    is_demo_mode = session_id.startswith("cs_demo_")
+                    
+                    details += f", Live mode: {is_live_mode}, Demo mode: {is_demo_mode}"
+                    
+                    # For live mode, URL should be Stripe's checkout
+                    if is_live_mode:
+                        is_stripe_url = "checkout.stripe.com" in url
+                        details += f", Stripe URL: {is_stripe_url}"
+                        success = success and is_stripe_url
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Upgrade Flow Enterprise Plan", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Upgrade Flow Enterprise Plan", False, str(e))
+            return False
+
     def test_stripe_payment_checkout_session(self):
         """Test POST /api/payments/checkout/session with live Stripe keys"""
         if not self.admin_token:
@@ -909,6 +1065,47 @@ class CSABackendTester:
             return success
         except Exception as e:
             self.log_test("Stripe Payment Checkout Session", False, str(e))
+            return False
+
+    def test_user_session_persistence(self):
+        """Test user session persistence (reported issue with sessions being lost)"""
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("User Session Persistence", False, "No test user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Make multiple requests to test session persistence
+            success_count = 0
+            total_requests = 5
+            
+            for i in range(total_requests):
+                response = requests.get(f"{self.api_url}/auth/me", 
+                                      headers=headers, timeout=10)
+                if response.status_code == 200:
+                    success_count += 1
+                else:
+                    break
+            
+            success = success_count == total_requests
+            details = f"Successful requests: {success_count}/{total_requests}"
+            
+            if success:
+                # Test with a longer delay to simulate real usage
+                import time
+                time.sleep(2)
+                
+                final_response = requests.get(f"{self.api_url}/auth/me", 
+                                            headers=headers, timeout=10)
+                session_still_valid = final_response.status_code == 200
+                success = success and session_still_valid
+                details += f", Session valid after delay: {session_still_valid}"
+            
+            self.log_test("User Session Persistence", success, details)
+            return success
+        except Exception as e:
+            self.log_test("User Session Persistence", False, str(e))
             return False
 
     def test_pdf_generation(self):
