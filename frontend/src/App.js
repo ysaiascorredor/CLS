@@ -1779,31 +1779,22 @@ function TeamManagement() {
       // Show invitation link for easy copying
       const invitationLink = response.data.invitation_link;
       
-      // Create a modal or dialog to show the link
-      const copyToClipboard = () => {
-        navigator.clipboard.writeText(invitationLink);
-        toast({ title: language === 'en' ? "Link copied!" : "¡Enlace copiado!" });
-      };
+      // Copy to clipboard automatically
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(invitationLink);
+      }
       
-      // Show success message with copy option
+      // Show success message with the link
       toast({ 
         title: language === 'en' ? "✅ Invitation Link Generated!" : "✅ ¡Enlace de Invitación Generado!",
         description: language === 'en' ? 
-          `Send this link to ${inviteForm.name}: ${invitationLink}` : 
-          `Envía este enlace a ${inviteForm.name}: ${invitationLink}`,
-        action: (
-          <Button 
-            onClick={copyToClipboard}
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {language === 'en' ? '📋 Copy Link' : '📋 Copiar Enlace'}
-          </Button>
-        )
+          `Link copied to clipboard! Send to ${inviteForm.name}` : 
+          `¡Enlace copiado! Envíalo a ${inviteForm.name}`
       });
       
       // Also show in console for easy access
       console.log('🔗 Invitation Link:', invitationLink);
+      console.log('📋 Link copied to clipboard automatically!');
       
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
