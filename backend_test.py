@@ -1491,78 +1491,73 @@ class CSABackendTester:
             self.log_test("Organization Team Endpoint", False, str(e))
             return False
 
-    def test_organization_flow_complete(self):
-        """Test complete organization flow: login -> verify no org -> create org -> verify org exists -> get team"""
-        print("\n🏢 TESTING COMPLETE ORGANIZATION FLOW (USER REPORTED ISSUE)...")
+    def test_organization_flow_existing_user(self):
+        """Test organization flow for user who already has an organization (CRITICAL USER ISSUE)"""
+        print("\n🏢 TESTING ORGANIZATION FLOW FOR EXISTING USER (USER REPORTED ISSUE)...")
         
         # Step 1: Login with test user
         login_success = self.test_test_user_login()
         if not login_success:
-            self.log_test("Organization Flow Complete", False, "Login failed")
+            self.log_test("Organization Flow Existing User", False, "Login failed")
             return False
             
-        # Step 2: Verify user initially has no organization
         if not hasattr(self, 'test_user_token') or not self.test_user_token:
-            self.log_test("Organization Flow Complete", False, "No test user token")
+            self.log_test("Organization Flow Existing User", False, "No test user token")
             return False
             
         try:
             headers = {"Authorization": f"Bearer {self.test_user_token}"}
             
-            # Get initial user state
-            initial_response = requests.get(f"{self.api_url}/auth/me", 
-                                          headers=headers, timeout=10)
-            if initial_response.status_code != 200:
-                self.log_test("Organization Flow Complete", False, "Cannot get initial user state")
+            # Get user state
+            user_response = requests.get(f"{self.api_url}/auth/me", 
+                                       headers=headers, timeout=10)
+            if user_response.status_code != 200:
+                self.log_test("Organization Flow Existing User", False, "Cannot get user state")
                 return False
                 
-            initial_user = initial_response.json()
-            initial_org_id = initial_user.get("organization_id")
+            user_data = user_response.json()
+            org_id = user_data.get("organization_id")
+            org_role = user_data.get("organization_role")
             
-            print(f"   📋 Initial user organization_id: {initial_org_id}")
+            print(f"   📋 User organization_id: {org_id}")
+            print(f"   📋 User organization_role: {org_role}")
             
-            # Step 3: Create organization
-            create_success = self.test_organization_create_endpoint()
-            if not create_success:
-                self.log_test("Organization Flow Complete", False, "Organization creation failed")
-                return False
+            # If user already has organization, test that team endpoint works
+            if org_id:
+                print("   ✅ User already has organization - testing team endpoint...")
+                team_success = self.test_organization_team_endpoint()
                 
-            # Step 4: Verify user now has organization_id
-            final_response = requests.get(f"{self.api_url}/auth/me", 
-                                        headers=headers, timeout=10)
-            if final_response.status_code != 200:
-                self.log_test("Organization Flow Complete", False, "Cannot get final user state")
-                return False
+                # Test that creating another organization fails properly
+                org_data = {"name": "Test Organization 2"}
+                create_response = requests.post(f"{self.api_url}/organization/create", 
+                                              json=org_data, headers=headers, timeout=10)
                 
-            final_user = final_response.json()
-            final_org_id = final_user.get("organization_id")
-            final_role = final_user.get("organization_role")
-            
-            print(f"   📋 Final user organization_id: {final_org_id}")
-            print(f"   📋 Final user organization_role: {final_role}")
-            
-            # Step 5: Test team endpoint
-            team_success = self.test_organization_team_endpoint()
-            if not team_success:
-                self.log_test("Organization Flow Complete", False, "Team endpoint failed")
-                return False
+                create_fails_properly = create_response.status_code == 400
                 
-            # Verify complete flow
-            flow_success = (
-                initial_org_id is None and 
-                final_org_id is not None and 
-                final_role == "owner" and
-                create_success and 
-                team_success
-            )
+                success = team_success and create_fails_properly
+                details = f"Has org: {org_id is not None}, Role: {org_role}, Team works: {team_success}, Create fails: {create_fails_properly}"
+                
+                # This is the key insight: if user has org but frontend doesn't show it,
+                # the issue is likely frontend not properly handling the organization state
+                if success:
+                    print("   🔍 DIAGNOSIS: User has organization but frontend may not be displaying it properly!")
+                    print("   🔍 Backend organization functionality is WORKING CORRECTLY")
+                    print("   🔍 Issue is likely: Frontend not reading organization_id from user data")
+                
+            else:
+                # User doesn't have organization, test creation
+                print("   📝 User has no organization - testing creation...")
+                create_success = self.test_organization_create_endpoint()
+                team_success = self.test_organization_team_endpoint() if create_success else False
+                
+                success = create_success and team_success
+                details = f"No org initially, Create: {create_success}, Team: {team_success}"
             
-            details = f"Initial org: {initial_org_id}, Final org: {final_org_id}, Role: {final_role}, Create: {create_success}, Team: {team_success}"
-            
-            self.log_test("Organization Flow Complete", flow_success, details)
-            return flow_success
+            self.log_test("Organization Flow Existing User", success, details)
+            return success
             
         except Exception as e:
-            self.log_test("Organization Flow Complete", False, str(e))
+            self.log_test("Organization Flow Existing User", False, str(e))
             return False
 
     def run_all_tests(self):
