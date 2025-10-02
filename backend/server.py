@@ -62,11 +62,17 @@ SUBSCRIPTION_PACKAGES = {
     "enterprise": {"price": 199.99, "name": "Enterprise Plan", "audits_per_month": -1, "team_members": -1}  # unlimited
 }
 
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET_KEY')
+JWT_ALGORITHM = 'HS256'
+JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
+
 # Pydantic Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
     name: str
+    password_hash: Optional[str] = None
     picture: Optional[str] = None
     subscription_plan: Optional[str] = None
     subscription_expires: Optional[datetime] = None
@@ -75,6 +81,28 @@ class User(BaseModel):
     organization_id: Optional[str] = None  # If part of an organization
     organization_role: str = "owner"  # "owner", "auditor", "viewer"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
+    subscription_plan: Optional[str] = None
+    subscription_expires: Optional[datetime] = None
+    audits_used_this_month: int = 0
+    role: str = "user"
+    organization_id: Optional[str] = None
+    organization_role: str = "owner"
+    created_at: datetime
 
 class Organization(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
