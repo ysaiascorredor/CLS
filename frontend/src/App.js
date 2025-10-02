@@ -412,9 +412,183 @@ function AuthForm() {
   );
 }
 
-// Landing Page Component (now shows TestAudit directly)
+// Landing Page Component
 function LandingPage() {
-  return <TestAudit />;
+  const { register, login } = useAuth();
+  const [language, setLanguage] = useState('en');
+  const [isLogin, setIsLogin] = useState(true);
+  const [showTestMode, setShowTestMode] = useState(false);
+  const [formData, setFormData] = useState({ email: '', name: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    let result;
+    if (isLogin) {
+      result = await login(formData.email, formData.password);
+    } else {
+      result = await register(formData.email, formData.name, formData.password);
+    }
+    
+    if (result.success) {
+      toast({ title: isLogin ? "¡Bienvenido!" : "¡Cuenta creada exitosamente!" });
+    } else {
+      toast({ title: result.error, variant: "destructive" });
+    }
+    
+    setLoading(false);
+  };
+
+  // Show test mode if requested
+  if (showTestMode) {
+    return <TestAudit />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center px-6">
+      <div className="max-w-md w-full">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <Shield className="w-8 h-8 text-blue-400" />
+              <h1 className="text-2xl font-bold text-white">CSA Safety Audit</h1>
+            </div>
+            
+            <div className="flex items-center justify-center space-x-4 mb-4">
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-20 bg-white/10 border-white/20 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">EN</SelectItem>
+                  <SelectItem value="es">ES</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <CardTitle className="text-white">
+              {isLogin ? (language === 'en' ? 'Login' : 'Iniciar Sesión') : (language === 'en' ? 'Register' : 'Registrarse')}
+            </CardTitle>
+            <CardDescription className="text-blue-200">
+              {isLogin 
+                ? (language === 'en' ? 'Enter your credentials to access' : 'Ingresa tus credenciales para acceder')
+                : (language === 'en' ? 'Create your account to get started' : 'Crea tu cuenta para comenzar')
+              }
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email" className="text-white">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  placeholder="usuario@empresa.com"
+                  required
+                  className="bg-white/10 border-white/20 text-white placeholder-white/60"
+                  data-testid="email-input"
+                />
+              </div>
+              
+              {!isLogin && (
+                <div>
+                  <Label htmlFor="name" className="text-white">
+                    {language === 'en' ? 'Full Name' : 'Nombre Completo'}
+                  </Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder={language === 'en' ? 'Your full name' : 'Tu nombre completo'}
+                    required
+                    className="bg-white/10 border-white/20 text-white placeholder-white/60"
+                    data-testid="name-input"
+                  />
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="password" className="text-white">
+                  {language === 'en' ? 'Password' : 'Contraseña'}
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  placeholder={language === 'en' ? 'Your password' : 'Tu contraseña'}
+                  required
+                  minLength={6}
+                  className="bg-white/10 border-white/20 text-white placeholder-white/60"
+                  data-testid="password-input"
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="submit-button"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : null}
+                {isLogin 
+                  ? (language === 'en' ? 'Login' : 'Iniciar Sesión')
+                  : (language === 'en' ? 'Register' : 'Registrarse')
+                }
+              </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsLogin(!isLogin)}
+                className="w-full text-blue-200 hover:text-white hover:bg-white/10"
+              >
+                {isLogin 
+                  ? (language === 'en' ? "Don't have an account? Register" : '¿No tienes cuenta? Regístrate')
+                  : (language === 'en' ? 'Already have an account? Login' : '¿Ya tienes cuenta? Inicia sesión')
+                }
+              </Button>
+
+              {/* Botón para modo de prueba */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTestMode(true)}
+                className="w-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
+              >
+                🧪 Modo de Prueba Simple
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {/* Demo Users */}
+        <Card className="mt-4 bg-white/5 backdrop-blur-md border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white text-sm">
+              {language === 'en' ? 'Demo Accounts' : 'Cuentas Demo'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs text-blue-200 space-y-2">
+            <div>
+              <strong>{language === 'en' ? 'Admin:' : 'Administrador:'}</strong> admin@csaaudit.com / admin123
+            </div>
+            <div>
+              <strong>{language === 'en' ? 'User:' : 'Usuario:'}</strong> demo@csaaudit.com / demo123
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 // Main Dashboard Component  
