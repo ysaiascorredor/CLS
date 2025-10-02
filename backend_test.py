@@ -1783,6 +1783,14 @@ class CSABackendTester:
         print("\n🏢 TESTING ORGANIZATION FLOW (USER REPORTED ISSUE)...")
         self.test_organization_flow_existing_user()
         
+        # TEAM INVITATION TESTS (CRITICAL USER REPORTED ISSUE)
+        print("\n👥 TESTING TEAM INVITATION FUNCTIONALITY (USER REPORTED ISSUE)...")
+        self.test_owner_login()
+        self.test_organization_team_endpoint_owner()
+        self.test_team_invitation_send()
+        self.test_pending_invitations_endpoint()
+        self.test_team_invitation_in_team_list()
+        
         # Error handling tests
         print("\n⚠️ Testing Error Handling...")
         self.test_error_handling()
