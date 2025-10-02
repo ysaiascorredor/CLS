@@ -1792,7 +1792,7 @@ async def invite_team_member(
     role: str = "auditor",
     current_user: User = Depends(require_auth)
 ):
-    """Invitar un miembro al equipo"""
+    """Invitar miembro al equipo con enlace único"""
     
     if not current_user.organization_id:
         raise HTTPException(status_code=400, detail="User must belong to an organization")
