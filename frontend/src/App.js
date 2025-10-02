@@ -2045,7 +2045,7 @@ function TeamManagement() {
       {/* Team Members */}
       <Card>
         <CardHeader>
-          <CardTitle>Team Members ({teamData?.team_members.length})</CardTitle>
+          <CardTitle>{language === 'en' ? 'Team Members' : 'Miembros del Equipo'} ({teamData?.team_members.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
