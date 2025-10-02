@@ -847,7 +847,7 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
         <Button 
           onClick={handleStartAudit}
           className="w-full"
-          disabled={!formData.siteName || !formData.auditorName || formData.selectedWorkTypes.length !== 3}
+          disabled={!formData.siteName || !formData.auditorName || formData.selectedWorkTypes.length === 0}
           data-testid="start-audit-btn"
         >
           {t.startAudit}
