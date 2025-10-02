@@ -1963,7 +1963,7 @@ function TeamManagement() {
               
               <Button onClick={createOrganization} className="bg-blue-600 hover:bg-blue-700">
                 <Building className="w-4 h-4 mr-2" />
-                Crear Mi Organización
+                Create My Organization
               </Button>
             </div>
           </CardContent>
