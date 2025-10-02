@@ -1148,6 +1148,358 @@ function AdminDashboard() {
   );
 }
 
+// Team Management Component
+function TeamManagement() {
+  const { user } = useAuth();
+  const { t } = React.useContext(LanguageContext);
+  const [teamData, setTeamData] = useState(null);
+  const [invitations, setInvitations] = useState([]);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: 'auditor' });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadTeamData();
+    loadInvitations();
+  }, []);
+
+  const loadTeamData = async () => {
+    try {
+      if (user?.organization_id) {
+        const response = await axios.get(`${API}/organization/team`, { withCredentials: true });
+        setTeamData(response.data);
+      }
+    } catch (error) {
+      console.log("No organization data or error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadInvitations = async () => {
+    try {
+      const response = await axios.get(`${API}/organization/invitations`, { withCredentials: true });
+      setInvitations(response.data);
+    } catch (error) {
+      console.log("No pending invitations");
+    }
+  };
+
+  const createOrganization = async () => {
+    const orgName = prompt("Nombre de tu organización/empresa:");
+    if (orgName) {
+      try {
+        await axios.post(`${API}/organization/create`, { name: orgName }, { withCredentials: true });
+        toast({ title: "Organización creada exitosamente!" });
+        window.location.reload();
+      } catch (error) {
+        toast({ title: "Error creando organización", variant: "destructive" });
+      }
+    }
+  };
+
+  const inviteMember = async () => {
+    try {
+      await axios.post(`${API}/organization/invite`, inviteForm, { withCredentials: true });
+      toast({ title: "Invitación enviada exitosamente!" });
+      setShowInviteDialog(false);
+      setInviteForm({ email: '', name: '', role: 'auditor' });
+      loadTeamData();
+    } catch (error) {
+      toast({ title: error.response?.data?.detail || "Error enviando invitación", variant: "destructive" });
+    }
+  };
+
+  const removeMember = async (memberId) => {
+    if (window.confirm("¿Estás seguro de que quieres remover este miembro?")) {
+      try {
+        await axios.delete(`${API}/organization/team/${memberId}`, { withCredentials: true });
+        toast({ title: "Miembro removido exitosamente" });
+        loadTeamData();
+      } catch (error) {
+        toast({ title: "Error removiendo miembro", variant: "destructive" });
+      }
+    }
+  };
+
+  const acceptInvitation = async (invitationId) => {
+    try {
+      await axios.post(`${API}/organization/invitations/${invitationId}/accept`, {}, { withCredentials: true });
+      toast({ title: "Invitación aceptada!" });
+      window.location.reload();
+    } catch (error) {
+      toast({ title: "Error aceptando invitación", variant: "destructive" });
+    }
+  };
+
+  const declineInvitation = async (invitationId) => {
+    try {
+      await axios.post(`${API}/organization/invitations/${invitationId}/decline`, {}, { withCredentials: true });
+      toast({ title: "Invitación rechazada" });
+      loadInvitations();
+    } catch (error) {
+      toast({ title: "Error rechazando invitación", variant: "destructive" });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Si tiene invitaciones pendientes, mostrarlas primero
+  if (invitations.length > 0 && !user?.organization_id) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-3xl font-bold text-slate-800">Invitaciones Pendientes</h2>
+        
+        {invitations.map((invitation) => (
+          <Card key={invitation.id} className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle>Invitación a {invitation.organization.name}</CardTitle>
+              <CardDescription>
+                {invitation.inviter.name} te ha invitado como {invitation.role === 'auditor' ? 'Auditor' : 'Observador'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-4">
+                <Button 
+                  onClick={() => acceptInvitation(invitation.id)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Aceptar Invitación
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => declineInvitation(invitation.id)}
+                >
+                  Rechazar
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Expira: {new Date(invitation.expires_at).toLocaleDateString()}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  // Si no tiene organización, mostrar opción de crear
+  if (!user?.organization_id) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-3xl font-bold text-slate-800">Gestión de Equipo</h2>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Crear Organización</CardTitle>
+            <CardDescription>
+              Crea tu organización para invitar miembros de tu equipo a colaborar en las auditorías
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p>Beneficios de crear una organización:</p>
+              <ul className="list-disc list-inside space-y-2 text-sm">
+                <li>Invita auditores y observadores a tu equipo</li>
+                <li>Comparte auditorías entre miembros</li>
+                <li>Gestiona límites de auditorías por organización</li>
+                <li>Vista consolidada de todas las auditorías del equipo</li>
+              </ul>
+              
+              <Button onClick={createOrganization} className="bg-blue-600 hover:bg-blue-700">
+                <Building className="w-4 h-4 mr-2" />
+                Crear Mi Organización
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Vista de organización existente
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-800">
+            {teamData?.organization.name}
+          </h2>
+          <p className="text-muted-foreground">
+            {teamData?.team_members.length} miembros • 
+            Plan {teamData?.organization.subscription_plan || 'Free'}
+          </p>
+        </div>
+        
+        {user?.organization_role === 'owner' && (
+          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Users className="w-4 h-4 mr-2" />
+                Invitar Miembro
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Invitar Nuevo Miembro</DialogTitle>
+                <DialogDescription>
+                  Invita a un miembro de tu equipo para colaborar en las auditorías
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={inviteForm.email}
+                    onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
+                    placeholder="usuario@empresa.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="name">Nombre</Label>
+                  <Input
+                    id="name"
+                    value={inviteForm.name}
+                    onChange={(e) => setInviteForm({...inviteForm, name: e.target.value})}
+                    placeholder="Nombre completo"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="role">Rol</Label>
+                  <Select value={inviteForm.role} onValueChange={(role) => setInviteForm({...inviteForm, role})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auditor">Auditor - Puede crear y editar auditorías</SelectItem>
+                      <SelectItem value="viewer">Observador - Solo puede ver auditorías</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={inviteMember} className="w-full">
+                  Enviar Invitación
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {/* Miembros del Equipo */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Miembros del Equipo ({teamData?.team_members.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {teamData?.team_members.map((member) => (
+              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <img 
+                    src={member.user?.picture || 'https://via.placeholder.com/40'} 
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-medium">{member.user?.name}</h4>
+                    <p className="text-sm text-muted-foreground">{member.user?.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {member.audit_count} auditorías • {member.completed_audits} completadas
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
+                    {member.role === 'owner' ? 'Propietario' : 
+                     member.role === 'auditor' ? 'Auditor' : 'Observador'}
+                  </Badge>
+                  
+                  {user?.organization_role === 'owner' && member.role !== 'owner' && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invitaciones Pendientes */}
+      {teamData?.pending_invitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Invitaciones Pendientes ({teamData.pending_invitations.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {teamData.pending_invitations.map((invitation) => (
+                <div key={invitation.id} className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <div>
+                    <p className="font-medium">{invitation.invitee_name}</p>
+                    <p className="text-sm text-muted-foreground">{invitation.invitee_email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Rol: {invitation.role === 'auditor' ? 'Auditor' : 'Observador'}
+                    </p>
+                  </div>
+                  <Badge variant="outline">Pendiente</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Límites del Plan */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Límites del Plan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Auditorías este mes</p>
+              <p className="text-2xl font-bold">
+                {teamData?.organization.audits_used_this_month || 0}
+                {teamData?.organization.subscription_plan && 
+                  SUBSCRIPTION_PACKAGES[teamData.organization.subscription_plan]?.audits_per_month !== -1 
+                  ? ` / ${SUBSCRIPTION_PACKAGES[teamData.organization.subscription_plan]?.audits_per_month}` 
+                  : ' / Ilimitadas'
+                }
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Miembros del equipo</p>
+              <p className="text-2xl font-bold">
+                {teamData?.organization.team_members_count || 0}
+                {teamData?.organization.subscription_plan && 
+                  SUBSCRIPTION_PACKAGES[teamData.organization.subscription_plan]?.team_members !== -1 
+                  ? ` / ${SUBSCRIPTION_PACKAGES[teamData.organization.subscription_plan]?.team_members}` 
+                  : ' / Ilimitados'
+                }
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Support Dashboard Component
 function SupportDashboard() {
   const [supportData, setSupportData] = useState(null);
