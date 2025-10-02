@@ -1149,8 +1149,8 @@ async def create_checkout_session(
     
     else:
         # Real Stripe mode
-        success_url = f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{origin_url}/pricing"
+        success_url = f"{origin_url}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}&package={package_id}"
+        cancel_url = f"{origin_url}/dashboard"
         
         webhook_url = f"{request.base_url}api/stripe/webhook"
         stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
