@@ -1740,7 +1740,7 @@ async def get_company_settings(current_user: User = Depends(require_auth)):
 
 @api_router.post("/organization/create")
 async def create_organization(
-    name: str,
+    request: dict,
     current_user: User = Depends(require_auth)
 ):
     """Crear organización para el usuario (convierte suscripción personal en organizacional)"""
