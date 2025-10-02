@@ -52,11 +52,11 @@ WORK_TYPES = [
     {"id": "underground_utilities", "name_en": "Underground Utilities", "name_es": "Servicios Subterráneos"}
 ]
 
-# Subscription packages
+# Subscription packages with team limits
 SUBSCRIPTION_PACKAGES = {
-    "basic": {"price": 29.99, "name": "Basic Plan", "audits_per_month": 50},
-    "professional": {"price": 79.99, "name": "Professional Plan", "audits_per_month": 200},
-    "enterprise": {"price": 199.99, "name": "Enterprise Plan", "audits_per_month": -1}  # unlimited
+    "basic": {"price": 29.99, "name": "Basic Plan", "audits_per_month": 50, "team_members": 3},
+    "professional": {"price": 79.99, "name": "Professional Plan", "audits_per_month": 200, "team_members": 10},
+    "enterprise": {"price": 199.99, "name": "Enterprise Plan", "audits_per_month": -1, "team_members": -1}  # unlimited
 }
 
 # Pydantic Models
