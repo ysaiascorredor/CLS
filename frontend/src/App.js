@@ -2554,6 +2554,99 @@ db.users.updateOne(
         </CardContent>
       </Card>
 
+      {/* Contact Support Information */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-blue-800">
+            <Shield className="w-5 h-5" />
+            <span>
+              {t.language === 'en' ? 'Technical Support Contact' : 'Contacto de Soporte Técnico'}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">📧</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">Email Support</p>
+                    <p className="text-blue-600 hover:underline">
+                      <a href="mailto:ysaias.corredor@clsolution.net">
+                        ysaias.corredor@clsolution.net
+                      </a>
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">📱</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {t.language === 'en' ? 'Phone Support' : 'Soporte Telefónico'}
+                    </p>
+                    <p className="text-green-600 hover:underline">
+                      <a href="tel:+19198087751">+1 (919) 808-7751</a>
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">🏢</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {t.language === 'en' ? 'Company' : 'Empresa'}
+                    </p>
+                    <p className="text-purple-600">Construction Labor Solution LLC</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="p-4 bg-white rounded border">
+                  <h4 className="font-semibold text-gray-800 mb-2">
+                    {t.language === 'en' ? '🕐 Support Hours' : '🕐 Horarios de Soporte'}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {t.language === 'en' ? 
+                      'Monday - Friday: 9:00 AM - 6:00 PM EST' : 
+                      'Lunes - Viernes: 9:00 AM - 6:00 PM EST'}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {t.language === 'en' ? 
+                      'Response time: Within 24 hours' : 
+                      'Tiempo de respuesta: Dentro de 24 horas'}
+                  </p>
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={() => window.open('mailto:ysaias.corredor@clsolution.net?subject=CSA Support Request')}
+                    className="bg-blue-600 hover:bg-blue-700 flex-1"
+                  >
+                    📧 {t.language === 'en' ? 'Send Email' : 'Enviar Email'}
+                  </Button>
+                  <Button 
+                    onClick={() => window.open('tel:+19198087751')}
+                    variant="outline"
+                    className="border-green-600 text-green-600 hover:bg-green-50 flex-1"
+                  >
+                    📱 {t.language === 'en' ? 'Call Now' : 'Llamar'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Support Manual Dialog */}
       {showManual && (
         <Dialog open={showManual} onOpenChange={setShowManual}>
