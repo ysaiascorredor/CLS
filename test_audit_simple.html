@@ -256,10 +256,31 @@
 
                 if (response.ok) {
                     currentAudit = await response.json();
-                    showMessage('¡Auditoría creada exitosamente!');
-                    document.getElementById('auditForm').style.display = 'none';
-                    document.getElementById('questionsForm').style.display = 'block';
-                    showCurrentQuestion();
+                    
+                    // Generate questions based on selected work types
+                    const questionsResponse = await fetch(`${API}/audits/questions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({
+                            work_types: selectedWorkTypes,
+                            language: 'es'
+                        })
+                    });
+                    
+                    if (questionsResponse.ok) {
+                        const questionsData = await questionsResponse.json();
+                        questions = questionsData.questions;
+                        
+                        showMessage('¡Auditoría creada exitosamente!');
+                        document.getElementById('auditForm').style.display = 'none';
+                        document.getElementById('questionsForm').style.display = 'block';
+                        showCurrentQuestion();
+                    } else {
+                        showMessage('Error generando preguntas', 'error');
+                    }
                 } else {
                     const error = await response.json();
                     showMessage(`Error creando auditoría: ${error.detail}`, 'error');
