@@ -330,7 +330,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Organization Creation and Team Management - Backend Testing Complete"
+    - "Owner Login Authentication Issue - RESOLVED"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
