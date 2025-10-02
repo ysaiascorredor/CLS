@@ -1972,17 +1972,36 @@ function SupportDashboard() {
         </CardContent>
       </Card>
 
-      {/* Comandos de Soporte */}
+      {/* Support Tools / Herramientas de Soporte */}
       <Card>
         <CardHeader>
-          <CardTitle>Herramientas de Soporte</CardTitle>
+          <CardTitle>
+            {t.language === 'en' ? t.supportTools : 'Herramientas de Soporte'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 bg-slate-50 rounded border">
-              <h4 className="font-medium mb-2">Comandos MongoDB Útiles:</h4>
-              <code className="text-sm bg-slate-100 p-2 rounded block">
-                {`// Ver usuario por email
+              <h4 className="font-medium mb-2">
+                {t.language === 'en' ? 'Useful MongoDB Commands:' : 'Comandos MongoDB Útiles:'}
+              </h4>
+              <code className="text-sm bg-slate-100 p-2 rounded block whitespace-pre">
+                {t.language === 'en' ? 
+                  `// Find user by email
+db.users.findOne({email: "user@email.com"});
+
+// Extend subscription 30 days
+db.users.updateOne(
+  {email: "user@email.com"},
+  {$set: {subscription_expires: new Date(Date.now() + 30*24*60*60*1000)}}
+);
+
+// Reset monthly audits
+db.users.updateOne(
+  {email: "user@email.com"},
+  {$set: {audits_used_this_month: 0}}
+);` :
+                  `// Ver usuario por email
 db.users.findOne({email: "usuario@email.com"});
 
 // Extender suscripción 30 días
@@ -1998,20 +2017,113 @@ db.users.updateOne(
 );`}
               </code>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button variant="outline" className="justify-start">
-                <Shield className="w-4 h-4 mr-2" />
-                Manual de Soporte
-              </Button>
-              <Button variant="outline" className="justify-start">
-                <FileText className="w-4 h-4 mr-2" />
-                Logs del Sistema
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Support Manual Dialog */}
+      {showManual && (
+        <Dialog open={showManual} onOpenChange={setShowManual}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {t.language === 'en' ? 'Support Manual' : 'Manual de Soporte'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">
+                {t.language === 'en' ? 'CSA Construction Safety Audit - Support Guide' : 'CSA Auditoría de Seguridad en Construcción - Guía de Soporte'}
+              </h3>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium">
+                  {t.language === 'en' ? '1. User Management' : '1. Gestión de Usuarios'}
+                </h4>
+                <ul className="list-disc ml-4 space-y-1 text-sm">
+                  <li>
+                    {t.language === 'en' ? 
+                      'Create admin users using the "Create Administrator" button' : 
+                      'Crear usuarios admin usando el botón "Crear Administrador"'}
+                  </li>
+                  <li>
+                    {t.language === 'en' ? 
+                      'Monitor user subscriptions in the Admin dashboard' : 
+                      'Monitorear suscripciones de usuarios en el panel de Admin'}
+                  </li>
+                  <li>
+                    {t.language === 'en' ? 
+                      'Track failed payments and assist users with billing issues' : 
+                      'Rastrear pagos fallidos y ayudar a usuarios con problemas de facturación'}
+                  </li>
+                </ul>
+                
+                <h4 className="font-medium">
+                  {t.language === 'en' ? '2. System Monitoring' : '2. Monitoreo del Sistema'}
+                </h4>
+                <ul className="list-disc ml-4 space-y-1 text-sm">
+                  <li>
+                    {t.language === 'en' ? 
+                      'Check system logs regularly for errors or issues' : 
+                      'Revisar logs del sistema regularmente para errores o problemas'}
+                  </li>
+                  <li>
+                    {t.language === 'en' ? 
+                      'Monitor application performance and database health' : 
+                      'Monitorear rendimiento de la aplicación y salud de la base de datos'}
+                  </li>
+                </ul>
+                
+                <h4 className="font-medium">
+                  {t.language === 'en' ? '3. Common Issues' : '3. Problemas Comunes'}
+                </h4>
+                <ul className="list-disc ml-4 space-y-1 text-sm">
+                  <li>
+                    {t.language === 'en' ? 
+                      'Login issues: Check user credentials and JWT tokens' : 
+                      'Problemas de login: Verificar credenciales de usuario y tokens JWT'}
+                  </li>
+                  <li>
+                    {t.language === 'en' ? 
+                      'Payment failures: Verify Stripe integration and webhook settings' : 
+                      'Fallas de pago: Verificar integración de Stripe y configuración de webhooks'}
+                  </li>
+                  <li>
+                    {t.language === 'en' ? 
+                      'Audit creation errors: Check work types and database connectivity' : 
+                      'Errores de creación de auditorías: Verificar tipos de trabajo y conectividad de base de datos'}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* System Logs Dialog */}
+      {showLogs && (
+        <Dialog open={showLogs} onOpenChange={setShowLogs}>
+          <DialogContent className="max-w-4xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>
+                {t.language === 'en' ? 'System Logs' : 'Logs del Sistema'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  {t.language === 'en' ? 'Latest system logs:' : 'Últimos logs del sistema:'}
+                </p>
+                <Button onClick={loadSystemLogs} variant="outline" size="sm">
+                  {t.language === 'en' ? 'Refresh' : 'Actualizar'}
+                </Button>
+              </div>
+              <div className="bg-black text-green-400 p-4 rounded font-mono text-sm max-h-96 overflow-y-auto">
+                <pre>{systemLogs || (t.language === 'en' ? 'Loading logs...' : 'Cargando logs...')}</pre>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
