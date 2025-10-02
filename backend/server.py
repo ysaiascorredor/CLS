@@ -607,14 +607,18 @@ async def get_work_types():
     """Get all available work types for audits"""
     return WORK_TYPES
 
+class QuestionsRequest(BaseModel):
+    work_types: List[str]
+    language: str = "en"
+
 @api_router.post("/audits/questions")
-async def generate_questions(work_types: List[str], language: str = "en"):
+async def generate_questions(request: QuestionsRequest):
     """Generate safety questions based on selected work types"""
     questions = []
     
-    for work_type in work_types:
+    for work_type in request.work_types:
         if work_type in SAFETY_QUESTIONS:
-            type_questions = SAFETY_QUESTIONS[work_type].get(language, SAFETY_QUESTIONS[work_type]["en"])
+            type_questions = SAFETY_QUESTIONS[work_type].get(request.language, SAFETY_QUESTIONS[work_type]["en"])
             for question in type_questions:
                 questions.append({
                     "work_type": work_type,
