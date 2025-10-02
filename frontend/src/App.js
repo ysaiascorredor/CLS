@@ -814,6 +814,15 @@ function Dashboard() {
                           <Button variant="outline" size="sm">
                             {t.viewAudit}
                           </Button>
+                          {audit.status === 'completed' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => downloadAuditPDF(audit.id, audit.site_name)}
+                            >
+                              📄 PDF
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
