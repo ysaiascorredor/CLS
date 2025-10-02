@@ -16,7 +16,6 @@ from fastapi.responses import JSONResponse, FileResponse
 import json
 import bcrypt
 import jwt
-from fastapi.security import HTTPBearer
 
 
 ROOT_DIR = Path(__file__).parent
