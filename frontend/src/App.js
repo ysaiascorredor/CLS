@@ -1899,7 +1899,7 @@ function TeamManagement() {
     );
   }
 
-  // Si tiene invitaciones pendientes, mostrarlas primero
+  // If user has pending invitations, show them first
   if (invitations.length > 0 && !user?.organization_id) {
     return (
       <div className="space-y-6">
