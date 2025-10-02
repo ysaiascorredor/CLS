@@ -69,7 +69,38 @@ class User(BaseModel):
     subscription_expires: Optional[datetime] = None
     audits_used_this_month: int = 0
     role: str = "user"  # "user" or "admin"
+    organization_id: Optional[str] = None  # If part of an organization
+    organization_role: str = "owner"  # "owner", "auditor", "viewer"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Organization(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    owner_id: str
+    subscription_plan: Optional[str] = None
+    subscription_expires: Optional[datetime] = None
+    audits_used_this_month: int = 0
+    team_members_count: int = 1
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TeamInvitation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    inviter_id: str
+    invitee_email: EmailStr
+    invitee_name: str
+    role: str = "auditor"  # "auditor" or "viewer"
+    status: str = "pending"  # "pending", "accepted", "declined", "expired"
+    expires_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(days=7))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TeamMember(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str
+    user_id: str
+    role: str = "auditor"  # "owner", "auditor", "viewer"
+    invited_by: str
+    joined_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserSession(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
