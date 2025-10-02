@@ -1810,8 +1810,12 @@ function TeamManagement() {
 
 // Support Dashboard Component
 function SupportDashboard() {
+  const { t } = React.useContext(LanguageContext);
   const [supportData, setSupportData] = useState(null);
+  const [systemLogs, setSystemLogs] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showManual, setShowManual] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -1831,16 +1835,26 @@ function SupportDashboard() {
   };
 
   const createAdminUser = async () => {
-    const email = prompt("Email del nuevo administrador:");
-    const name = prompt("Nombre del nuevo administrador:");
+    const email = prompt(t.language === 'en' ? "New administrator email:" : "Email del nuevo administrador:");
+    const name = prompt(t.language === 'en' ? "New administrator name:" : "Nombre del nuevo administrador:");
     
     if (email && name) {
       try {
         await axios.post(`${API}/admin/create-admin`, { email, name }, { withCredentials: true });
-        toast({ title: "Administrador creado exitosamente!" });
+        toast({ title: t.language === 'en' ? "Administrator created successfully!" : "Administrador creado exitosamente!" });
       } catch (error) {
-        toast({ title: "Error creando administrador", variant: "destructive" });
+        toast({ title: t.language === 'en' ? "Error creating administrator" : "Error creando administrador", variant: "destructive" });
       }
+    }
+  };
+
+  const loadSystemLogs = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/logs`, { withCredentials: true });
+      setSystemLogs(response.data.logs);
+      setShowLogs(true);
+    } catch (error) {
+      toast({ title: t.language === 'en' ? "Error loading system logs" : "Error cargando logs del sistema", variant: "destructive" });
     }
   };
 
@@ -1855,10 +1869,20 @@ function SupportDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-slate-800">Panel de Soporte</h2>
-        <Button onClick={createAdminUser} className="bg-blue-600 hover:bg-blue-700">
-          Crear Administrador
-        </Button>
+        <h2 className="text-3xl font-bold text-slate-800">
+          {t.language === 'en' ? t.supportPanel : 'Panel de Soporte'}
+        </h2>
+        <div className="flex space-x-2">
+          <Button onClick={createAdminUser} className="bg-blue-600 hover:bg-blue-700">
+            {t.language === 'en' ? t.createAdmin : 'Crear Administrador'}
+          </Button>
+          <Button onClick={() => setShowManual(true)} variant="outline">
+            {t.language === 'en' ? t.supportManual : 'Manual de Soporte'}
+          </Button>
+          <Button onClick={loadSystemLogs} variant="outline">
+            {t.language === 'en' ? t.systemLogs : 'Logs del Sistema'}
+          </Button>
+        </div>
       </div>
       
       {/* Pagos Fallidos */}
