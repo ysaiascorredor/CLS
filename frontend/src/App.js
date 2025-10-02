@@ -1793,7 +1793,7 @@ function TeamManagement() {
       // Show success message
       const successMessage = clipboardSuccess 
         ? (language === 'en' ? "✅ Invitation sent! Link copied to clipboard." : "✅ ¡Invitación enviada! Enlace copiado al portapapeles.")
-        : (language === 'en' ? "✅ Invitation sent! Check Pending Invitations list." : "✅ ¡Invitación enviada! Revisa la lista de Invitaciones Pendientes.");
+        : (language === 'en' ? "✅ Invitation sent! Check Pending Invitations list." : "✅ Invitation sent! Check Pending Invitations list.");
       
       toast({ 
         title: language === 'en' ? "Invitation Sent" : "Invitación Enviada",
