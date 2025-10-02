@@ -665,6 +665,16 @@ class CSABackendTester:
         print("\n⚠️ Testing Error Handling...")
         self.test_error_handling()
         
+        # Support Panel Admin Endpoints
+        print("\n🛠️ Testing Support Panel Admin Endpoints...")
+        self.test_admin_create_user_endpoint()
+        self.test_admin_create_user_without_auth()
+        self.test_admin_create_user_with_user_token()
+        self.test_system_logs_endpoint()
+        self.test_system_logs_without_auth()
+        self.test_support_tickets_endpoint()
+        self.test_support_tickets_without_auth()
+        
         # Summary
         print("=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
