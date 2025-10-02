@@ -1362,6 +1362,209 @@ class CSABackendTester:
         
         return all_passed
 
+    def test_organization_create_endpoint(self):
+        """Test POST /api/organization/create endpoint - CRITICAL USER REPORTED ISSUE"""
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("Organization Create Endpoint", False, "No test user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # First, verify user doesn't have organization_id initially
+            user_response = requests.get(f"{self.api_url}/auth/me", 
+                                       headers=headers, timeout=10)
+            
+            if user_response.status_code != 200:
+                self.log_test("Organization Create Endpoint", False, "Cannot get user info")
+                return False
+                
+            user_data = user_response.json()
+            initial_org_id = user_data.get("organization_id")
+            
+            # Test creating organization
+            org_data = {
+                "name": "Construcciones Test LLC"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create", 
+                                   json=org_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_organization = "organization" in data
+                
+                success = has_message and has_organization
+                details = f"Status: {response.status_code}, Message: {has_message}, Organization: {has_organization}"
+                
+                if has_organization:
+                    org = data["organization"]
+                    correct_name = org.get("name") == "Construcciones Test LLC"
+                    has_id = "id" in org
+                    correct_owner = org.get("owner_id") == user_data.get("id")
+                    
+                    success = success and correct_name and has_id and correct_owner
+                    details += f", Name: {correct_name}, ID: {has_id}, Owner: {correct_owner}"
+                    
+                    # Verify user was updated with organization_id
+                    updated_user_response = requests.get(f"{self.api_url}/auth/me", 
+                                                       headers=headers, timeout=10)
+                    if updated_user_response.status_code == 200:
+                        updated_user = updated_user_response.json()
+                        new_org_id = updated_user.get("organization_id")
+                        user_updated = new_org_id is not None and new_org_id != initial_org_id
+                        user_role = updated_user.get("organization_role") == "owner"
+                        
+                        success = success and user_updated and user_role
+                        details += f", User updated: {user_updated}, Owner role: {user_role}"
+                    else:
+                        success = False
+                        details += ", Failed to verify user update"
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Organization Create Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Organization Create Endpoint", False, str(e))
+            return False
+
+    def test_organization_team_endpoint(self):
+        """Test GET /api/organization/team endpoint after organization creation"""
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("Organization Team Endpoint", False, "No test user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_organization = "organization" in data
+                has_team_members = "team_members" in data
+                has_pending_invitations = "pending_invitations" in data
+                
+                success = has_organization and has_team_members and has_pending_invitations
+                details = f"Status: {response.status_code}, Organization: {has_organization}, Team: {has_team_members}, Invitations: {has_pending_invitations}"
+                
+                if success:
+                    org = data.get("organization", {})
+                    team_members = data.get("team_members", [])
+                    
+                    org_has_name = "name" in org
+                    org_has_id = "id" in org
+                    has_team_member = len(team_members) > 0
+                    
+                    success = success and org_has_name and org_has_id and has_team_member
+                    details += f", Org name: {org_has_name}, Org ID: {org_has_id}, Team count: {len(team_members)}"
+                    
+                    if has_team_member:
+                        first_member = team_members[0]
+                        member_has_user = "user" in first_member
+                        member_has_role = "role" in first_member
+                        is_owner = first_member.get("role") == "owner"
+                        
+                        success = success and member_has_user and member_has_role and is_owner
+                        details += f", Member user: {member_has_user}, Role: {member_has_role}, Owner: {is_owner}"
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Organization Team Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Organization Team Endpoint", False, str(e))
+            return False
+
+    def test_organization_flow_complete(self):
+        """Test complete organization flow: login -> verify no org -> create org -> verify org exists -> get team"""
+        print("\n🏢 TESTING COMPLETE ORGANIZATION FLOW (USER REPORTED ISSUE)...")
+        
+        # Step 1: Login with test user
+        login_success = self.test_test_user_login()
+        if not login_success:
+            self.log_test("Organization Flow Complete", False, "Login failed")
+            return False
+            
+        # Step 2: Verify user initially has no organization
+        if not hasattr(self, 'test_user_token') or not self.test_user_token:
+            self.log_test("Organization Flow Complete", False, "No test user token")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Get initial user state
+            initial_response = requests.get(f"{self.api_url}/auth/me", 
+                                          headers=headers, timeout=10)
+            if initial_response.status_code != 200:
+                self.log_test("Organization Flow Complete", False, "Cannot get initial user state")
+                return False
+                
+            initial_user = initial_response.json()
+            initial_org_id = initial_user.get("organization_id")
+            
+            print(f"   📋 Initial user organization_id: {initial_org_id}")
+            
+            # Step 3: Create organization
+            create_success = self.test_organization_create_endpoint()
+            if not create_success:
+                self.log_test("Organization Flow Complete", False, "Organization creation failed")
+                return False
+                
+            # Step 4: Verify user now has organization_id
+            final_response = requests.get(f"{self.api_url}/auth/me", 
+                                        headers=headers, timeout=10)
+            if final_response.status_code != 200:
+                self.log_test("Organization Flow Complete", False, "Cannot get final user state")
+                return False
+                
+            final_user = final_response.json()
+            final_org_id = final_user.get("organization_id")
+            final_role = final_user.get("organization_role")
+            
+            print(f"   📋 Final user organization_id: {final_org_id}")
+            print(f"   📋 Final user organization_role: {final_role}")
+            
+            # Step 5: Test team endpoint
+            team_success = self.test_organization_team_endpoint()
+            if not team_success:
+                self.log_test("Organization Flow Complete", False, "Team endpoint failed")
+                return False
+                
+            # Verify complete flow
+            flow_success = (
+                initial_org_id is None and 
+                final_org_id is not None and 
+                final_role == "owner" and
+                create_success and 
+                team_success
+            )
+            
+            details = f"Initial org: {initial_org_id}, Final org: {final_org_id}, Role: {final_role}, Create: {create_success}, Team: {team_success}"
+            
+            self.log_test("Organization Flow Complete", flow_success, details)
+            return flow_success
+            
+        except Exception as e:
+            self.log_test("Organization Flow Complete", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
