@@ -2034,7 +2034,7 @@ function TeamManagement() {
                   </Select>
                 </div>
                 <Button onClick={inviteMember} className="w-full">
-                  Send Invitation
+                  {language === 'en' ? 'Send Invitation' : 'Enviar Invitación'}
                 </Button>
               </div>
             </DialogContent>
