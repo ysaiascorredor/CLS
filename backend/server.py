@@ -353,6 +353,8 @@ class User(BaseModel):
     role: str = "user"  # "user" or "admin"
     organization_id: Optional[str] = None  # If part of an organization
     organization_role: str = "owner"  # "owner", "auditor", "viewer"
+    company_name: Optional[str] = None
+    company_logo: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserRegister(BaseModel):
