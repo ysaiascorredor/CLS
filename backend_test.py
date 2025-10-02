@@ -1175,6 +1175,11 @@ class CSABackendTester:
             print("❌ Backend is not accessible. Stopping tests.")
             return False
         
+        # Critical Launch Verification Tests
+        print("\n🚀 CRITICAL LAUNCH VERIFICATION TESTS...")
+        self.test_database_connectivity()
+        self.test_critical_endpoints_response_time()
+        
         # Public endpoint tests
         print("\n📡 Testing Public Endpoints...")
         self.test_work_types_endpoint()
@@ -1183,7 +1188,7 @@ class CSABackendTester:
         self.test_cors_headers()
         
         # Authentication tests
-        print("\n🔐 Testing Authentication...")
+        print("\n🔐 Testing Authentication & Security...")
         self.test_demo_login()
         self.test_admin_login()
         self.test_invalid_login()
@@ -1212,21 +1217,31 @@ class CSABackendTester:
         self.test_support_tickets_without_auth()
         
         # Statistics Endpoints
-        print("\n📊 Testing Statistics Endpoints...")
+        print("\n📊 Testing Statistics & Charts...")
         self.test_create_test_audit_for_statistics()
         self.test_statistics_endpoint()
         self.test_statistics_charts_endpoint()
         self.test_statistics_without_auth()
+        
+        # FINAL LAUNCH CRITICAL TESTS
+        print("\n🎯 FINAL LAUNCH CRITICAL TESTS...")
+        self.test_stripe_payment_checkout_session()
+        self.test_pdf_generation()
+        self.test_company_settings_get()
+        self.test_company_settings_post()
+        self.test_bilingual_support()
         
         # Summary
         print("=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 All tests passed!")
+            print("🎉 All tests passed! READY FOR COMMERCIAL LAUNCH! 🚀")
             return True
         else:
             print("⚠️  Some tests failed. Check the details above.")
+            failed_tests = self.tests_run - self.tests_passed
+            print(f"❌ {failed_tests} test(s) failed - LAUNCH READINESS COMPROMISED")
             return False
 
 def main():
