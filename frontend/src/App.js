@@ -21,6 +21,9 @@ import './App.css';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Stripe Configuration
+const STRIPE_PUBLIC_KEY = "pk_test_51SDjkW1VJAmV9ieirFljSCEDZMhdcDJ3qKfX2zXpRfBRsjQIVhb9m4HNMEiAkDuQAWZPnw9J2WMEJcNn7LqVg5Ry00hkQNjfam";
+
 // Subscription packages reference (should match backend)
 const SUBSCRIPTION_PACKAGES = {
   "basic": {"price": 29.99, "name": "Basic Plan", "audits_per_month": 50, "team_members": 3},
