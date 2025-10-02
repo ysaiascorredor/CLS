@@ -894,6 +894,35 @@ function Dashboard() {
               </TabsContent>
             )}
           </Tabs>
+          
+          {/* Simple Support Footer - Always Visible */}
+          <div className="mt-8 pt-4 border-t border-gray-200 bg-gray-50 rounded-lg">
+            <div className="text-center text-sm text-gray-600 space-y-1">
+              <p className="font-medium">
+                {language === 'en' ? '🆘 Need Help? Contact Support:' : '🆘 ¿Necesitas Ayuda? Contáctanos:'}
+              </p>
+              <div className="flex justify-center items-center space-x-4">
+                <a 
+                  href="mailto:ysaias.corredor@clsolution.net?subject=CSA Support Request" 
+                  className="text-blue-600 hover:text-blue-800 hover:underline flex items-center space-x-1"
+                >
+                  <span>📧</span>
+                  <span>ysaias.corredor@clsolution.net</span>
+                </a>
+                <span className="text-gray-400">•</span>
+                <a 
+                  href="tel:+19198087751" 
+                  className="text-green-600 hover:text-green-800 hover:underline flex items-center space-x-1"
+                >
+                  <span>📱</span>
+                  <span>+1 (919) 808-7751</span>
+                </a>
+              </div>
+              <p className="text-xs text-gray-500">
+                Construction Labor Solution LLC • {language === 'en' ? 'Mon-Fri 9AM-6PM EST' : 'Lun-Vie 9AM-6PM EST'}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </LanguageContext.Provider>
