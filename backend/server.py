@@ -1034,40 +1034,54 @@ async def complete_demo_payment(session_id: str, current_user: User = Depends(re
 @api_router.get("/payments/checkout/status/{session_id}")
 async def get_checkout_status(session_id: str, current_user: User = Depends(require_auth)):
     """Check payment status"""
-    # Initialize Stripe
+    
+    # Find transaction in database
+    transaction = await db.payment_transactions.find_one({"session_id": session_id})
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    # Check if it's a demo transaction
+    if transaction.get("metadata", {}).get("demo_mode"):
+        # Return demo status
+        return {
+            "session_id": session_id,
+            "payment_status": transaction["payment_status"],
+            "status": "demo_mode",
+            "demo_mode": True
+        }
+    
+    # Real Stripe transaction
     stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url="")
     
     # Get status from Stripe
     status_response = await stripe_checkout.get_checkout_status(session_id)
     
     # Update transaction in database
-    transaction = await db.payment_transactions.find_one({"session_id": session_id})
-    if transaction:
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
+    await db.payment_transactions.update_one(
+        {"session_id": session_id},
+        {
+            "$set": {
+                "payment_status": "paid" if status_response.payment_status == "paid" else "failed",
+                "stripe_status": status_response.status
+            }
+        }
+    )
+    
+    # If payment successful, update user subscription
+    if status_response.payment_status == "paid" and transaction["payment_status"] != "paid":
+        package_id = transaction["package_type"]
+        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        
+        await db.users.update_one(
+            {"id": current_user.id},
             {
                 "$set": {
-                    "payment_status": "paid" if status_response.payment_status == "paid" else "failed",
-                    "stripe_status": status_response.status
+                    "subscription_plan": package_id,
+                    "subscription_expires": expires_at,
+                    "audits_used_this_month": 0
                 }
             }
         )
-        
-        # If payment successful, update user subscription
-        if status_response.payment_status == "paid" and transaction["payment_status"] != "paid":
-            package_id = transaction["package_type"]
-            expires_at = datetime.now(timezone.utc) + timedelta(days=30)
-            
-            await db.users.update_one(
-                {"id": current_user.id},
-                {
-                    "$set": {
-                        "subscription_plan": package_id,
-                        "subscription_expires": expires_at,
-                        "audits_used_this_month": 0
-                    }
-                }
-            )
     
     return status_response
 
