@@ -1903,7 +1903,7 @@ function TeamManagement() {
   if (invitations.length > 0 && !user?.organization_id) {
     return (
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold text-slate-800">Invitaciones Pendientes</h2>
+        <h2 className="text-3xl font-bold text-slate-800">Pending Invitations</h2>
         
         {invitations.map((invitation) => (
           <Card key={invitation.id} className="border-blue-200 bg-blue-50">
