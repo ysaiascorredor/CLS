@@ -4,7 +4,7 @@
 
 ### 🔐 **ACCESO DE ADMINISTRADOR**
 - **Email**: admin@csaaudit.com
-- **URL**: https://safetypro-audit.preview.emergentagent.com
+- **URL**: https://safeinspect-2.preview.emergentagent.com
 - **Tipo**: Administrador con acceso completo
 
 ---

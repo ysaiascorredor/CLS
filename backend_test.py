@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class CSABackendTester:
-    def __init__(self, base_url="https://safetypro-audit.preview.emergentagent.com"):
+    def __init__(self, base_url="https://safeinspect-2.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
@@ -128,7 +128,7 @@ class CSABackendTester:
         """Test CORS configuration"""
         try:
             response = requests.options(f"{self.api_url}/work-types", 
-                                      headers={"Origin": "https://safetypro-audit.preview.emergentagent.com"})
+                                      headers={"Origin": "https://safeinspect-2.preview.emergentagent.com"})
             
             cors_headers = {
                 'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
