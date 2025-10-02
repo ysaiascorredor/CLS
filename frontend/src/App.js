@@ -122,9 +122,14 @@ const translations = {
     supportPanel: "Panel de Soporte",
     totalUsers: "Usuarios Totales",
     activeSubscribers: "Suscriptores Activos", 
-    totalRevenue: "Ingresos Totales",
+    totalRevenue: "Ingresos Totales", 
     userManagement: "Gestión de Usuarios",
-    changePlan: "Cambiar Plan"
+    changePlan: "Cambiar Plan",
+    team: "Equipo",
+    teamManagement: "Gestión de Equipo",
+    inviteMember: "Invitar Miembro",
+    createOrganization: "Crear Organización",
+    acceptInvitation: "Aceptar Invitación"
   }
 };
 
