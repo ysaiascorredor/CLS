@@ -194,40 +194,57 @@ class Statistics(BaseModel):
     most_common_findings: List[Dict[str, Any]]
     work_type_statistics: List[Dict[str, Any]]
 
+# Password helpers
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def create_access_token(user_id: str) -> str:
+    expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION_HOURS)
+    payload = {
+        "user_id": user_id,
+        "exp": expire,
+        "iat": datetime.utcnow()
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_token(token: str) -> Optional[str]:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.JWTError:
+        return None
+
 # Authentication helper
-async def get_current_user(session_token: str = None, authorization: str = None) -> Optional[User]:
-    # Check session token from cookie first
-    if session_token:
-        token = session_token
-    # Then check Authorization header
-    elif authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-    else:
+async def get_current_user(authorization: str = None) -> Optional[User]:
+    if not authorization or not authorization.startswith("Bearer "):
         return None
     
-    # Find session in database
-    session_doc = await db.user_sessions.find_one({"session_token": token})
-    if not session_doc:
-        return None
+    token = authorization.split(" ")[1]
+    user_id = verify_token(token)
     
-    # Check if session is expired
-    if session_doc["expires_at"] < datetime.now(timezone.utc):
-        await db.user_sessions.delete_one({"session_token": token})
+    if not user_id:
         return None
     
     # Find user
-    user_doc = await db.users.find_one({"id": session_doc["user_id"]})
+    user_doc = await db.users.find_one({"id": user_id})
     if not user_doc:
         return None
     
+    # Remove password_hash before returning
+    user_doc.pop("password_hash", None)
     return User(**user_doc)
 
-async def require_auth(
-    session_token: Optional[str] = Cookie(None),
-    authorization: str = Depends(HTTPBearer(auto_error=False))
-) -> User:
+async def require_auth(authorization: str = Depends(HTTPBearer(auto_error=False))) -> User:
     auth_header = authorization.credentials if authorization else None
-    user = await get_current_user(session_token, f"Bearer {auth_header}" if auth_header else None)
+    user = await get_current_user(f"Bearer {auth_header}" if auth_header else None)
     if not user:
         raise HTTPException(status_code=401, detail="Authentication required")
     return user
