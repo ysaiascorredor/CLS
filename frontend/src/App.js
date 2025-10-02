@@ -161,33 +161,78 @@ function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get(`${API}/auth/me`, { withCredentials: true });
-      setUser(response.data);
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response = await axios.get(`${API}/auth/me`);
+        setUser(response.data);
+      }
     } catch (error) {
       console.log('Not authenticated');
+      localStorage.removeItem('access_token');
+      delete axios.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
     }
   };
 
-  const login = (redirectUrl) => {
-    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-    console.log('Auth URL:', authUrl);
-    console.log('Redirecting to:', authUrl);
-    window.location.href = authUrl;
+  const register = async (email, name, password) => {
+    try {
+      const response = await axios.post(`${API}/auth/register`, {
+        email,
+        name,
+        password
+      });
+      
+      const { user, access_token } = response.data;
+      localStorage.setItem('access_token', access_token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      setUser(user);
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.detail || 'Registration failed' 
+      };
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post(`${API}/auth/login`, {
+        email,
+        password
+      });
+      
+      const { user, access_token } = response.data;
+      localStorage.setItem('access_token', access_token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      setUser(user);
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.detail || 'Login failed' 
+      };
+    }
   };
 
   const logout = async () => {
     try {
-      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
-      setUser(null);
+      await axios.post(`${API}/auth/logout`);
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('access_token');
+      delete axios.defaults.headers.common['Authorization'];
+      setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, register, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
