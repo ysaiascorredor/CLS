@@ -2042,7 +2042,7 @@ function TeamManagement() {
         )}
       </div>
 
-      {/* Miembros del Equipo */}
+      {/* Team Members */}
       <Card>
         <CardHeader>
           <CardTitle>Team Members ({teamData?.team_members.length})</CardTitle>
