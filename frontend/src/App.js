@@ -112,7 +112,14 @@ const translations = {
     currentPlan: "Plan Actual",
     upgradeNow: "Actualizar Ahora",
     recentAudits: "Auditorías Recientes",
-    viewAudit: "Ver Auditoría"
+    viewAudit: "Ver Auditoría",
+    adminDashboard: "Panel de Administración",
+    supportPanel: "Panel de Soporte",
+    totalUsers: "Usuarios Totales",
+    activeSubscribers: "Suscriptores Activos", 
+    totalRevenue: "Ingresos Totales",
+    userManagement: "Gestión de Usuarios",
+    changePlan: "Cambiar Plan"
   }
 };
 
