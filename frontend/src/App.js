@@ -169,9 +169,17 @@ function LandingPage() {
   const t = translations[language];
   
   const handleLogin = () => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    console.log('Redirect URL:', redirectUrl);
-    login(redirectUrl);
+    // Temporary demo mode - simulate login
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@csaaudit.com',
+      name: 'Demo User',
+      picture: 'https://via.placeholder.com/150',
+      subscription_plan: 'professional'
+    };
+    setUser(demoUser);
+    window.location.hash = '#demo-mode';
+    window.location.pathname = '/dashboard';
   };
 
   return (
