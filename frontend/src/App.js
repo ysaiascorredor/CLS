@@ -189,6 +189,11 @@ function AuthProvider({ children }) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(user);
       
+      // Force navigation to dashboard
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
+      
       return { success: true };
     } catch (error) {
       return { 
@@ -209,6 +214,11 @@ function AuthProvider({ children }) {
       localStorage.setItem('access_token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(user);
+      
+      // Force navigation to dashboard
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
       
       return { success: true };
     } catch (error) {
