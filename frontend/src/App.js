@@ -1678,7 +1678,7 @@ function AdminDashboard() {
 // Team Management Component
 function TeamManagement() {
   const { user } = useAuth();
-  const { t } = React.useContext(LanguageContext);
+  const { t, language } = React.useContext(LanguageContext);
   const [teamData, setTeamData] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
