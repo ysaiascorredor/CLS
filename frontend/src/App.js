@@ -2067,8 +2067,8 @@ function TeamManagement() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
-                    {member.role === 'owner' ? 'Owner' : 
-                     member.role === 'auditor' ? 'Auditor' : 'Observer'}
+                    {member.role === 'owner' ? (language === 'en' ? 'Owner' : 'Propietario') : 
+                     member.role === 'auditor' ? (language === 'en' ? 'Auditor' : 'Auditor') : (language === 'en' ? 'Observer' : 'Observador')}
                   </Badge>
                   
                   {user?.organization_role === 'owner' && member.role !== 'owner' && (
