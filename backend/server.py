@@ -1524,6 +1524,39 @@ Authentication: Working
     except Exception as e:
         return {"logs": f"Error retrieving logs: {str(e)}\n\nTimestamp: {datetime.now().isoformat()}"}
 
+@api_router.post("/admin/company/settings")
+async def update_company_settings(
+    settings: dict,
+    current_user: User = Depends(require_auth)
+):
+    """Update company settings including logo and name"""
+    
+    company_name = settings.get("company_name")
+    company_logo = settings.get("company_logo")  # Base64 encoded image
+    
+    update_data = {}
+    if company_name:
+        update_data["company_name"] = company_name
+    if company_logo:
+        update_data["company_logo"] = company_logo
+    
+    if update_data:
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": update_data}
+        )
+    
+    return {"message": "Company settings updated successfully"}
+
+@api_router.get("/company/settings")
+async def get_company_settings(current_user: User = Depends(require_auth)):
+    """Get company settings"""
+    user = await db.users.find_one({"id": current_user.id})
+    return {
+        "company_name": user.get("company_name", "Construction Labor Solution LLC"),
+        "company_logo": user.get("company_logo")
+    }
+
 # ===== ENDPOINTS DE ORGANIZACIONES Y EQUIPOS =====
 
 @api_router.post("/organization/create")
