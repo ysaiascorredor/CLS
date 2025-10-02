@@ -446,7 +446,7 @@ function Dashboard() {
 
   const loadAudits = async () => {
     try {
-      const response = await axios.get(`${API}/audits`, { withCredentials: true });
+      const response = await axios.get(`${API}/audits`);
       setAudits(response.data);
     } catch (error) {
       toast({ title: "Error loading audits", variant: "destructive" });
@@ -455,7 +455,7 @@ function Dashboard() {
 
   const loadStatistics = async () => {
     try {
-      const response = await axios.get(`${API}/statistics`, { withCredentials: true });
+      const response = await axios.get(`${API}/statistics`);
       setStatistics(response.data);
     } catch (error) {
       toast({ title: "Error loading statistics", variant: "destructive" });
