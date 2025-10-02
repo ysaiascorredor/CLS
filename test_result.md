@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "CSA Construction Safety Audit application has a critical runtime error 'workTypes is not defined' in the AuditProgressForm component that prevents the application from rendering correctly."
+user_problem_statement: "Usuario reporta que el botón 'Crear mi organización' responde pero la interfaz no cambia y la funcionalidad no avanza. Testing urgente de endpoints de organización requerido."
 
 backend:
   - task: "Fix workTypes prop drilling issue"
