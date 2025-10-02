@@ -2018,7 +2018,7 @@ function TeamManagement() {
                     id="name"
                     value={inviteForm.name}
                     onChange={(e) => setInviteForm({...inviteForm, name: e.target.value})}
-                    placeholder="Nombre completo"
+                    placeholder="Full name"
                   />
                 </div>
                 <div>
