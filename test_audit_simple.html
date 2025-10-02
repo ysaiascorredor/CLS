@@ -234,8 +234,8 @@
             const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const selectedWorkTypes = Array.from(checkedBoxes).map(cb => cb.value);
 
-            if (selectedWorkTypes.length !== 3) {
-                showMessage('Debes seleccionar exactamente 3 tipos de trabajo', 'error');
+            if (selectedWorkTypes.length === 0) {
+                showMessage('Debes seleccionar al menos 1 tipo de trabajo', 'error');
                 return;
             }
 
