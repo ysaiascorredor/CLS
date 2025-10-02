@@ -1885,17 +1885,19 @@ function SupportDashboard() {
         </div>
       </div>
       
-      {/* Pagos Fallidos */}
+      {/* Failed Payments / Pagos Fallidos */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <XCircle className="w-5 h-5 text-red-500" />
-            <span>Pagos Fallidos ({supportData?.failed_payments.length || 0})</span>
+            <span>
+              {t.language === 'en' ? t.failedPayments : 'Pagos Fallidos'} ({supportData?.failed_payments?.length || 0})
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {supportData?.failed_payments.slice(0, 5).map((payment) => (
+            {supportData?.failed_payments?.slice(0, 5).map((payment) => (
               <div key={payment.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-200 rounded">
                 <div>
                   <p className="font-medium">User ID: {payment.user_id}</p>
@@ -1905,59 +1907,67 @@ function SupportDashboard() {
                 </div>
                 <Badge variant="destructive">Failed</Badge>
               </div>
-            ))}
+            )) || <p className="text-muted-foreground">No failed payments found</p>}
           </div>
         </CardContent>
       </Card>
 
-      {/* Usuarios Activos Sin Suscripción */}
+      {/* Active Users Without Subscription / Usuarios Activos Sin Suscripción */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Users className="w-5 h-5 text-yellow-500" />
-            <span>Usuarios Activos Sin Suscripción ({supportData?.active_users_no_subscription.length || 0})</span>
+            <span>
+              {t.language === 'en' ? t.activeUsersNoSubscription : 'Usuarios Activos Sin Suscripción'} ({supportData?.active_users_no_subscription?.length || 0})
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {supportData?.active_users_no_subscription.slice(0, 8).map((user) => (
+            {supportData?.active_users_no_subscription?.slice(0, 8).map((user) => (
               <div key={user.id} className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <div>
                   <p className="font-medium">{user.name}</p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                   <p className="text-xs text-muted-foreground">
-                    Registrado: {new Date(user.created_at).toLocaleDateString()}
+                    {t.language === 'en' ? 'Registered:' : 'Registrado:'} {new Date(user.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <Badge variant="secondary">No Plan</Badge>
               </div>
-            ))}
+            )) || <p className="text-muted-foreground">No users without subscription found</p>}
           </div>
         </CardContent>
       </Card>
 
-      {/* Usuarios Heavy Sin Upgrade */}
+      {/* Heavy Users No Upgrade / Usuarios Heavy Sin Upgrade */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TrendingUp className="w-5 h-5 text-blue-500" />
-            <span>Usuarios con Muchas Auditorías (Sin Upgrade)</span>
+            <span>
+              {t.language === 'en' ? t.heavyUsersNoUpgrade : 'Usuarios con Muchas Auditorías (Sin Upgrade)'}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {supportData?.heavy_users_no_upgrade.slice(0, 5).map((item, index) => (
+            {supportData?.heavy_users_no_upgrade?.slice(0, 5).map((item, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-blue-50 border border-blue-200 rounded">
                 <div>
                   <p className="font-medium">{item.user.name}</p>
                   <p className="text-sm text-muted-foreground">{item.user.email}</p>
                 </div>
                 <div className="text-right">
-                  <Badge variant="outline">{item.audit_count} auditorías</Badge>
-                  <p className="text-xs text-muted-foreground mt-1">¡Candidato a upgrade!</p>
+                  <Badge variant="outline">
+                    {item.audit_count} {t.language === 'en' ? 'audits' : 'auditorías'}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.language === 'en' ? 'Upgrade candidate!' : '¡Candidato a upgrade!'}
+                  </p>
                 </div>
               </div>
-            ))}
+            )) || <p className="text-muted-foreground">No heavy users found</p>}
           </div>
         </CardContent>
       </Card>
