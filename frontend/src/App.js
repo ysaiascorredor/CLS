@@ -1996,7 +1996,7 @@ function TeamManagement() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invite New Member</DialogTitle>
+                <DialogTitle>{language === 'en' ? 'Invite New Member' : 'Invitar Nuevo Miembro'}</DialogTitle>
                 <DialogDescription>
                   Invite a team member to collaborate on audits
                 </DialogDescription>
