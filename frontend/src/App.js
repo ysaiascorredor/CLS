@@ -2104,7 +2104,7 @@ function TeamManagement() {
                       Rol: {invitation.role === 'auditor' ? 'Auditor' : 'Observador'}
                     </p>
                   </div>
-                  <Badge variant="outline">Pendiente</Badge>
+                  <Badge variant="outline">Pending</Badge>
                 </div>
               ))}
             </div>
