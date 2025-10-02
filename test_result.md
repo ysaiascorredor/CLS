@@ -315,7 +315,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Upgrade Flow Testing Complete - Backend Fully Functional"
+    - "Organization Creation and Team Management - Backend Testing Complete"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
