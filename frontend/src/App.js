@@ -1737,7 +1737,14 @@ function TeamManagement() {
     try {
       console.log('📧 Inviting member:', inviteForm);
       
-      await axios.post(`${API}/organization/invite`, inviteForm);
+      // Backend expects query parameters, not JSON body
+      const params = new URLSearchParams({
+        invitee_email: inviteForm.email,
+        invitee_name: inviteForm.name,
+        role: inviteForm.role
+      });
+      
+      await axios.post(`${API}/organization/invite?${params}`);
       
       toast({ 
         title: language === 'en' ? "Invitation sent successfully!" : "¡Invitación enviada exitosamente!" 
@@ -1745,7 +1752,7 @@ function TeamManagement() {
       
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
-      loadTeamData();
+      loadAllTeamData(); // Reload to show new invitation
       
     } catch (error) {
       console.error('❌ Invite error:', error);
