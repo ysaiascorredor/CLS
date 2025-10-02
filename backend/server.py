@@ -1468,17 +1468,33 @@ async def get_user_details(user_id: str, admin_user: User = Depends(require_admi
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Remove MongoDB ObjectId and sensitive fields
+    user.pop("_id", None)
+    user.pop("password_hash", None)
+    
     # Auditorías del usuario
     audits = await db.audits.find({"user_id": user_id}).sort("created_at", -1).to_list(50)
     
+    # Remove _id from audits
+    for audit in audits:
+        audit.pop("_id", None)
+    
     # Historial de pagos
     payments = await db.payment_transactions.find({"user_id": user_id}).sort("created_at", -1).to_list(20)
+    
+    # Remove _id from payments
+    for payment in payments:
+        payment.pop("_id", None)
     
     # Sesiones activas
     active_sessions = await db.user_sessions.find({
         "user_id": user_id,
         "expires_at": {"$gt": datetime.now(timezone.utc)}
     }).to_list(10)
+    
+    # Remove _id from sessions
+    for session in active_sessions:
+        session.pop("_id", None)
     
     return {
         "user": user,
