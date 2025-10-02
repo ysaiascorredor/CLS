@@ -714,7 +714,7 @@ function Dashboard() {
 
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t.totalAudits}</CardTitle>
@@ -732,6 +732,16 @@ function Dashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">{statistics?.compliant_audits || 0}</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{t.nonCompliantAudits}</CardTitle>
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-red-600">{statistics?.non_compliant_audits || 0}</div>
                   </CardContent>
                 </Card>
                 
