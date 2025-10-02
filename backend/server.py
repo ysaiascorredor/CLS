@@ -1745,6 +1745,10 @@ async def create_organization(
 ):
     """Crear organización para el usuario (convierte suscripción personal en organizacional)"""
     
+    name = request.get("name")
+    if not name:
+        raise HTTPException(status_code=400, detail="Organization name is required")
+    
     # Verificar que el usuario no esté ya en una organización
     if current_user.organization_id:
         raise HTTPException(status_code=400, detail="User already belongs to an organization")
