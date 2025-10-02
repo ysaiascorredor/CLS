@@ -1996,9 +1996,9 @@ function TeamManagement() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Invitar Nuevo Miembro</DialogTitle>
+                <DialogTitle>Invite New Member</DialogTitle>
                 <DialogDescription>
-                  Invita a un miembro de tu equipo para colaborar en las auditorías
+                  Invite a team member to collaborate on audits
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
