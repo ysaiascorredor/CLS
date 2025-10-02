@@ -1429,6 +1429,10 @@ async def get_all_users(
     
     # Agregar información adicional de cada usuario
     for user in users:
+        # Remove MongoDB ObjectId and sensitive fields
+        user.pop("_id", None)
+        user.pop("password_hash", None)
+        
         # Número de auditorías
         user["total_audits"] = await db.audits.count_documents({"user_id": user["id"]})
         
