@@ -552,6 +552,11 @@ function Dashboard() {
               )}
             </TabsContent>
 
+            {/* Team Tab */}
+            <TabsContent value="team">
+              <TeamManagement />
+            </TabsContent>
+
             {/* Settings Tab */}
             <TabsContent value="settings">
               <SubscriptionSettings />
