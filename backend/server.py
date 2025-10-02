@@ -790,6 +790,115 @@ async def get_user_statistics(current_user: User = Depends(require_auth)):
         work_type_statistics=work_type_stats
     )
 
+@api_router.get("/statistics/charts", response_model=ChartData)
+async def get_chart_data(current_user: User = Depends(require_auth)):
+    """Get data for charts and graphs in statistics"""
+    # Get all completed audits with dates
+    audits = await db.audits.find({
+        "user_id": current_user.id, 
+        "status": "completed",
+        "completed_at": {"$exists": True}
+    }).sort("completed_at", 1).to_list(1000)
+    
+    if not audits:
+        return ChartData(
+            audit_trends=[],
+            compliance_trends=[],
+            work_type_performance=[],
+            monthly_summary=[]
+        )
+    
+    # Group by month for trends
+    monthly_data = {}
+    for audit in audits:
+        completed_date = audit.get("completed_at")
+        if completed_date:
+            # Convert to month-year key
+            month_key = completed_date.strftime("%Y-%m")
+            if month_key not in monthly_data:
+                monthly_data[month_key] = {
+                    "total": 0,
+                    "compliant": 0,
+                    "non_compliant": 0,
+                    "scores": []
+                }
+            
+            monthly_data[month_key]["total"] += 1
+            score = audit.get("overall_compliance_score", 0)
+            monthly_data[month_key]["scores"].append(score)
+            
+            if score >= 80:
+                monthly_data[month_key]["compliant"] += 1
+            else:
+                monthly_data[month_key]["non_compliant"] += 1
+    
+    # Create audit trends (total audits per month)
+    audit_trends = []
+    for month, data in sorted(monthly_data.items()):
+        audit_trends.append({
+            "month": month,
+            "total_audits": data["total"],
+            "avg_score": sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+        })
+    
+    # Create compliance trends (compliant vs non-compliant over time)
+    compliance_trends = []
+    for month, data in sorted(monthly_data.items()):
+        compliance_trends.append({
+            "month": month,
+            "compliant": data["compliant"],
+            "non_compliant": data["non_compliant"],
+            "compliance_rate": (data["compliant"] / data["total"] * 100) if data["total"] > 0 else 0
+        })
+    
+    # Work type performance
+    work_type_scores = {}
+    for audit in audits:
+        score = audit.get("overall_compliance_score", 0)
+        for work_type in audit.get("selected_work_types", []):
+            if work_type not in work_type_scores:
+                work_type_scores[work_type] = []
+            work_type_scores[work_type].append(score)
+    
+    work_type_performance = []
+    for work_type, scores in work_type_scores.items():
+        avg_score = sum(scores) / len(scores) if scores else 0
+        compliant_count = sum(1 for score in scores if score >= 80)
+        work_type_performance.append({
+            "work_type": work_type,
+            "avg_score": round(avg_score, 1),
+            "total_audits": len(scores),
+            "compliant_audits": compliant_count,
+            "compliance_rate": round((compliant_count / len(scores) * 100), 1) if scores else 0
+        })
+    
+    # Monthly summary (last 6 months)
+    monthly_summary = []
+    now = datetime.now(timezone.utc)
+    for i in range(6):
+        month_date = now - timedelta(days=30*i)
+        month_key = month_date.strftime("%Y-%m")
+        month_name = month_date.strftime("%b %Y")
+        
+        data = monthly_data.get(month_key, {"total": 0, "compliant": 0, "non_compliant": 0, "scores": []})
+        avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+        
+        monthly_summary.insert(0, {
+            "month": month_name,
+            "month_key": month_key,
+            "total_audits": data["total"],
+            "compliant": data["compliant"],
+            "non_compliant": data["non_compliant"],
+            "avg_score": round(avg_score, 1)
+        })
+    
+    return ChartData(
+        audit_trends=audit_trends,
+        compliance_trends=compliance_trends,
+        work_type_performance=work_type_performance,
+        monthly_summary=monthly_summary
+    )
+
 # Payment endpoints
 @api_router.get("/payments/packages")
 async def get_subscription_packages():
