@@ -33,9 +33,18 @@ function TestAudit() {
     { id: 'excavation', name: 'Excavation Work (Trabajo de Excavación)' },
     { id: 'height_work', name: 'Height Work (Trabajo en Altura)' },
     { id: 'welding', name: 'Welding Operations (Operaciones de Soldadura)' },
+    { id: 'heavy_machinery', name: 'Heavy Machinery Operation (Operación de Maquinaria Pesada)' },
     { id: 'electrical', name: 'Electrical Work (Trabajo Eléctrico)' },
     { id: 'concrete', name: 'Concrete Work (Trabajo de Concreto)' },
-    { id: 'scaffolding', name: 'Scaffolding (Andamiaje)' }
+    { id: 'scaffolding', name: 'Scaffolding (Andamiaje)' },
+    { id: 'demolition', name: 'Demolition (Demolición)' },
+    { id: 'roofing', name: 'Roofing Work (Trabajo de Techado)' },
+    { id: 'painting', name: 'Painting/Coating (Pintura/Recubrimiento)' },
+    { id: 'plumbing', name: 'Plumbing (Plomería)' },
+    { id: 'hvac', name: 'HVAC Installation (Instalación HVAC)' },
+    { id: 'steel_erection', name: 'Steel Erection (Montaje de Acero)' },
+    { id: 'road_construction', name: 'Road Construction (Construcción de Carreteras)' },
+    { id: 'underground_utilities', name: 'Underground Utilities (Servicios Subterráneos)' }
   ];
 
   const showMessage = (text, type = 'success') => {
