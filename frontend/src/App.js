@@ -2677,11 +2677,8 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/test" element={<TestAudit />} />
-            <Route path="/subscription-success" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
+            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+            <Route path="/demo-checkout" element={<DemoCheckout />} />
           </Routes>
           <Toaster />
         </SessionHandler>
