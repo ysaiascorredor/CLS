@@ -68,6 +68,7 @@ class User(BaseModel):
     subscription_plan: Optional[str] = None
     subscription_expires: Optional[datetime] = None
     audits_used_this_month: int = 0
+    role: str = "user"  # "user" or "admin"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserSession(BaseModel):
