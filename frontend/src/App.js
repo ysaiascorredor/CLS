@@ -831,11 +831,10 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
                   checked={formData.selectedWorkTypes.includes(workType.id)}
                   onChange={(e) => {
                     const newSelected = e.target.checked
-                      ? [...formData.selectedWorkTypes, workType.id].slice(0, 3)
+                      ? [...formData.selectedWorkTypes, workType.id]
                       : formData.selectedWorkTypes.filter(id => id !== workType.id);
                     setFormData({...formData, selectedWorkTypes: newSelected});
                   }}
-                  disabled={formData.selectedWorkTypes.length >= 3 && !formData.selectedWorkTypes.includes(workType.id)}
                 />
                 <label htmlFor={workType.id} className="text-sm">
                   {language === 'en' ? workType.name_en : workType.name_es}
