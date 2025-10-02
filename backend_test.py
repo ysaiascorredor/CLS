@@ -1982,6 +1982,145 @@ class CSABackendTester:
             self.log_test("Team Invitation In Team List", False, str(e))
             return False
 
+    def test_team_invitation_duplicate_prevention(self):
+        """Test duplicate invitation prevention - REVIEW REQUEST REQUIREMENT"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Team Invitation Duplicate Prevention", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Use a fixed email for duplicate testing
+            import time
+            timestamp = str(int(time.time()))
+            test_email = f"duplicate.test.{timestamp}@example.com"
+            
+            # Send first invitation
+            params = {
+                "invitee_email": test_email,
+                "invitee_name": "Duplicate Test User",
+                "role": "auditor"
+            }
+            
+            first_response = requests.post(f"{self.api_url}/organization/invite", 
+                                         params=params, headers=headers, timeout=10)
+            
+            # Send second invitation with same email (should fail)
+            second_response = requests.post(f"{self.api_url}/organization/invite", 
+                                          params=params, headers=headers, timeout=10)
+            
+            # First should succeed, second should fail with appropriate error
+            first_success = first_response.status_code == 200
+            second_fails = second_response.status_code == 400
+            
+            success = first_success and second_fails
+            details = f"First invitation: {first_response.status_code}, Second invitation: {second_response.status_code}"
+            
+            if second_fails:
+                try:
+                    error_data = second_response.json()
+                    error_message = error_data.get('detail', '').lower()
+                    has_duplicate_error = 'already' in error_message or 'duplicate' in error_message or 'invited' in error_message
+                    details += f", Duplicate error message: {has_duplicate_error}"
+                    success = success and has_duplicate_error
+                except:
+                    details += ", Could not parse error message"
+            
+            self.log_test("Team Invitation Duplicate Prevention", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Team Invitation Duplicate Prevention", False, str(e))
+            return False
+
+    def test_team_invitation_comprehensive_flow(self):
+        """Test comprehensive team invitation flow as specified in review request"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Team Invitation Comprehensive Flow", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Step 1: Verify owner login works (already tested but confirm)
+            me_response = requests.get(f"{self.api_url}/auth/me", headers=headers, timeout=10)
+            if me_response.status_code != 200:
+                self.log_test("Team Invitation Comprehensive Flow", False, "Owner authentication failed")
+                return False
+                
+            user_data = me_response.json()
+            is_owner = user_data.get("organization_role") == "owner"
+            has_org_id = user_data.get("organization_id") is not None
+            
+            if not (is_owner and has_org_id):
+                self.log_test("Team Invitation Comprehensive Flow", False, f"Owner role: {is_owner}, Has org: {has_org_id}")
+                return False
+            
+            # Step 2: Test POST /api/organization/invite with query parameters
+            import time
+            timestamp = str(int(time.time()))
+            test_email = f"comprehensive.test.{timestamp}@example.com"
+            
+            params = {
+                "invitee_email": test_email,
+                "invitee_name": "Comprehensive Test User",
+                "role": "auditor"
+            }
+            
+            invite_response = requests.post(f"{self.api_url}/organization/invite", 
+                                          params=params, headers=headers, timeout=10)
+            
+            if invite_response.status_code != 200:
+                try:
+                    error_data = invite_response.json()
+                    details = f"Invite failed: {invite_response.status_code}, Error: {error_data.get('detail', 'Unknown')}"
+                except:
+                    details = f"Invite failed: {invite_response.status_code}"
+                self.log_test("Team Invitation Comprehensive Flow", False, details)
+                return False
+            
+            invite_data = invite_response.json()
+            has_invitation_link = "invitation_link" in invite_data
+            has_invitation = "invitation" in invite_data
+            
+            # Step 3: Verify invitation appears in GET /api/organization/team pending_invitations
+            team_response = requests.get(f"{self.api_url}/organization/team", headers=headers, timeout=10)
+            
+            if team_response.status_code != 200:
+                self.log_test("Team Invitation Comprehensive Flow", False, f"Team endpoint failed: {team_response.status_code}")
+                return False
+            
+            team_data = team_response.json()
+            pending_invitations = team_data.get("pending_invitations", [])
+            
+            # Find our invitation
+            found_invitation = False
+            for invitation in pending_invitations:
+                if invitation.get("invitee_email") == test_email:
+                    found_invitation = True
+                    break
+            
+            # Step 4: Test duplicate prevention
+            duplicate_response = requests.post(f"{self.api_url}/organization/invite", 
+                                             params=params, headers=headers, timeout=10)
+            duplicate_prevented = duplicate_response.status_code == 400
+            
+            # Final assessment
+            success = (has_invitation_link and has_invitation and found_invitation and duplicate_prevented)
+            details = f"Invitation link: {has_invitation_link}, Invitation data: {has_invitation}, Found in team list: {found_invitation}, Duplicate prevented: {duplicate_prevented}"
+            
+            if has_invitation_link:
+                invitation_link = invite_data.get("invitation_link", "")
+                link_valid = len(invitation_link) > 0 and ("http" in invitation_link or "invitation" in invitation_link)
+                details += f", Link valid: {link_valid}"
+                success = success and link_valid
+            
+            self.log_test("Team Invitation Comprehensive Flow", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Team Invitation Comprehensive Flow", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
