@@ -2034,7 +2034,7 @@ function TeamManagement() {
                   </Select>
                 </div>
                 <Button onClick={inviteMember} className="w-full">
-                  Enviar Invitación
+                  Send Invitation
                 </Button>
               </div>
             </DialogContent>
