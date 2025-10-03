@@ -1259,6 +1259,168 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
   );
 }
 
+// User Settings Component (Password Change)
+function UserSettings() {
+  const { language } = React.useContext(LanguageContext);
+  const [passwordForm, setPasswordForm] = useState({
+    old_password: '',
+    new_password: '',
+    confirm_password: ''
+  });
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const { toast } = useToast();
+
+  const changePassword = async () => {
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast({ 
+        title: language === 'en' ? "❌ Password Mismatch" : "❌ Contraseñas No Coinciden",
+        description: language === 'en' ? "New passwords don't match" : "Las contraseñas nuevas no coinciden",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (passwordForm.new_password.length < 6) {
+      toast({ 
+        title: language === 'en' ? "❌ Password Too Short" : "❌ Contraseña Muy Corta",
+        description: language === 'en' ? "Password must be at least 6 characters" : "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/auth/change-password`, {
+        old_password: passwordForm.old_password,
+        new_password: passwordForm.new_password
+      });
+
+      toast({ 
+        title: language === 'en' ? "✅ Password Changed" : "✅ Contraseña Cambiada",
+        description: language === 'en' ? "Your password has been updated successfully" : "Tu contraseña se actualizó exitosamente"
+      });
+
+      setPasswordForm({ old_password: '', new_password: '', confirm_password: '' });
+
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error changing password" : "Error cambiando contraseña");
+      toast({ 
+        title: language === 'en' ? "❌ Password Change Failed" : "❌ Error Cambiando Contraseña",
+        description: errorMessage,
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const cancelSubscription = async () => {
+    try {
+      await axios.post(`${API}/payments/cancel-subscription`);
+      
+      toast({ 
+        title: language === 'en' ? "✅ Subscription Cancelled" : "✅ Suscripción Cancelada",
+        description: language === 'en' ? "Your subscription has been cancelled. Access continues until expiration." : "Tu suscripción ha sido cancelada. El acceso continúa hasta la expiración."
+      });
+
+      setShowCancelDialog(false);
+
+    } catch (error) {
+      toast({ 
+        title: language === 'en' ? "❌ Cancellation Failed" : "❌ Error en Cancelación",
+        description: error.response?.data?.detail || (language === 'en' ? "Error cancelling subscription" : "Error cancelando suscripción"),
+        variant: "destructive" 
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Password Change */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {language === 'en' ? 'Change Password' : 'Cambiar Contraseña'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'en' ? 'Update your account password' : 'Actualiza la contraseña de tu cuenta'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>{language === 'en' ? 'Current Password' : 'Contraseña Actual'}</Label>
+            <Input
+              type="password"
+              value={passwordForm.old_password}
+              onChange={(e) => setPasswordForm({...passwordForm, old_password: e.target.value})}
+              placeholder={language === 'en' ? 'Enter current password' : 'Ingresa contraseña actual'}
+            />
+          </div>
+          <div>
+            <Label>{language === 'en' ? 'New Password' : 'Nueva Contraseña'}</Label>
+            <Input
+              type="password"
+              value={passwordForm.new_password}
+              onChange={(e) => setPasswordForm({...passwordForm, new_password: e.target.value})}
+              placeholder={language === 'en' ? 'Enter new password (6+ characters)' : 'Nueva contraseña (6+ caracteres)'}
+            />
+          </div>
+          <div>
+            <Label>{language === 'en' ? 'Confirm New Password' : 'Confirmar Nueva Contraseña'}</Label>
+            <Input
+              type="password"
+              value={passwordForm.confirm_password}
+              onChange={(e) => setPasswordForm({...passwordForm, confirm_password: e.target.value})}
+              placeholder={language === 'en' ? 'Confirm new password' : 'Confirmar nueva contraseña'}
+            />
+          </div>
+          <Button onClick={changePassword} className="bg-blue-600 hover:bg-blue-700">
+            {language === 'en' ? '🔐 Change Password' : '🔐 Cambiar Contraseña'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Cancel Subscription */}
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle className="text-red-700">
+            {language === 'en' ? 'Cancel Subscription' : 'Cancelar Suscripción'}
+          </CardTitle>
+          <CardDescription>
+            {language === 'en' ? 'Cancel your subscription (access continues until expiration)' : 'Cancela tu suscripción (el acceso continúa hasta la expiración)'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <DialogTrigger asChild>
+              <Button variant="destructive">
+                {language === 'en' ? '❌ Cancel Subscription' : '❌ Cancelar Suscripción'}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{language === 'en' ? 'Confirm Cancellation' : 'Confirmar Cancelación'}</DialogTitle>
+                <DialogDescription>
+                  {language === 'en' 
+                    ? 'Are you sure you want to cancel your subscription? You will continue to have access until your current billing period ends.'
+                    : '¿Estás seguro de que quieres cancelar tu suscripción? Continuarás teniendo acceso hasta que termine tu período de facturación actual.'
+                  }
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+                  {language === 'en' ? 'Keep Subscription' : 'Mantener Suscripción'}
+                </Button>
+                <Button variant="destructive" onClick={cancelSubscription}>
+                  {language === 'en' ? 'Yes, Cancel' : 'Sí, Cancelar'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Company Settings Component
 function CompanySettings() {
   const { t } = React.useContext(LanguageContext);
