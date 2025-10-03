@@ -3248,8 +3248,8 @@ class CSABackendTester:
         if not success:
             return False
             
-        # Step 6: Try to login with the deleted user (should fail)
-        success = self.test_deleted_user_login_fails()
+        # Step 6: Verify removed user can still login but has no organization
+        success = self.test_deleted_user_login_still_works()
         if not success:
             return False
             
