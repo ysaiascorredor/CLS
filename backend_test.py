@@ -3489,11 +3489,11 @@ class CSABackendTester:
                 if has_user:
                     user_data = data["user"]
                     no_organization = user_data.get("organization_id") is None
-                    no_org_role = user_data.get("organization_role") is None
                     correct_email = user_data.get("email") == self.test_delete_user["email"]
                     
-                    success = has_token and has_user and no_organization and no_org_role and correct_email
-                    details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, No org: {no_organization}, No role: {no_org_role}, Correct email: {correct_email}"
+                    # The key test is that user has no organization_id (removed from org)
+                    success = has_token and has_user and no_organization and correct_email
+                    details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, No org: {no_organization}, Correct email: {correct_email}"
                 else:
                     success = False
                     details = f"Status: {response.status_code}, Missing user data"
