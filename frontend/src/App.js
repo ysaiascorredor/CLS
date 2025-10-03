@@ -2281,8 +2281,8 @@ function TeamManagement() {
                     }
                   </p>
                 </div>
-                <Button onClick={createTeamUser} className="w-full">
-                  {language === 'en' ? '🚀 Create User Account' : '🚀 Crear Cuenta de Usuario'}
+                <Button onClick={createTeamUser} className="w-full bg-green-600 hover:bg-green-700" data-testid="submit-create-user">
+                  🚀 CREATE USER ACCOUNT NOW
                 </Button>
               </div>
             </DialogContent>
