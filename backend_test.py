@@ -2889,6 +2889,359 @@ class CSABackendTester:
             print(f"❌ {failed_tests} test(s) failed - LAUNCH READINESS COMPROMISED")
             return False
 
+    # ===== NEW USER CREATION SYSTEM TESTS (REVIEW REQUEST) =====
+    
+    def test_gmail_owner_login(self):
+        """Test login with ysaias.corredor@gmail.com / Clave.01 (REVIEW REQUEST)"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    self.owner_user_data = user_data
+                    correct_email = user_data.get("email") == "ysaias.corredor@gmail.com"
+                    has_organization = user_data.get("organization_id") is not None
+                    is_owner = user_data.get("organization_role") == "owner"
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Has org: {has_organization}, Owner role: {is_owner}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Gmail Owner Login (ysaias.corredor@gmail.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Gmail Owner Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+
+    def test_direct_user_creation(self):
+        """Test POST /api/organization/create-user - Direct user creation (REVIEW REQUEST)"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Direct User Creation", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Create unique email for testing
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            test_email = f"test.direct.user.{timestamp}@example.com"
+            
+            # Test creating a new user directly
+            user_data = {
+                "email": test_email,
+                "name": "Test Direct User",
+                "role": "auditor"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                has_instructions = "instructions" in data
+                
+                success = has_message and has_user and has_instructions
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}, Instructions: {has_instructions}"
+                
+                if has_user:
+                    user_info = data["user"]
+                    has_id = "id" in user_info
+                    has_temp_password = "temporary_password" in user_info
+                    correct_email = user_info.get("email") == test_email
+                    correct_name = user_info.get("name") == "Test Direct User"
+                    correct_role = user_info.get("role") == "auditor"
+                    
+                    success = success and has_id and has_temp_password and correct_email and correct_name and correct_role
+                    details += f", ID: {has_id}, Temp password: {has_temp_password}, Email: {correct_email}, Name: {correct_name}, Role: {correct_role}"
+                    
+                    # Store for password change test
+                    if has_temp_password and has_id:
+                        self.test_created_user = {
+                            "id": user_info["id"],
+                            "email": test_email,
+                            "temp_password": user_info["temporary_password"]
+                        }
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Direct User Creation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Direct User Creation", False, str(e))
+            return False
+
+    def test_new_user_login_with_temp_password(self):
+        """Test login with newly created user and temporary password"""
+        if not hasattr(self, 'test_created_user'):
+            self.log_test("New User Login with Temp Password", False, "No created user available")
+            return False
+            
+        try:
+            login_data = {
+                "email": self.test_created_user["email"],
+                "password": self.test_created_user["temp_password"]
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if has_token:
+                    self.test_created_user["token"] = data["access_token"]
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == self.test_created_user["email"]
+                    has_organization = user_data.get("organization_id") is not None
+                    is_auditor = user_data.get("organization_role") == "auditor"
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Has org: {has_organization}, Auditor role: {is_auditor}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("New User Login with Temp Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("New User Login with Temp Password", False, str(e))
+            return False
+
+    def test_password_change_endpoint(self):
+        """Test POST /api/auth/change-password - Password change functionality (REVIEW REQUEST)"""
+        if not hasattr(self, 'test_created_user') or "token" not in self.test_created_user:
+            self.log_test("Password Change Endpoint", False, "No created user token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_created_user['token']}"}
+            
+            # Test changing password
+            password_data = {
+                "old_password": self.test_created_user["temp_password"],
+                "new_password": "NewSecurePassword123!"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/change-password", 
+                                   json=password_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                success_message = "successfully" in data.get("message", "").lower()
+                
+                success = has_message and success_message
+                details = f"Status: {response.status_code}, Message: {has_message}, Success: {success_message}"
+                
+                # Store new password for verification
+                if success:
+                    self.test_created_user["new_password"] = "NewSecurePassword123!"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Password Change Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Password Change Endpoint", False, str(e))
+            return False
+
+    def test_login_with_new_password(self):
+        """Test login with new password after password change"""
+        if not hasattr(self, 'test_created_user') or "new_password" not in self.test_created_user:
+            self.log_test("Login with New Password", False, "No new password available")
+            return False
+            
+        try:
+            login_data = {
+                "email": self.test_created_user["email"],
+                "password": self.test_created_user["new_password"]
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if has_token:
+                    self.test_created_user["new_token"] = data["access_token"]
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == self.test_created_user["email"]
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Login with New Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Login with New Password", False, str(e))
+            return False
+
+    def test_user_removal_endpoint(self):
+        """Test DELETE /api/organization/remove-user/{user_id} - User removal (REVIEW REQUEST)"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("User Removal Endpoint", False, "No owner token available")
+            return False
+            
+        if not hasattr(self, 'test_created_user') or "id" not in self.test_created_user:
+            self.log_test("User Removal Endpoint", False, "No created user ID available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            user_id = self.test_created_user["id"]
+            
+            response = requests.delete(f"{self.api_url}/organization/remove-user/{user_id}", 
+                                     headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                success_message = "removed" in data.get("message", "").lower()
+                
+                success = has_message and success_message
+                details = f"Status: {response.status_code}, Message: {has_message}, Success: {success_message}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("User Removal Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("User Removal Endpoint", False, str(e))
+            return False
+
+    def test_subscription_cancellation_endpoint(self):
+        """Test POST /api/payments/cancel-subscription - Subscription cancellation (REVIEW REQUEST)"""
+        if not hasattr(self, 'owner_token') or not self.owner_token:
+            self.log_test("Subscription Cancellation Endpoint", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.post(f"{self.api_url}/payments/cancel-subscription", 
+                                   headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_status = "status" in data
+                cancelled_status = data.get("status") == "cancelled"
+                success_message = "cancelled" in data.get("message", "").lower()
+                
+                success = has_message and has_status and cancelled_status and success_message
+                details = f"Status: {response.status_code}, Message: {has_message}, Status field: {has_status}, Cancelled: {cancelled_status}, Success msg: {success_message}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Subscription Cancellation Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Subscription Cancellation Endpoint", False, str(e))
+            return False
+
+    def run_new_user_creation_tests(self):
+        """Run new user creation system tests (REVIEW REQUEST)"""
+        print("🆕 NEW USER CREATION SYSTEM TESTING")
+        print("Testing direct user creation system that replaces invitations")
+        print("=" * 80)
+        
+        # Test sequence as requested in review
+        tests = [
+            self.test_gmail_owner_login,
+            self.test_direct_user_creation,
+            self.test_new_user_login_with_temp_password,
+            self.test_password_change_endpoint,
+            self.test_login_with_new_password,
+            self.test_user_removal_endpoint,
+            self.test_subscription_cancellation_endpoint
+        ]
+        
+        for test in tests:
+            test()
+        
+        print("=" * 80)
+        print(f"🏁 New User Creation Testing Complete: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        return self.tests_passed == self.tests_run
+
     def run_critical_subscription_tests(self):
         """Run critical subscription-related tests for the reported issue"""
         print("🚨 CRITICAL SUBSCRIPTION ISSUE TESTING")
