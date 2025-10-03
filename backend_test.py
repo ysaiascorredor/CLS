@@ -2382,6 +2382,211 @@ class CSABackendTester:
             self.log_test("Team Invitation Comprehensive Flow", False, str(e))
             return False
 
+    def test_admin_fix_pending_payment(self):
+        """Test POST /api/payments/fix-pending/{user_id} endpoint - URGENT FIX"""
+        if not self.admin_token:
+            self.log_test("Admin Fix Pending Payment", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Use the specific user_id from the review request
+            user_id = "b7524205-e008-449c-b33b-2a7f52817396"
+            
+            response = requests.post(f"{self.api_url}/payments/fix-pending/{user_id}", 
+                                   headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                message_contains_fixed = "fixed" in data.get("message", "").lower()
+                
+                success = has_message and message_contains_fixed
+                details = f"Status: {response.status_code}, Message: {has_message}, Contains 'fixed': {message_contains_fixed}"
+                
+                if has_message:
+                    message = data.get("message", "")
+                    details += f", Message: {message}"
+                    
+            elif response.status_code == 404:
+                # No pending transactions found - this might be expected if already fixed
+                data = response.json()
+                message = data.get("detail", "")
+                success = "no pending transactions" in message.lower()
+                details = f"Status: {response.status_code}, Message: {message}, Expected 404: {success}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Fix Pending Payment", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Fix Pending Payment", False, str(e))
+            return False
+
+    def test_owner_subscription_after_fix(self):
+        """Test GET /api/auth/me for owner user after payment fix"""
+        if not self.owner_token:
+            self.log_test("Owner Subscription After Fix", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_subscription = data.get("subscription_plan") is not None
+                subscription_plan = data.get("subscription_plan")
+                subscription_expires = data.get("subscription_expires")
+                
+                success = has_subscription and subscription_plan == "enterprise"
+                details = f"Status: {response.status_code}, Has subscription: {has_subscription}, Plan: {subscription_plan}, Expires: {subscription_expires}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Owner Subscription After Fix", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Subscription After Fix", False, str(e))
+            return False
+
+    def test_email_settings_get(self):
+        """Test GET /api/settings/email endpoint"""
+        if not self.admin_token:
+            self.log_test("Email Settings GET", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            response = requests.get(f"{self.api_url}/settings/email", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_configured = "configured" in data
+                configured = data.get("configured", False)
+                
+                success = has_configured
+                details = f"Status: {response.status_code}, Has configured field: {has_configured}, Configured: {configured}"
+                
+                # If configured, check for other fields
+                if configured:
+                    expected_fields = ["smtp_server", "smtp_port", "email", "sender_name"]
+                    has_fields = all(field in data for field in expected_fields)
+                    no_password = "password" not in data  # Password should not be returned
+                    
+                    success = success and has_fields and no_password
+                    details += f", Has required fields: {has_fields}, No password: {no_password}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Email Settings GET", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Email Settings GET", False, str(e))
+            return False
+
+    def test_email_settings_post(self):
+        """Test POST /api/settings/email endpoint"""
+        if not self.admin_token:
+            self.log_test("Email Settings POST", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Test email configuration
+            email_config = {
+                "smtp_server": "smtp.gmail.com",
+                "smtp_port": 587,
+                "email": "test@csaaudit.com",
+                "password": "test_password_123",
+                "sender_name": "CSA Audit System"
+            }
+            
+            response = requests.post(f"{self.api_url}/settings/email", 
+                                   json=email_config, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                success_message = "saved successfully" in data.get("message", "").lower()
+                
+                success = has_message and success_message
+                details = f"Status: {response.status_code}, Message: {has_message}, Success message: {success_message}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Email Settings POST", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Email Settings POST", False, str(e))
+            return False
+
+    def test_subscription_cancellation(self):
+        """Test POST /api/payments/cancel-subscription endpoint"""
+        if not self.owner_token:
+            self.log_test("Subscription Cancellation", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.post(f"{self.api_url}/payments/cancel-subscription", 
+                                   headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_status = "status" in data
+                cancelled_message = "cancelled successfully" in data.get("message", "").lower()
+                cancelled_status = data.get("status") == "cancelled"
+                
+                success = has_message and has_status and cancelled_message and cancelled_status
+                details = f"Status: {response.status_code}, Message: {has_message}, Status field: {has_status}, Cancelled message: {cancelled_message}, Cancelled status: {cancelled_status}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Subscription Cancellation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Subscription Cancellation", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
