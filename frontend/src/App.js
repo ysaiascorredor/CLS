@@ -2224,7 +2224,7 @@ function TeamManagement() {
                 <li>Vista consolidada de todas las auditorías del equipo</li>
               </ul>
               
-              <Button onClick={createOrganization} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={createOrganization} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                 <Building className="w-4 h-4 mr-2" />
                 Create My Organization
               </Button>
