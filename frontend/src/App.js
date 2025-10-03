@@ -2048,26 +2048,29 @@ function TeamManagement() {
     }
   };
 
-  const removeMember = async (memberId) => {
+  const deleteMember = async (memberId) => {
     const confirmMessage = language === 'en' ? 
-      "Are you sure you want to remove this member?" : 
-      "¿Estás seguro de que quieres remover este miembro?";
+      "Are you sure you want to delete this user?" : 
+      "¿Estás seguro de que quieres eliminar este usuario?";
       
     if (window.confirm(confirmMessage)) {
       try {
-        await axios.delete(`${API}/organization/team/${memberId}`);
+        console.log('🗑️ Deleting user:', memberId);
+        await axios.delete(`${API}/organization/remove-user/${memberId}`);
         
         toast({ 
-          title: language === 'en' ? "Member removed successfully" : "Miembro removido exitosamente" 
+          title: language === 'en' ? "✅ User deleted successfully" : "✅ Usuario eliminado exitosamente" 
         });
         
-        loadTeamData();
+        loadAllTeamData(); // Correct function call
         
       } catch (error) {
-        console.error('❌ Remove member error:', error);
+        console.error('❌ Delete user error:', error);
         
+        const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error deleting user" : "Error eliminando usuario");
         toast({ 
-          title: language === 'en' ? "Error removing member" : "Error removiendo miembro", 
+          title: language === 'en' ? "❌ Delete Failed" : "❌ Error al Eliminar", 
+          description: errorMessage,
           variant: "destructive" 
         });
       }
