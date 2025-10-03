@@ -2220,9 +2220,9 @@ function TeamManagement() {
         {user?.organization_role === 'owner' && (
           <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-green-600 hover:bg-green-700" data-testid="create-user-button">
                 <Users className="w-4 h-4 mr-2" />
-                {language === 'en' ? '➕ Add User' : '➕ Agregar Usuario'}
+                🚀 CREATE USER NOW
               </Button>
             </DialogTrigger>
             <DialogContent>
