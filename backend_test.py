@@ -42,7 +42,7 @@ class CSABackendTester:
             return False
 
     def test_work_types_endpoint(self):
-        """Test work types endpoint (public)"""
+        """Test work types endpoint (public) - UPDATED FOR NEW CATEGORIES"""
         try:
             response = requests.get(f"{self.api_url}/work-types", timeout=10)
             success = response.status_code == 200
@@ -51,15 +51,34 @@ class CSABackendTester:
                 data = response.json()
                 work_types_count = len(data)
                 has_required_fields = all('id' in wt and 'name_en' in wt and 'name_es' in wt for wt in data)
-                success = work_types_count == 15 and has_required_fields
-                details = f"Found {work_types_count} work types, required fields: {has_required_fields}"
+                
+                # Check for new categories as per review request
+                required_new_categories = ['jsa', 'jha', 'safety_daily_plan', 'ppe', 'lifting_equipment', 'housekeeping', 'chemical_work']
+                existing_ids = [wt['id'] for wt in data]
+                has_new_categories = all(cat_id in existing_ids for cat_id in required_new_categories)
+                
+                # Should now have 22 total categories (15 original + 7 new)
+                success = work_types_count == 22 and has_required_fields and has_new_categories
+                details = f"Found {work_types_count} work types (expected 22), required fields: {has_required_fields}, new categories: {has_new_categories}"
+                
+                if has_new_categories:
+                    # Verify specific new category names
+                    jsa_found = any(wt['id'] == 'jsa' and 'Job Safety Analysis' in wt['name_en'] for wt in data)
+                    jha_found = any(wt['id'] == 'jha' and 'Job Hazard Analysis' in wt['name_en'] for wt in data)
+                    ppe_found = any(wt['id'] == 'ppe' and 'Personal Protective Equipment' in wt['name_en'] for wt in data)
+                    chemical_found = any(wt['id'] == 'chemical_work' and 'Chemical Handling' in wt['name_en'] for wt in data)
+                    
+                    specific_categories_valid = jsa_found and jha_found and ppe_found and chemical_found
+                    success = success and specific_categories_valid
+                    details += f", specific new categories valid: {specific_categories_valid}"
+                    
             else:
                 details = f"Status: {response.status_code}"
                 
-            self.log_test("Work Types Endpoint", success, details)
+            self.log_test("Work Types Endpoint (New Categories)", success, details)
             return success
         except Exception as e:
-            self.log_test("Work Types Endpoint", False, str(e))
+            self.log_test("Work Types Endpoint (New Categories)", False, str(e))
             return False
 
     def test_subscription_packages_endpoint(self):
