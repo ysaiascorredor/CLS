@@ -53,11 +53,9 @@ axios.interceptors.response.use(
   }
 );
 
-// Subscription packages reference (should match backend)
+// Subscription packages reference (should match backend) - Single unlimited plan
 const SUBSCRIPTION_PACKAGES = {
-  "basic": {"price": 29.99, "name": "Basic Plan", "audits_per_month": 50, "team_members": 3},
-  "professional": {"price": 79.99, "name": "Professional Plan", "audits_per_month": 200, "team_members": 10},
-  "enterprise": {"price": 199.99, "name": "Enterprise Plan", "audits_per_month": -1, "team_members": -1}
+  "unlimited": {"price": 49.99, "name": "CSA Safety Pro", "audits_per_month": -1, "team_members": -1}
 };
 
 // Language context
