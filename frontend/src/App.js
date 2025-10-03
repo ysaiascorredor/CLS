@@ -2039,32 +2039,55 @@ function TeamManagement() {
 
   const deleteMember = async (memberId) => {
     console.log('🗑️ DELETE FUNCTION CALLED for member:', memberId);
+    console.log('🔍 Type of memberId:', typeof memberId);
+    console.log('🔍 MemberId value:', memberId);
     
-    const confirmMessage = "⚠️ Are you sure you want to delete this user? This action cannot be undone!";
+    if (!memberId) {
+      console.error('❌ ERROR: memberId is null/undefined');
+      toast({ 
+        title: "❌ Error al Eliminar", 
+        description: "ID de usuario no válido",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    const confirmMessage = "⚠️ ¿Estás seguro de que quieres eliminar este usuario? ¡Esta acción no se puede deshacer!";
       
+    console.log('🔔 Showing confirmation dialog...');
     if (window.confirm(confirmMessage)) {
       console.log('✅ User confirmed deletion, proceeding...');
       console.log('🔗 DELETE URL:', `${API}/organization/remove-user/${memberId}`);
+      console.log('🔗 Full URL:', `${import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/organization/remove-user/${memberId}`);
       
       try {
-        await axios.delete(`${API}/organization/remove-user/${memberId}`);
+        console.log('🚀 Making DELETE request...');
+        const response = await axios.delete(`${API}/organization/remove-user/${memberId}`);
+        console.log('✅ DELETE request successful:', response);
         
         toast({ 
-          title: language === 'en' ? "✅ User deleted successfully" : "✅ Usuario eliminado exitosamente" 
+          title: "✅ Usuario eliminado exitosamente",
+          description: `Usuario con ID ${memberId} eliminado correctamente`
         });
         
+        console.log('🔄 Reloading team data...');
         loadAllTeamData(); // Correct function call
         
       } catch (error) {
-        console.error('❌ Delete user error:', error);
+        console.error('❌ Delete user error - FULL ERROR:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error status:', error.response?.status);
+        console.error('❌ Error data:', error.response?.data);
         
-        const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error deleting user" : "Error eliminando usuario");
+        const errorMessage = error.response?.data?.detail || `Error eliminando usuario: ${error.message}`;
         toast({ 
-          title: language === 'en' ? "❌ Delete Failed" : "❌ Error al Eliminar", 
+          title: "❌ Error al Eliminar", 
           description: errorMessage,
           variant: "destructive" 
         });
       }
+    } else {
+      console.log('❌ User cancelled deletion');
     }
   };
 
