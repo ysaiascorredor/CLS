@@ -317,9 +317,9 @@ backend:
 
   - task: "CRITICAL: Subscription Status Issue - User Paid But Shows No Active Subscription"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -329,6 +329,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "CRITICAL SUBSCRIPTION ISSUE RESOLVED: Tested new admin endpoint POST /api/payments/fix-pending/{user_id} with user ID b7524205-e008-449c-b33b-2a7f52817396. ✅ Admin fix endpoint working perfectly - Fixed 2 pending payments and activated subscription. ✅ Owner login (ysaias.corredor@clsolution.net/Clave.01) working correctly. ✅ GET /api/auth/me now shows active enterprise subscription (expires 2026-10-02). ✅ Payment status updated from 'pending' to 'paid'. ✅ Subscription properly activated. The critical user issue has been FULLY RESOLVED through the admin payment fix endpoint."
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL BUSINESS ISSUE CONFIRMED: User ysaias.corredor@gmail.com (PAYING CUSTOMER) has DATA INCONSISTENCY issue. COMPREHENSIVE DIAGNOSIS: ✅ Login working perfectly (User ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8), ✅ Backend shows subscription_plan: 'basic', ❌ CRITICAL ISSUE: subscription_expires: None and subscription_status: None. ROOT CAUSE: User has subscription plan but missing expiration date and status fields. This is a DATA INCONSISTENCY issue where the user has partial subscription data. BUSINESS IMPACT: Customer cannot access paid features despite having subscription plan. URGENCY: IMMEDIATE - paying customer affected. Backend subscription system partially working but data integrity compromised."
 
   - task: "Admin Payment Fix Endpoint"
     implemented: true
