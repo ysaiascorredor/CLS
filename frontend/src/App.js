@@ -840,7 +840,7 @@ function Dashboard() {
               </div>
               
               {/* Recent Audits */}
-              <Card>
+              <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
                 <CardHeader>
                   <CardTitle>{t.recentAudits}</CardTitle>
                 </CardHeader>
