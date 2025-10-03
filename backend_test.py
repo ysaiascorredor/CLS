@@ -2587,6 +2587,178 @@ class CSABackendTester:
             self.log_test("Subscription Cancellation", False, str(e))
             return False
 
+    def test_gmail_account_subscription_issue(self):
+        """URGENT: Test the CORRECT Gmail account subscription issue - ysaias.corredor@gmail.com"""
+        try:
+            # First, try to login with the Gmail account
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                if has_token:
+                    gmail_token = data["access_token"]
+                    user_data = data["user"]
+                    user_id = user_data.get("id")
+                    subscription_plan = user_data.get("subscription_plan")
+                    subscription_expires = user_data.get("subscription_expires")
+                    
+                    # Check subscription status via /auth/me
+                    headers = {"Authorization": f"Bearer {gmail_token}"}
+                    me_response = requests.get(f"{self.api_url}/auth/me", 
+                                             headers=headers, timeout=10)
+                    
+                    if me_response.status_code == 200:
+                        me_data = me_response.json()
+                        current_plan = me_data.get("subscription_plan")
+                        current_expires = me_data.get("subscription_expires")
+                        
+                        # Check for pending payments using admin token
+                        if self.admin_token:
+                            admin_headers = {"Authorization": f"Bearer {self.admin_token}"}
+                            
+                            # Get support tickets to see pending payments
+                            support_response = requests.get(f"{self.api_url}/admin/support-tickets", 
+                                                           headers=admin_headers, timeout=10)
+                            
+                            pending_payments_found = False
+                            if support_response.status_code == 200:
+                                support_data = support_response.json()
+                                failed_payments = support_data.get("failed_payments", [])
+                                
+                                # Look for this user in failed payments
+                                for payment in failed_payments:
+                                    if payment.get("email") == "ysaias.corredor@gmail.com":
+                                        pending_payments_found = True
+                                        break
+                            
+                            # If user has no active subscription or pending payments found, try to fix
+                            if not current_plan or pending_payments_found:
+                                fix_response = requests.post(f"{self.api_url}/payments/fix-pending/{user_id}", 
+                                                           headers=admin_headers, timeout=10)
+                                
+                                if fix_response.status_code == 200:
+                                    fix_data = fix_response.json()
+                                    
+                                    # Verify subscription is now active
+                                    final_me_response = requests.get(f"{self.api_url}/auth/me", 
+                                                                    headers=headers, timeout=10)
+                                    
+                                    if final_me_response.status_code == 200:
+                                        final_data = final_me_response.json()
+                                        final_plan = final_data.get("subscription_plan")
+                                        final_expires = final_data.get("subscription_expires")
+                                        
+                                        success = final_plan is not None
+                                        details = f"Gmail login: ✅, User ID: {user_id}, Fix applied: ✅, Final plan: {final_plan}, Expires: {final_expires}"
+                                    else:
+                                        success = False
+                                        details = f"Gmail login: ✅, Fix applied: ✅, But final /auth/me failed: {final_me_response.status_code}"
+                                else:
+                                    success = False
+                                    details = f"Gmail login: ✅, But fix-pending failed: {fix_response.status_code}"
+                            else:
+                                success = True
+                                details = f"Gmail login: ✅, User ID: {user_id}, Already has active subscription: {current_plan}, Expires: {current_expires}"
+                        else:
+                            success = False
+                            details = f"Gmail login: ✅, But no admin token to check/fix payments"
+                    else:
+                        success = False
+                        details = f"Gmail login: ✅, But /auth/me failed: {me_response.status_code}"
+                else:
+                    success = False
+                    details = f"Gmail login response missing token or user data"
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Gmail login failed: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Gmail login failed: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("URGENT: Gmail Account Subscription Issue", success, details)
+            return success
+        except Exception as e:
+            self.log_test("URGENT: Gmail Account Subscription Issue", False, str(e))
+            return False
+
+    def test_find_gmail_user_in_database(self):
+        """Find and analyze the Gmail user account in the database"""
+        if not self.admin_token:
+            self.log_test("Find Gmail User in Database", False, "No admin token available")
+            return False
+            
+        try:
+            admin_headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Get all users to find the Gmail account
+            users_response = requests.get(f"{self.api_url}/admin/users?search=ysaias.corredor@gmail.com", 
+                                        headers=admin_headers, timeout=10)
+            
+            if users_response.status_code == 200:
+                users_data = users_response.json()
+                users = users_data.get("users", [])
+                
+                gmail_user_found = False
+                gmail_user_details = {}
+                
+                for user in users:
+                    if user.get("email") == "ysaias.corredor@gmail.com":
+                        gmail_user_found = True
+                        gmail_user_details = {
+                            "id": user.get("id"),
+                            "name": user.get("name"),
+                            "email": user.get("email"),
+                            "subscription_plan": user.get("subscription_plan"),
+                            "subscription_expires": user.get("subscription_expires"),
+                            "role": user.get("role"),
+                            "total_audits": user.get("total_audits", 0)
+                        }
+                        break
+                
+                if gmail_user_found:
+                    # Check for payment transactions for this user
+                    support_response = requests.get(f"{self.api_url}/admin/support-tickets", 
+                                                   headers=admin_headers, timeout=10)
+                    
+                    pending_payments = []
+                    if support_response.status_code == 200:
+                        support_data = support_response.json()
+                        failed_payments = support_data.get("failed_payments", [])
+                        
+                        for payment in failed_payments:
+                            if payment.get("email") == "ysaias.corredor@gmail.com":
+                                pending_payments.append({
+                                    "amount": payment.get("amount"),
+                                    "package_type": payment.get("package_type"),
+                                    "session_id": payment.get("session_id"),
+                                    "payment_status": payment.get("payment_status")
+                                })
+                    
+                    success = True
+                    details = f"Gmail user found: {gmail_user_details}, Pending payments: {len(pending_payments)} - {pending_payments}"
+                else:
+                    success = False
+                    details = f"Gmail user NOT FOUND in database. Total users searched: {len(users)}"
+            else:
+                success = False
+                details = f"Failed to get users list: {users_response.status_code}"
+            
+            self.log_test("Find Gmail User in Database", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Find Gmail User in Database", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
