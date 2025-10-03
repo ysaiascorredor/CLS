@@ -5293,6 +5293,248 @@ def main():
     
     return 0 if success else 1
 
+    def test_admin_dashboard_endpoint_review_request(self):
+        """Test GET /api/admin/dashboard endpoint - REVIEW REQUEST SPECIFIC TEST"""
+        if not self.owner_token:
+            self.log_test("Admin Dashboard Endpoint (Review Request)", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/admin/dashboard", 
+                                  headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for expected dashboard fields
+                expected_fields = ["metrics", "users_by_plan", "revenue_by_month", "top_users"]
+                has_all_fields = all(field in data for field in expected_fields)
+                
+                success = has_all_fields
+                details = f"Status: {response.status_code}, Has all fields: {has_all_fields}"
+                
+                if has_all_fields:
+                    # Validate metrics structure
+                    metrics = data.get("metrics", {})
+                    metrics_fields = ["total_users", "total_audits", "active_subscribers", "total_revenue"]
+                    has_metrics = all(field in metrics for field in metrics_fields)
+                    
+                    # Validate data types
+                    users_by_plan = data.get("users_by_plan", [])
+                    revenue_by_month = data.get("revenue_by_month", [])
+                    top_users = data.get("top_users", [])
+                    
+                    is_list_users = isinstance(users_by_plan, list)
+                    is_list_revenue = isinstance(revenue_by_month, list)
+                    is_list_top = isinstance(top_users, list)
+                    
+                    success = success and has_metrics and is_list_users and is_list_revenue and is_list_top
+                    details += f", Metrics: {has_metrics}, Lists valid: users={is_list_users}, revenue={is_list_revenue}, top={is_list_top}"
+                    
+                    # Check if we have actual data
+                    total_users = metrics.get("total_users", 0)
+                    total_audits = metrics.get("total_audits", 0)
+                    details += f", Total users: {total_users}, Total audits: {total_audits}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Dashboard Endpoint (Review Request)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Dashboard Endpoint (Review Request)", False, str(e))
+            return False
+
+    def test_admin_users_endpoint_review_request(self):
+        """Test GET /api/admin/users endpoint - REVIEW REQUEST SPECIFIC TEST"""
+        if not self.owner_token:
+            self.log_test("Admin Users Endpoint (Review Request)", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/admin/users", 
+                                  headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for expected pagination fields
+                expected_fields = ["users", "total_count", "page", "per_page", "total_pages"]
+                has_all_fields = all(field in data for field in expected_fields)
+                
+                success = has_all_fields
+                details = f"Status: {response.status_code}, Has all fields: {has_all_fields}"
+                
+                if has_all_fields:
+                    users = data.get("users", [])
+                    total_count = data.get("total_count", 0)
+                    page = data.get("page", 0)
+                    per_page = data.get("per_page", 0)
+                    total_pages = data.get("total_pages", 0)
+                    
+                    is_list_users = isinstance(users, list)
+                    has_users = len(users) > 0
+                    
+                    success = success and is_list_users
+                    details += f", Users list: {is_list_users}, User count: {len(users)}, Total: {total_count}, Page: {page}/{total_pages}"
+                    
+                    # Check user data structure (should not contain password_hash)
+                    if users:
+                        first_user = users[0]
+                        has_email = "email" in first_user
+                        has_name = "name" in first_user
+                        has_role = "role" in first_user
+                        no_password = "password_hash" not in first_user
+                        
+                        success = success and has_email and has_name and has_role and no_password
+                        details += f", User fields: email={has_email}, name={has_name}, role={has_role}, no_password={no_password}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Users Endpoint (Review Request)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Users Endpoint (Review Request)", False, str(e))
+            return False
+
+    def test_owner_admin_role_verification_review_request(self):
+        """Test that ysaias.corredor@gmail.com now has role='admin' - REVIEW REQUEST SPECIFIC TEST"""
+        if not self.owner_token:
+            self.log_test("Owner Admin Role Verification (Review Request)", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/auth/me", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify user details
+                email = data.get("email")
+                role = data.get("role")
+                subscription_plan = data.get("subscription_plan")
+                
+                correct_email = email == "ysaias.corredor@gmail.com"
+                is_admin = role == "admin"
+                has_subscription = subscription_plan is not None
+                
+                success = correct_email and is_admin
+                details = f"Status: {response.status_code}, Email: {email}, Role: {role}, Plan: {subscription_plan}"
+                details += f", Correct email: {correct_email}, Is admin: {is_admin}, Has subscription: {has_subscription}"
+                
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Owner Admin Role Verification (Review Request)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Admin Role Verification (Review Request)", False, str(e))
+            return False
+
+    def test_admin_authentication_with_jwt_review_request(self):
+        """Test admin authentication with JWT token - REVIEW REQUEST SPECIFIC TEST"""
+        if not self.owner_token:
+            self.log_test("Admin Authentication with JWT (Review Request)", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test multiple admin endpoints to verify JWT authentication works
+            admin_endpoints = [
+                ("/admin/dashboard", "Dashboard"),
+                ("/admin/users", "Users List"),
+                ("/admin/logs", "System Logs"),
+                ("/admin/support-tickets", "Support Tickets")
+            ]
+            
+            all_passed = True
+            endpoint_results = []
+            
+            for endpoint, name in admin_endpoints:
+                try:
+                    response = requests.get(f"{self.api_url}{endpoint}", 
+                                          headers=headers, timeout=15)
+                    
+                    endpoint_success = response.status_code == 200
+                    endpoint_results.append(f"{name}: {response.status_code}")
+                    
+                    if not endpoint_success:
+                        all_passed = False
+                        
+                except Exception as e:
+                    endpoint_results.append(f"{name}: ERROR")
+                    all_passed = False
+            
+            success = all_passed
+            details = f"Admin endpoints tested: {', '.join(endpoint_results)}"
+            
+            self.log_test("Admin Authentication with JWT (Review Request)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Authentication with JWT (Review Request)", False, str(e))
+            return False
+
+    def run_review_request_tests(self):
+        """Run the specific tests requested in the review"""
+        print("🚀 Starting CSA Backend Testing Suite - ADMIN DASHBOARD FOCUS")
+        print("=" * 60)
+        
+        # REVIEW REQUEST SPECIFIC TESTS - Admin Dashboard Functionality
+        review_request_tests = [
+            self.test_health_check,
+            self.test_owner_login,  # Login with ysaias.corredor@gmail.com / Clave.01
+            self.test_owner_admin_role_verification_review_request,  # Verify role="admin"
+            self.test_admin_dashboard_endpoint_review_request,  # GET /api/admin/dashboard
+            self.test_admin_users_endpoint_review_request,  # GET /api/admin/users
+            self.test_admin_authentication_with_jwt_review_request,  # Test admin auth with JWT
+        ]
+        
+        print(f"\n🎯 Running {len(review_request_tests)} REVIEW REQUEST SPECIFIC tests...")
+        print("Focus: Admin dashboard functionality testing")
+        print("-" * 60)
+        
+        for test in review_request_tests:
+            test()
+        
+        print("\n" + "=" * 60)
+        print(f"🏁 REVIEW REQUEST Testing Complete: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 ALL REVIEW REQUEST TESTS PASSED!")
+            print("✅ Admin dashboard functionality is working correctly")
+            print("✅ User ysaias.corredor@gmail.com has admin access")
+            print("✅ Backend admin endpoints are operational")
+        else:
+            failed_count = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed_count} tests failed")
+            print("❌ Admin dashboard functionality needs attention")
+        
+        success_rate = (tester.tests_passed / tester.tests_run * 100) if tester.tests_run > 0 else 0
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        
+        return self.tests_passed == self.tests_run
+
 if __name__ == "__main__":
     # Check if we should run review request tests specifically
     if len(sys.argv) > 1 and sys.argv[1] == "review":
