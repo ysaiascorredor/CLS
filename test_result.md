@@ -432,10 +432,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Team Invitation Functionality - BACKEND VERIFIED"
+    - "URGENT Review Request Testing - COMPLETED"
   stuck_tasks: []
-  test_all: true
-  test_priority: "high_first"
+  test_all: false
+  test_priority: "urgent_complete"
 
 agent_communication:
     - agent: "main"
