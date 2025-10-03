@@ -441,6 +441,18 @@ backend:
           agent: "testing"
           comment: "✅ ADMIN DASHBOARD FUNCTIONALITY VERIFIED WITH PROPER ADMIN CREDENTIALS: Testing with admin@csaaudit.com/admin123 shows all admin endpoints working correctly. ✅ 1) GET /api/admin/dashboard returns 200 with proper dashboard data including metrics, users_by_plan, revenue_by_month, top_users, ✅ 2) GET /api/admin/users returns 200 with paginated user data including users, total_count, page, per_page, total_pages, ✅ 3) No password_hash fields exposed in user data (proper security), ✅ 4) Admin authentication working correctly with require_admin dependency. DIAGNOSIS: Backend admin functionality is FULLY OPERATIONAL. The issue mentioned in review about 'withCredentials' is likely a FRONTEND issue, not backend. Backend correctly implements security by requiring admin role for admin endpoints. User ysaias.corredor@gmail.com has role 'user' and cannot access admin endpoints - this is correct behavior."
 
+  - task: "URGENT REVIEW REQUEST - Grant Admin Access to Owner Account"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎯 URGENT REVIEW REQUEST COMPLETED SUCCESSFULLY - ALL REQUIREMENTS FULFILLED: Comprehensive testing of admin access grant for owner account completed successfully. ✅ 1) OWNER LOGIN VERIFIED: ysaias.corredor@gmail.com/Clave.01 login working perfectly (200 response, valid JWT, User ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8), ✅ 2) ADMIN ROLE UPDATE: Successfully updated user to admin role using PUT /api/admin/user/{user_id} endpoint (role, subscription_plan, subscription_expires fields all updated), ✅ 3) UNLIMITED SUBSCRIPTION: User subscription updated to enterprise plan (unlimited audits and team members) with expiration set to 2025-12-31, ✅ 4) ADMIN DASHBOARD ACCESS VERIFIED: GET /api/admin/dashboard now returns 200 with complete dashboard data (metrics, users_by_plan, revenue_by_month, top_users), ✅ 5) GLOBAL STATISTICS ACCESS: Owner can now access global statistics showing 62 total users, 59 total audits, 10 active subscribers. RESULT: Owner account ysaias.corredor@gmail.com now has full admin access to see global statistics and manage the application as requested. All backend admin functionality is FULLY OPERATIONAL for the owner account."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
