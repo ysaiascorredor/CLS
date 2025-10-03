@@ -2689,6 +2689,15 @@ class CSABackendTester:
         self.test_company_settings_post()
         self.test_bilingual_support()
         
+        # URGENT: Review Request Specific Tests
+        print("\n🚨 URGENT REVIEW REQUEST TESTING:")
+        print("Testing admin payment fix and new endpoints...")
+        self.test_admin_fix_pending_payment()
+        self.test_owner_subscription_after_fix()
+        self.test_email_settings_get()
+        self.test_email_settings_post()
+        self.test_subscription_cancellation()
+        
         # Summary
         print("=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
