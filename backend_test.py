@@ -4531,20 +4531,19 @@ class CSABackendTester:
             if response.status_code == 200:
                 data = response.json()
                 has_message = "message" in data
-                has_user = "user" in data
+                has_updated_fields = "updated_fields" in data
                 
-                success = has_message and has_user
-                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}"
+                success = has_message and has_updated_fields
+                details = f"Status: {response.status_code}, Message: {has_message}, Updated fields: {has_updated_fields}"
                 
-                if has_user:
-                    user_data = data["user"]
-                    updated_role = user_data.get("role")
-                    updated_plan = user_data.get("subscription_plan")
-                    is_admin = updated_role == "admin"
-                    is_enterprise = updated_plan == "enterprise"
+                if has_updated_fields:
+                    updated_fields = data.get("updated_fields", [])
+                    role_updated = "role" in updated_fields
+                    plan_updated = "subscription_plan" in updated_fields
+                    expires_updated = "subscription_expires" in updated_fields
                     
-                    success = success and is_admin and is_enterprise
-                    details += f", Role updated to admin: {is_admin}, Plan updated to enterprise: {is_enterprise}"
+                    success = success and role_updated and plan_updated and expires_updated
+                    details += f", Role field updated: {role_updated}, Plan field updated: {plan_updated}, Expires field updated: {expires_updated}"
                     
             else:
                 success = False
