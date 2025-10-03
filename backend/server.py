@@ -1408,6 +1408,7 @@ async def create_team_user_directly(
     email = user_data["email"]
     name = user_data["name"] 
     role = user_data["role"]
+    custom_password = user_data.get("password", None)  # Optional custom password
     
     # Verificar límites del plan
     org = await db.organizations.find_one({"id": current_user.organization_id})
