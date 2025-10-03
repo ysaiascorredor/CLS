@@ -3546,6 +3546,230 @@ class CSABackendTester:
             self.log_test("Delete Nonexistent User", False, str(e))
             return False
 
+    def test_delete_user_functionality_review_request(self):
+        """Test delete user functionality as per review request - CRITICAL TEST"""
+        print("\n🗑️ TESTING DELETE USER FUNCTIONALITY - REVIEW REQUEST")
+        print("=" * 60)
+        
+        # Step 1: Login with ysaias.corredor@gmail.com / Clave.01
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                owner_token = data.get("access_token")
+                user_data = data.get("user", {})
+                
+                success = owner_token is not None
+                details = f"Status: {response.status_code}, Token: {success}, User ID: {user_data.get('id')}, Organization: {user_data.get('organization_id')}"
+                
+                self.log_test("Step 1: Owner Login (ysaias.corredor@gmail.com)", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                self.log_test("Step 1: Owner Login (ysaias.corredor@gmail.com)", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Step 1: Owner Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+        
+        # Step 2: Create a test user using POST /api/organization/create-user
+        try:
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            create_user_data = {
+                "email": "test.delete.function@example.com",
+                "name": "Test Delete Function User",
+                "role": "auditor",
+                "password": "DeleteTest123"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=create_user_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                test_user_data = data.get("user", {})
+                test_user_id = test_user_data.get("id")
+                
+                success = test_user_id is not None
+                details = f"Status: {response.status_code}, User ID: {test_user_id}, Email: {test_user_data.get('email')}, Role: {test_user_data.get('role')}"
+                
+                self.log_test("Step 2: Create Test User", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                    
+                self.log_test("Step 2: Create Test User", False, details)
+                return False
+                
+        except Exception as e:
+            self.log_test("Step 2: Create Test User", False, str(e))
+            return False
+        
+        # Step 3: Verify the user was created and appears in the team
+        try:
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                team_members = data.get("team_members", [])
+                
+                # Find our test user in the team
+                test_user_found = False
+                for member in team_members:
+                    if member.get("email") == "test.delete.function@example.com":
+                        test_user_found = True
+                        break
+                
+                success = test_user_found
+                details = f"Status: {response.status_code}, Team members count: {len(team_members)}, Test user found: {test_user_found}"
+                
+                self.log_test("Step 3: Verify User in Team", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                    
+                self.log_test("Step 3: Verify User in Team", False, details)
+                return False
+                
+        except Exception as e:
+            self.log_test("Step 3: Verify User in Team", False, str(e))
+            return False
+        
+        # Step 4: Test the DELETE /api/organization/remove-user/{user_id} endpoint
+        try:
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            response = requests.delete(f"{self.api_url}/organization/remove-user/{test_user_id}", 
+                                     headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                success_message = "removed from team successfully" in data.get("message", "").lower()
+                
+                success = has_message and success_message
+                details = f"Status: {response.status_code}, Message: {data.get('message', 'No message')}"
+                
+                self.log_test("Step 4: Delete User", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                    
+                self.log_test("Step 4: Delete User", False, details)
+                return False
+                
+        except Exception as e:
+            self.log_test("Step 4: Delete User", False, str(e))
+            return False
+        
+        # Step 5: Check that the user is properly removed from the team after deletion
+        try:
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                team_members = data.get("team_members", [])
+                
+                # Verify our test user is no longer in the team
+                test_user_still_found = False
+                for member in team_members:
+                    if member.get("email") == "test.delete.function@example.com":
+                        test_user_still_found = True
+                        break
+                
+                success = not test_user_still_found  # Success if user is NOT found
+                details = f"Status: {response.status_code}, Team members count: {len(team_members)}, Test user still found: {test_user_still_found}"
+                
+                self.log_test("Step 5: Verify User Removed from Team", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+                    
+                self.log_test("Step 5: Verify User Removed from Team", False, details)
+                return False
+                
+        except Exception as e:
+            self.log_test("Step 5: Verify User Removed from Team", False, str(e))
+            return False
+        
+        # Bonus: Verify deleted user can still login but has no organization
+        try:
+            login_data = {
+                "email": "test.delete.function@example.com",
+                "password": "DeleteTest123"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                user_data = data.get("user", {})
+                organization_id = user_data.get("organization_id")
+                
+                success = organization_id is None  # Should be None after removal
+                details = f"Status: {response.status_code}, Organization ID: {organization_id} (should be None)"
+                
+                self.log_test("Bonus: Verify Deleted User Login (No Organization)", success, details)
+                
+            else:
+                # If user can't login, that's also acceptable behavior
+                success = True
+                details = f"Status: {response.status_code} (User cannot login - acceptable behavior)"
+                self.log_test("Bonus: Verify Deleted User Login (No Organization)", success, details)
+                
+        except Exception as e:
+            self.log_test("Bonus: Verify Deleted User Login (No Organization)", False, str(e))
+        
+        print("🎯 DELETE USER FUNCTIONALITY REVIEW REQUEST TESTING COMPLETE")
+        return True
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
