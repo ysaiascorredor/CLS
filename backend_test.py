@@ -4467,6 +4467,14 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # NEW REVIEW REQUEST TESTS - HIGHEST PRIORITY
+        print("\n🔍 NEW REVIEW REQUEST: Audit Categories & Admin Dashboard Testing")
+        print("-" * 80)
+        self.test_new_audit_category_questions()
+        self.test_owner_gmail_login()
+        self.test_admin_dashboard_endpoint()
+        self.test_admin_users_endpoint()
+        
         # PRIORITY: Execute Review Request First
         print("\n🎯 PRIORITY REVIEW REQUEST: Create Real Team Members for Delete Testing")
         print("-" * 80)
