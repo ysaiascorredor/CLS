@@ -3641,7 +3641,7 @@ class CSABackendTester:
                 # Find our test user in the team
                 test_user_found = False
                 for member in team_members:
-                    if member.get("email") == "test.delete.function@example.com":
+                    if member.get("user", {}).get("email") == test_email:
                         test_user_found = True
                         break
                 
