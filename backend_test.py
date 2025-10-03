@@ -3782,7 +3782,10 @@ class CSABackendTester:
         # DELETE USER FUNCTIONALITY TEST (REVIEW REQUEST) - RUN SECOND
         self.test_delete_user_functionality()
         
-        # CRITICAL BUSINESS ISSUE - Run third
+        # DELETE USER FUNCTIONALITY REVIEW REQUEST TEST - RUN THIRD
+        self.test_delete_user_functionality_review_request()
+        
+        # CRITICAL BUSINESS ISSUE - Run fourth
         self.test_critical_subscription_diagnosis()
         
         # Basic connectivity tests
