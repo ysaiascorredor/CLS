@@ -3296,7 +3296,8 @@ class CSABackendTester:
                 if success:
                     user_info = data.get("user", {})
                     user_id = user_info.get("id")
-                    correct_email = user_info.get("email") == "test.delete.user@example.com"
+                    returned_email = user_info.get("email")
+                    correct_email = returned_email == test_email
                     correct_name = user_info.get("name") == "Test Delete User"
                     correct_role = user_info.get("role") == "auditor"
                     
@@ -3306,7 +3307,7 @@ class CSABackendTester:
                     # Store user info for deletion test
                     self.test_delete_user = {
                         "id": user_id,
-                        "email": test_email,
+                        "email": returned_email,  # Use the actual returned email
                         "name": "Test Delete User",
                         "password": "TestPass123"
                     }
