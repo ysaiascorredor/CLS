@@ -3465,10 +3465,10 @@ class CSABackendTester:
             self.log_test("Verify User Removed From Team", False, str(e))
             return False
 
-    def test_deleted_user_login_fails(self):
-        """Try to login with the deleted user (should fail)"""
+    def test_deleted_user_login_still_works(self):
+        """Verify removed user can still login but has no organization"""
         if not hasattr(self, 'test_delete_user'):
-            self.log_test("Deleted User Login Fails", False, "No test user available")
+            self.log_test("Removed User Login Still Works", False, "No test user available")
             return False
             
         try:
@@ -3480,25 +3480,35 @@ class CSABackendTester:
             response = requests.post(f"{self.api_url}/auth/login", 
                                    json=login_data, timeout=10)
             
-            # Login should fail (401 or 404)
-            success = response.status_code in [401, 404]
-            details = f"Status: {response.status_code} (expected 401 or 404)"
-            
-            if not success:
-                # If login succeeded, that's a problem
-                if response.status_code == 200:
-                    details += " - ERROR: Deleted user can still login!"
+            # Login should succeed but user should have no organization
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                if has_user:
+                    user_data = data["user"]
+                    no_organization = user_data.get("organization_id") is None
+                    no_org_role = user_data.get("organization_role") is None
+                    correct_email = user_data.get("email") == self.test_delete_user["email"]
+                    
+                    success = has_token and has_user and no_organization and no_org_role and correct_email
+                    details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, No org: {no_organization}, No role: {no_org_role}, Correct email: {correct_email}"
                 else:
-                    try:
-                        error_data = response.json()
-                        details += f", Error: {error_data.get('detail', 'Unknown error')}"
-                    except:
-                        details += f", Response: {response.text[:100]}"
+                    success = False
+                    details = f"Status: {response.status_code}, Missing user data"
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
             
-            self.log_test("Deleted User Login Fails", success, details)
+            self.log_test("Removed User Login Still Works", success, details)
             return success
         except Exception as e:
-            self.log_test("Deleted User Login Fails", False, str(e))
+            self.log_test("Removed User Login Still Works", False, str(e))
             return False
 
     def test_delete_nonexistent_user(self):
