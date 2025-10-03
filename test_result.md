@@ -444,10 +444,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "URGENT Review Request Testing - COMPLETED"
+    - "URGENT Gmail Account Subscription Issue - RESOLVED"
   stuck_tasks: []
   test_all: false
-  test_priority: "urgent_complete"
+  test_priority: "urgent_gmail_resolved"
 
 agent_communication:
     - agent: "main"
