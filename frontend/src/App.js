@@ -1515,7 +1515,7 @@ function CompanySettings() {
             )}
           </div>
           
-          <Button onClick={saveSettings} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={saveSettings} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             {t.language === 'en' ? 'Save Settings' : 'Guardar Configuración'}
           </Button>
         </CardContent>
