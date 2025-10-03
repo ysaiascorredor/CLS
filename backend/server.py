@@ -52,6 +52,7 @@ stripe_api_key = os.environ.get('STRIPE_API_KEY')
 
 # Work types for construction audits with specific questions
 WORK_TYPES = [
+    # EXISTING CATEGORIES
     {"id": "excavation", "name_en": "Excavation Work", "name_es": "Trabajo de Excavación"},
     {"id": "height_work", "name_en": "Height Work", "name_es": "Trabajo en Altura"},
     {"id": "welding", "name_en": "Welding Operations", "name_es": "Operaciones de Soldadura"},
@@ -66,7 +67,18 @@ WORK_TYPES = [
     {"id": "hvac", "name_en": "HVAC Installation", "name_es": "Instalación HVAC"},
     {"id": "steel_erection", "name_en": "Steel Erection", "name_es": "Montaje de Acero"},
     {"id": "road_construction", "name_en": "Road Construction", "name_es": "Construcción de Carreteras"},
-    {"id": "underground_utilities", "name_en": "Underground Utilities", "name_es": "Servicios Subterráneos"}
+    {"id": "underground_utilities", "name_en": "Underground Utilities", "name_es": "Servicios Subterráneos"},
+    
+    # NEW CATEGORIES - Safety Planning & Analysis
+    {"id": "jsa", "name_en": "Job Safety Analysis (JSA)", "name_es": "Análisis de Seguridad del Trabajo (AST)"},
+    {"id": "jha", "name_en": "Job Hazard Analysis (JHA)", "name_es": "Análisis de Riesgos del Trabajo (ART)"},
+    {"id": "safety_daily_plan", "name_en": "Safety Daily Plan", "name_es": "Plan Diario de Seguridad"},
+    
+    # NEW CATEGORIES - PPE & Equipment
+    {"id": "ppe", "name_en": "Personal Protective Equipment (PPE)", "name_es": "Equipo de Protección Personal (EPP)"},
+    {"id": "lifting_equipment", "name_en": "Lifting Equipment & Cranes", "name_es": "Equipos de Elevación y Grúas"},
+    {"id": "housekeeping", "name_en": "Housekeeping & Site Organization", "name_es": "Orden y Limpieza del Sitio"},
+    {"id": "chemical_work", "name_en": "Chemical Handling & Hazmat", "name_es": "Manejo de Químicos y Materiales Peligrosos"},
 ]
 
 # Specific safety questions for each work type
