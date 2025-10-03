@@ -1654,8 +1654,8 @@ function AdminDashboard() {
     try {
       setLoading(true);
       const [dashboardRes, usersRes] = await Promise.all([
-        axios.get(`${API}/admin/dashboard`, { withCredentials: true }),
-        axios.get(`${API}/admin/users?limit=20`, { withCredentials: true })
+        axios.get(`${API}/admin/dashboard`),
+        axios.get(`${API}/admin/users?limit=20`)
       ]);
       
       setDashboardData(dashboardRes.data);
