@@ -1384,6 +1384,177 @@ async def cancel_subscription(current_user: User = Depends(require_auth)):
         "status": "cancelled"
     }
 
+# ===== DIRECT USER CREATION (BETTER THAN INVITATIONS) =====
+
+@api_router.post("/organization/create-user")
+async def create_team_user_directly(
+    user_data: dict,
+    current_user: User = Depends(require_auth)
+):
+    """Create team user directly with temporary password - MUCH BETTER than invitations"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    if current_user.organization_role not in ["owner"]:
+        raise HTTPException(status_code=403, detail="Only organization owners can create users")
+    
+    # Validate required fields
+    required_fields = ["email", "name", "role"]
+    for field in required_fields:
+        if field not in user_data:
+            raise HTTPException(status_code=400, detail=f"Missing {field}")
+    
+    email = user_data["email"]
+    name = user_data["name"] 
+    role = user_data["role"]
+    
+    # Verificar límites del plan
+    org = await db.organizations.find_one({"id": current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    if org["subscription_plan"]:
+        package = SUBSCRIPTION_PACKAGES.get(org["subscription_plan"])
+        if package and package["team_members"] != -1:
+            current_members = await db.team_members.count_documents({"organization_id": org["id"]})
+            if current_members >= package["team_members"]:
+                raise HTTPException(status_code=403, detail="Team member limit reached for current plan")
+    
+    # Verificar que el email no exista ya
+    existing_user = await db.users.find_one({"email": email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    
+    # Generar contraseña temporal segura
+    import secrets
+    import string
+    
+    # Contraseña temporal: 8 caracteres, fácil de recordar pero segura
+    temp_password_chars = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(temp_password_chars) for _ in range(8))
+    temp_password = temp_password.capitalize() + "2024"  # Ej: Abc12def2024
+    
+    # Crear usuario directamente
+    password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    new_user = User(
+        email=email,
+        name=name,
+        password_hash=password_hash,
+        organization_id=current_user.organization_id,
+        organization_role=role,
+        subscription_plan=org.get("subscription_plan", "basic"),
+        subscription_status="active",  # Inherits from organization
+        subscription_expires_at=org.get("subscription_expires_at"),
+        created_by=current_user.id
+    )
+    
+    # Guardar usuario
+    await db.users.insert_one(new_user.dict())
+    
+    # Crear registro en team_members
+    team_member = TeamMember(
+        organization_id=current_user.organization_id,
+        user_id=new_user.id,
+        role=role,
+        added_by=current_user.id
+    )
+    
+    await db.team_members.insert_one(team_member.dict())
+    
+    return {
+        "message": "User created successfully",
+        "user": {
+            "id": new_user.id,
+            "email": email,
+            "name": name,
+            "role": role,
+            "temporary_password": temp_password
+        },
+        "instructions": f"Give these credentials to {name}: Email: {email} | Password: {temp_password} | They can change password after first login"
+    }
+
+@api_router.post("/auth/change-password")
+async def change_password(
+    password_data: dict,
+    current_user: User = Depends(require_auth)
+):
+    """Allow users to change their password"""
+    
+    old_password = password_data.get("old_password")
+    new_password = password_data.get("new_password")
+    
+    if not old_password or not new_password:
+        raise HTTPException(status_code=400, detail="Both old and new passwords required")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    # Verify old password
+    user = await db.users.find_one({"id": current_user.id})
+    if not user or not bcrypt.checkpw(old_password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Hash new password
+    new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    # Update password
+    await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "password_hash": new_password_hash,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "password_changed_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {"message": "Password changed successfully"}
+
+@api_router.delete("/organization/remove-user/{user_id}")
+async def remove_team_user(
+    user_id: str,
+    current_user: User = Depends(require_auth)
+):
+    """Remove user from team - only owner can do this"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    if current_user.organization_role not in ["owner"]:
+        raise HTTPException(status_code=403, detail="Only organization owners can remove users")
+    
+    # Can't remove yourself
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot remove yourself")
+    
+    # Verify user exists and belongs to same organization
+    user_to_remove = await db.users.find_one({"id": user_id, "organization_id": current_user.organization_id})
+    if not user_to_remove:
+        raise HTTPException(status_code=404, detail="User not found in your organization")
+    
+    # Remove from team_members
+    await db.team_members.delete_one({"user_id": user_id, "organization_id": current_user.organization_id})
+    
+    # Update user record (remove from organization)
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$unset": {
+                "organization_id": "",
+                "organization_role": ""
+            },
+            "$set": {
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "removed_from_org_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    return {"message": f"User {user_to_remove['name']} removed from team successfully"}
+
 # ===== EMAIL CONFIGURATION =====
 
 @api_router.post("/settings/email")
