@@ -1458,7 +1458,7 @@ async def create_team_user_directly(
         organization_id=current_user.organization_id,
         user_id=new_user.id,
         role=role,
-        added_by=current_user.id
+        invited_by=current_user.id
     )
     
     await db.team_members.insert_one(team_member.dict())
