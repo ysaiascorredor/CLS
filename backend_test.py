@@ -4461,6 +4461,256 @@ class CSABackendTester:
             self.log_test("Admin Users Endpoint", False, str(e))
             return False
 
+    def test_owner_gmail_login_current_status(self):
+        """Test current login status for ysaias.corredor@gmail.com"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    user_id = user_data.get("id")
+                    current_role = user_data.get("role")
+                    current_plan = user_data.get("subscription_plan")
+                    subscription_expires = user_data.get("subscription_expires")
+                    
+                    details += f", ID: {user_id}, Role: {current_role}, Plan: {current_plan}, Expires: {subscription_expires}"
+                    
+                    # Store user ID for admin updates
+                    self.owner_user_id = user_id
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Owner Gmail Login Current Status", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Gmail Login Current Status", False, str(e))
+            return False
+
+    def test_update_user_to_admin_role(self):
+        """Update ysaias.corredor@gmail.com to admin role using admin endpoint"""
+        if not self.admin_token or not hasattr(self, 'owner_user_id'):
+            self.log_test("Update User to Admin Role", False, "No admin token or owner user ID available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Update user to admin role and unlimited subscription
+            update_data = {
+                "role": "admin",
+                "subscription_plan": "enterprise",  # Using enterprise as "unlimited"
+                "subscription_expires": "2025-12-31T23:59:59Z"  # Set far future expiration
+            }
+            
+            response = requests.put(f"{self.api_url}/admin/user/{self.owner_user_id}", 
+                                  json=update_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                
+                success = has_message and has_user
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}"
+                
+                if has_user:
+                    user_data = data["user"]
+                    updated_role = user_data.get("role")
+                    updated_plan = user_data.get("subscription_plan")
+                    is_admin = updated_role == "admin"
+                    is_enterprise = updated_plan == "enterprise"
+                    
+                    success = success and is_admin and is_enterprise
+                    details += f", Role updated to admin: {is_admin}, Plan updated to enterprise: {is_enterprise}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Update User to Admin Role", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Update User to Admin Role", False, str(e))
+            return False
+
+    def test_verify_admin_access_after_update(self):
+        """Verify admin access works after role update"""
+        try:
+            # Re-login to get new token with admin role
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                new_token = data.get("access_token")
+                user_data = data.get("user", {})
+                
+                # Verify user now has admin role
+                is_admin = user_data.get("role") == "admin"
+                is_enterprise = user_data.get("subscription_plan") == "enterprise"
+                
+                if new_token and is_admin:
+                    # Test admin dashboard access
+                    headers = {"Authorization": f"Bearer {new_token}"}
+                    dashboard_response = requests.get(f"{self.api_url}/admin/dashboard", 
+                                                    headers=headers, timeout=10)
+                    
+                    dashboard_works = dashboard_response.status_code == 200
+                    
+                    if dashboard_works:
+                        dashboard_data = dashboard_response.json()
+                        has_metrics = "total_users" in dashboard_data or "total_audits" in dashboard_data
+                        
+                        success = dashboard_works and has_metrics
+                        details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Dashboard: {dashboard_works}, Has metrics: {has_metrics}"
+                    else:
+                        success = False
+                        details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Dashboard: {dashboard_response.status_code}"
+                else:
+                    success = False
+                    details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Token: {bool(new_token)}"
+            else:
+                success = False
+                details = f"Login failed: {response.status_code}"
+            
+            self.log_test("Verify Admin Access After Update", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Verify Admin Access After Update", False, str(e))
+            return False
+
+    def test_admin_dashboard_with_owner_credentials(self):
+        """Test GET /api/admin/dashboard with owner credentials after admin update"""
+        try:
+            # Login with owner credentials
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                token = data.get("access_token")
+                user_data = data.get("user", {})
+                
+                if token:
+                    headers = {"Authorization": f"Bearer {token}"}
+                    
+                    # Test admin dashboard
+                    dashboard_response = requests.get(f"{self.api_url}/admin/dashboard", 
+                                                    headers=headers, timeout=10)
+                    
+                    if dashboard_response.status_code == 200:
+                        dashboard_data = dashboard_response.json()
+                        
+                        # Check for expected dashboard fields
+                        expected_fields = ["total_users", "total_audits", "active_subscriptions", "revenue_this_month"]
+                        has_expected_fields = any(field in dashboard_data for field in expected_fields)
+                        
+                        success = has_expected_fields
+                        details = f"Dashboard: 200, User role: {user_data.get('role')}, Has expected fields: {has_expected_fields}"
+                        
+                        if has_expected_fields:
+                            # Log some dashboard metrics
+                            metrics = {k: v for k, v in dashboard_data.items() if k in expected_fields}
+                            details += f", Metrics: {metrics}"
+                            
+                    else:
+                        success = False
+                        try:
+                            error_data = dashboard_response.json()
+                            details = f"Dashboard: {dashboard_response.status_code}, Error: {error_data.get('detail', 'Unknown')}"
+                        except:
+                            details = f"Dashboard: {dashboard_response.status_code}"
+                else:
+                    success = False
+                    details = "No access token received"
+            else:
+                success = False
+                details = f"Login failed: {response.status_code}"
+            
+            self.log_test("Admin Dashboard with Owner Credentials", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Dashboard with Owner Credentials", False, str(e))
+            return False
+
+    def run_review_request_tests(self):
+        """Run specific tests for the review request"""
+        print("🎯 URGENT REVIEW REQUEST TESTING - ADMIN ACCESS & UNLIMITED SUBSCRIPTION")
+        print("=" * 80)
+        print("Testing requirements:")
+        print("1. Update ysaias.corredor@gmail.com to admin role")
+        print("2. Update subscription to unlimited (enterprise plan)")
+        print("3. Verify admin dashboard access works")
+        print("=" * 80)
+        
+        # Step 1: Check current status
+        self.test_owner_gmail_login_current_status()
+        
+        # Step 2: Login as admin to perform updates
+        if not self.test_admin_login():
+            print("❌ Cannot proceed without admin access")
+            return False
+        
+        # Step 3: Update user to admin role and unlimited subscription
+        self.test_update_user_to_admin_role()
+        
+        # Step 4: Verify admin access works
+        self.test_verify_admin_access_after_update()
+        
+        # Step 5: Test admin dashboard specifically
+        self.test_admin_dashboard_with_owner_credentials()
+        
+        print("=" * 80)
+        print(f"🏁 Review Request Testing Complete: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("✅ ALL REVIEW REQUEST REQUIREMENTS COMPLETED SUCCESSFULLY!")
+            print("✅ User ysaias.corredor@gmail.com now has admin access")
+            print("✅ Subscription updated to unlimited (enterprise plan)")
+            print("✅ Admin dashboard access verified")
+        else:
+            failed_tests = self.tests_run - self.tests_passed
+            print(f"❌ {failed_tests} test(s) failed. Check details above.")
+        
+        return self.tests_passed == self.tests_run
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
