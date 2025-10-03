@@ -378,6 +378,21 @@ backend:
           agent: "testing"
           comment: "URGENT GMAIL ACCOUNT ISSUE RESOLVED: Found and fixed subscription issue for CORRECT account ysaias.corredor@gmail.com (NOT @clsolution.net). User exists in database (ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8) but had no active subscription. Applied admin fix using POST /api/payments/fix-pending/{user_id} which successfully activated basic subscription. Login working perfectly with ysaias.corredor@gmail.com/Clave.01. GET /api/auth/me now shows active subscription. Root cause: User was working on wrong account - real Gmail account needed subscription activation. Backend subscription system fully operational."
 
+  - task: "NEW USER CREATION SYSTEM - Direct User Creation (Replaces Invitations)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "INITIAL TESTING: Found validation error in TeamMember model - field name mismatch between 'added_by' and 'invited_by' causing 500 error in user creation endpoint."
+        - working: true
+          agent: "testing"
+          comment: "NEW USER CREATION SYSTEM FULLY TESTED AND WORKING: Comprehensive testing of direct user creation system completed successfully. ✅ 1) Owner login with ysaias.corredor@gmail.com/Clave.01 working perfectly, ✅ 2) POST /api/organization/create-user creates users directly with temporary passwords (no email dependencies), ✅ 3) New users can login immediately with temporary password, ✅ 4) POST /api/auth/change-password allows users to change password after first login, ✅ 5) Users can login with new password successfully, ✅ 6) DELETE /api/organization/remove-user/{user_id} removes users from organization, ✅ 7) POST /api/payments/cancel-subscription cancels subscriptions correctly. FIXED: TeamMember model field name from 'added_by' to 'invited_by'. This new system is MUCH BETTER than invitations: Admin creates users directly → Users get immediate access → Users change password after first login → No email dependencies or complicated links. All 7 tests passed (100% success rate)."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
