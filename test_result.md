@@ -459,10 +459,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "URGENT Gmail Account Subscription Issue - RESOLVED"
+    - "NEW USER CREATION SYSTEM - Direct User Creation (Replaces Invitations) - COMPLETED"
   stuck_tasks: []
   test_all: false
-  test_priority: "urgent_gmail_resolved"
+  test_priority: "new_user_creation_completed"
 
 agent_communication:
     - agent: "main"
