@@ -4255,7 +4255,12 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
-        # URGENT REVIEW REQUEST TEST - Run first
+        # PRIORITY: Execute Review Request First
+        print("\n🎯 PRIORITY REVIEW REQUEST: Create Real Team Members for Delete Testing")
+        print("-" * 80)
+        self.test_review_request_create_real_team_members()
+        
+        # URGENT REVIEW REQUEST TEST - Run second
         print("\n🚨 URGENT REVIEW REQUEST: DELETE User Functionality Testing")
         print("-" * 60)
         self.test_delete_user_functionality_review_request()
