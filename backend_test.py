@@ -4641,17 +4641,22 @@ class CSABackendTester:
                     if dashboard_response.status_code == 200:
                         dashboard_data = dashboard_response.json()
                         
-                        # Check for expected dashboard fields
-                        expected_fields = ["total_users", "total_audits", "active_subscriptions", "revenue_this_month"]
-                        has_expected_fields = any(field in dashboard_data for field in expected_fields)
+                        # Check for the actual dashboard structure
+                        has_metrics = "metrics" in dashboard_data
+                        has_users_by_plan = "users_by_plan" in dashboard_data
+                        has_revenue_by_month = "revenue_by_month" in dashboard_data
+                        has_top_users = "top_users" in dashboard_data
                         
-                        success = has_expected_fields
-                        details = f"Dashboard: 200, User role: {user_data.get('role')}, Has expected fields: {has_expected_fields}"
+                        success = has_metrics and has_users_by_plan and has_revenue_by_month and has_top_users
+                        details = f"Dashboard: 200, User role: {user_data.get('role')}, Has metrics: {has_metrics}, Has users_by_plan: {has_users_by_plan}, Has revenue_by_month: {has_revenue_by_month}, Has top_users: {has_top_users}"
                         
-                        if has_expected_fields:
+                        if has_metrics:
                             # Log some dashboard metrics
-                            metrics = {k: v for k, v in dashboard_data.items() if k in expected_fields}
-                            details += f", Metrics: {metrics}"
+                            metrics = dashboard_data.get("metrics", {})
+                            total_users = metrics.get("total_users", 0)
+                            total_audits = metrics.get("total_audits", 0)
+                            active_subscribers = metrics.get("active_subscribers", 0)
+                            details += f", Total users: {total_users}, Total audits: {total_audits}, Active subscribers: {active_subscribers}"
                             
                     else:
                         success = False
