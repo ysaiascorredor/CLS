@@ -481,9 +481,10 @@ metadata:
 test_plan:
   current_focus:
     - "DELETE USER FUNCTIONALITY VERIFICATION - Review Request Testing - COMPLETED"
+    - "URGENT DELETE BUTTONS ISSUE - FRONTEND INVESTIGATION NEEDED"
   stuck_tasks: []
   test_all: false
-  test_priority: "delete_user_functionality_verified"
+  test_priority: "delete_functionality_backend_verified_frontend_issue"
 
 agent_communication:
     - agent: "main"
