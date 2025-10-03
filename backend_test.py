@@ -3587,8 +3587,11 @@ class CSABackendTester:
             headers = {"Authorization": f"Bearer {owner_token}"}
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
+            # Use unique email to avoid conflicts
+            test_email = f"test.delete.function.{timestamp}@example.com"
+            
             create_user_data = {
-                "email": "test.delete.function@example.com",
+                "email": test_email,
                 "name": "Test Delete Function User",
                 "role": "auditor",
                 "password": "DeleteTest123"
