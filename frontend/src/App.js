@@ -2259,6 +2259,22 @@ function TeamManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label htmlFor="password">{language === 'en' ? 'Password (Optional)' : 'Contraseña (Opcional)'}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={createUserForm.password}
+                    onChange={(e) => setCreateUserForm({...createUserForm, password: e.target.value})}
+                    placeholder={language === 'en' ? 'Leave empty for auto-generated' : 'Dejar vacío para auto-generar'}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {language === 'en' 
+                      ? 'If empty, a secure password will be generated automatically' 
+                      : 'Si está vacío, se generará una contraseña segura automáticamente'
+                    }
+                  </p>
+                </div>
                 <Button onClick={createTeamUser} className="w-full">
                   {language === 'en' ? '🚀 Create User Account' : '🚀 Crear Cuenta de Usuario'}
                 </Button>
