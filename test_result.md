@@ -453,6 +453,18 @@ backend:
           agent: "testing"
           comment: "🎯 URGENT REVIEW REQUEST COMPLETED SUCCESSFULLY - ALL REQUIREMENTS FULFILLED: Comprehensive testing of admin access grant for owner account completed successfully. ✅ 1) OWNER LOGIN VERIFIED: ysaias.corredor@gmail.com/Clave.01 login working perfectly (200 response, valid JWT, User ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8), ✅ 2) ADMIN ROLE UPDATE: Successfully updated user to admin role using PUT /api/admin/user/{user_id} endpoint (role, subscription_plan, subscription_expires fields all updated), ✅ 3) UNLIMITED SUBSCRIPTION: User subscription updated to enterprise plan (unlimited audits and team members) with expiration set to 2025-12-31, ✅ 4) ADMIN DASHBOARD ACCESS VERIFIED: GET /api/admin/dashboard now returns 200 with complete dashboard data (metrics, users_by_plan, revenue_by_month, top_users), ✅ 5) GLOBAL STATISTICS ACCESS: Owner can now access global statistics showing 62 total users, 59 total audits, 10 active subscribers. RESULT: Owner account ysaias.corredor@gmail.com now has full admin access to see global statistics and manage the application as requested. All backend admin functionality is FULLY OPERATIONAL for the owner account."
 
+  - task: "DIRECT BACKEND ADMIN DASHBOARD TESTING - Frontend Connectivity Issues"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "🎯 DIRECT BACKEND ADMIN DASHBOARD TESTING COMPLETE - ALL REVIEW REQUEST REQUIREMENTS VERIFIED: Completed comprehensive direct backend testing of admin dashboard functionality as requested due to frontend showing 'Wake up servers' message. ✅ CRITICAL VERIFICATION: 1) LOGIN WITH OWNER CREDENTIALS: ysaias.corredor@gmail.com/Clave.01 login returns 200 with valid JWT token, role: admin, plan: enterprise, 2) ADMIN ROLE CONFIRMED: User now has role='admin' as requested in previous reviews, 3) GET /api/admin/dashboard FULLY OPERATIONAL: Returns 200 with complete admin statistics - metrics (62 total users, 59 total audits, 10 active subscribers), users_by_plan array, revenue_by_month array, top_users array, 4) GET /api/admin/users FULLY OPERATIONAL: Returns 200 with paginated user list (62 total users, proper pagination with page/per_page/total_pages, no password_hash exposure for security), 5) ADMIN JWT AUTHENTICATION VERIFIED: All admin endpoints tested successfully - Dashboard: 200, Users List: 200, System Logs: 200, Support Tickets: 200. DIAGNOSIS: Backend admin functionality is 100% OPERATIONAL. The frontend 'Wake up servers' message is a FRONTEND CONNECTIVITY issue, not a backend problem. Backend is running correctly on localhost:8001 and processing all admin requests successfully. Admin dashboard backend functionality is ready for use once frontend connectivity is resolved."
+
 frontend:
   - task: "Resolve ReferenceError: workTypes is not defined"
     implemented: true  
