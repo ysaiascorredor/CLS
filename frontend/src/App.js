@@ -2747,7 +2747,7 @@ function SupportDashboard() {
           {t.language === 'en' ? t.supportPanel : 'Panel de Soporte'}
         </h2>
         <div className="flex space-x-2">
-          <Button onClick={createAdminUser} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={createAdminUser} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             {t.language === 'en' ? t.createAdmin : 'Crear Administrador'}
           </Button>
           <Button onClick={() => setShowManual(true)} variant="outline">
