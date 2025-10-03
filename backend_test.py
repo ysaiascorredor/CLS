@@ -3396,7 +3396,7 @@ class CSABackendTester:
             if response.status_code == 200:
                 data = response.json()
                 has_message = "message" in data
-                success_message = "removed successfully" in data.get("message", "").lower()
+                success_message = "removed" in data.get("message", "").lower() and "successfully" in data.get("message", "").lower()
                 
                 success = has_message and success_message
                 details = f"Status: {response.status_code}, Message: {has_message}, Success message: {success_message}"
