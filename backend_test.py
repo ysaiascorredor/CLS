@@ -2759,11 +2759,132 @@ class CSABackendTester:
             self.log_test("Find Gmail User in Database", False, str(e))
             return False
 
+    def test_critical_subscription_diagnosis(self):
+        """CRITICAL BUSINESS ISSUE: Test ysaias.corredor@gmail.com subscription status"""
+        try:
+            print("\n🚨 CRITICAL BUSINESS ISSUE DIAGNOSIS 🚨")
+            print("Testing user: ysaias.corredor@gmail.com (PAYING CUSTOMER)")
+            print("Issue: App doesn't show active subscription plan")
+            print("-" * 60)
+            
+            # Step 1: Login with the specific user
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code != 200:
+                self.log_test("CRITICAL: Gmail User Login", False, f"Login failed: {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Login Error: {error_data.get('detail', 'Unknown error')}")
+                except:
+                    print(f"   Login Error: {response.text[:200]}")
+                return False
+            
+            # Login successful - get token and user data
+            login_response = response.json()
+            user_token = login_response.get("access_token")
+            user_data = login_response.get("user", {})
+            
+            print(f"✅ Login successful for {user_data.get('email', 'Unknown')}")
+            print(f"   User ID: {user_data.get('id', 'Unknown')}")
+            print(f"   Name: {user_data.get('name', 'Unknown')}")
+            print(f"   Role: {user_data.get('role', 'Unknown')}")
+            
+            # Step 2: Check GET /api/auth/me response
+            headers = {"Authorization": f"Bearer {user_token}"}
+            me_response = requests.get(f"{self.api_url}/auth/me", 
+                                     headers=headers, timeout=10)
+            
+            if me_response.status_code != 200:
+                self.log_test("CRITICAL: Auth Me Response", False, f"Auth/me failed: {me_response.status_code}")
+                return False
+            
+            me_data = me_response.json()
+            
+            # Step 3: Analyze subscription data
+            subscription_plan = me_data.get("subscription_plan")
+            subscription_expires = me_data.get("subscription_expires")
+            subscription_status = me_data.get("subscription_status")
+            
+            print(f"\n📊 SUBSCRIPTION ANALYSIS:")
+            print(f"   subscription_plan: {subscription_plan}")
+            print(f"   subscription_expires: {subscription_expires}")
+            print(f"   subscription_status: {subscription_status}")
+            
+            # Step 4: Check payment history (admin required)
+            if self.admin_token:
+                print(f"\n💳 PAYMENT HISTORY CHECK:")
+                
+                # Get user ID for payment lookup
+                user_id = me_data.get("id")
+                
+                # Check support tickets endpoint for payment issues
+                admin_headers = {"Authorization": f"Bearer {self.admin_token}"}
+                support_response = requests.get(f"{self.api_url}/admin/support-tickets", 
+                                              headers=admin_headers, timeout=10)
+                
+                if support_response.status_code == 200:
+                    support_data = support_response.json()
+                    failed_payments = support_data.get("failed_payments", [])
+                    
+                    # Look for this user in failed payments
+                    user_failed_payments = [p for p in failed_payments if p.get("user_id") == user_id]
+                    
+                    print(f"   Failed payments for user: {len(user_failed_payments)}")
+                    for payment in user_failed_payments:
+                        print(f"   - Amount: ${payment.get('amount', 'Unknown')}")
+                        print(f"   - Status: {payment.get('payment_status', 'Unknown')}")
+                        print(f"   - Package: {payment.get('package_type', 'Unknown')}")
+                        print(f"   - Session ID: {payment.get('session_id', 'Unknown')}")
+            
+            # Step 5: Determine issue type
+            has_active_subscription = subscription_plan is not None and subscription_plan != "None"
+            has_valid_expiration = subscription_expires is not None
+            
+            print(f"\n🔍 DIAGNOSIS:")
+            if has_active_subscription and has_valid_expiration:
+                print("   ✅ Backend shows ACTIVE subscription")
+                print("   🎯 Issue is likely FRONTEND DISPLAY problem")
+                issue_type = "FRONTEND_DISPLAY"
+            elif not has_active_subscription:
+                print("   ❌ Backend shows NO active subscription")
+                print("   🎯 Issue is BACKEND SUBSCRIPTION ACTIVATION")
+                issue_type = "BACKEND_ACTIVATION"
+            else:
+                print("   ⚠️  Partial subscription data")
+                print("   🎯 Issue is DATA INCONSISTENCY")
+                issue_type = "DATA_INCONSISTENCY"
+            
+            # Step 6: Business impact assessment
+            print(f"\n💼 BUSINESS IMPACT:")
+            print("   🚨 CRITICAL: Paying customer cannot access paid features")
+            print("   💰 Revenue at risk: Customer may request refund")
+            print("   📈 Customer satisfaction: Severely impacted")
+            print("   ⏰ Resolution urgency: IMMEDIATE")
+            
+            success = True  # Test completed successfully (diagnosis done)
+            details = f"User login: ✅, Subscription plan: {subscription_plan}, Issue type: {issue_type}"
+            
+            self.log_test("CRITICAL: Subscription Status Diagnosis", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("CRITICAL: Subscription Status Diagnosis", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
+        
+        # CRITICAL BUSINESS ISSUE - Run first
+        self.test_critical_subscription_diagnosis()
         
         # Basic connectivity tests
         if not self.test_health_check():
