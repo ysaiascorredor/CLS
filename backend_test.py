@@ -3216,6 +3216,320 @@ class CSABackendTester:
             self.log_test("Password Validation Short Password", False, str(e))
             return False
 
+    # ===== DELETE USER FUNCTIONALITY TESTS (REVIEW REQUEST) =====
+    
+    def test_delete_user_functionality(self):
+        """Test DELETE user functionality - REVIEW REQUEST SPECIFIC TEST"""
+        print("\n🗑️  TESTING DELETE USER FUNCTIONALITY - REVIEW REQUEST")
+        print("=" * 70)
+        
+        # Step 1: Login with ysaias.corredor@gmail.com / Clave.01 (organization owner)
+        success = self.test_owner_gmail_login()
+        if not success:
+            return False
+            
+        # Step 2: Create a test user to delete
+        success = self.test_create_user_for_deletion()
+        if not success:
+            return False
+            
+        # Step 3: Verify the user appears in the team list
+        success = self.test_verify_user_in_team_list()
+        if not success:
+            return False
+            
+        # Step 4: Test the DELETE functionality
+        success = self.test_delete_user_endpoint()
+        if not success:
+            return False
+            
+        # Step 5: Verify the user is removed from team list after deletion
+        success = self.test_verify_user_removed_from_team()
+        if not success:
+            return False
+            
+        # Step 6: Try to login with the deleted user (should fail)
+        success = self.test_deleted_user_login_fails()
+        if not success:
+            return False
+            
+        # Step 7: Verify error handling - try to delete non-existent user
+        success = self.test_delete_nonexistent_user()
+        if not success:
+            return False
+            
+        print("✅ DELETE USER FUNCTIONALITY - ALL TESTS PASSED!")
+        return True
+
+    def test_create_user_for_deletion(self):
+        """Create a test user specifically for deletion testing"""
+        if not self.owner_token:
+            self.log_test("Create User For Deletion", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Create user with specific credentials as mentioned in review request
+            user_data = {
+                "email": "test.delete.user@example.com",
+                "name": "Test Delete User",
+                "role": "auditor",
+                "password": "TestPass123"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                
+                success = has_message and has_user
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}"
+                
+                if success:
+                    user_info = data.get("user", {})
+                    user_id = user_info.get("id")
+                    correct_email = user_info.get("email") == "test.delete.user@example.com"
+                    correct_name = user_info.get("name") == "Test Delete User"
+                    correct_role = user_info.get("role") == "auditor"
+                    
+                    success = success and correct_email and correct_name and correct_role and user_id
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, ID: {bool(user_id)}"
+                    
+                    # Store user info for deletion test
+                    self.test_delete_user = {
+                        "id": user_id,
+                        "email": "test.delete.user@example.com",
+                        "name": "Test Delete User",
+                        "password": "TestPass123"
+                    }
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Create User For Deletion", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Create User For Deletion", False, str(e))
+            return False
+
+    def test_verify_user_in_team_list(self):
+        """Verify the test user appears in GET /api/organization/team"""
+        if not self.owner_token or not hasattr(self, 'test_delete_user'):
+            self.log_test("Verify User In Team List", False, "No owner token or test user")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_team_members = "team_members" in data
+                
+                if has_team_members:
+                    team_members = data.get("team_members", [])
+                    
+                    # Look for our test user
+                    user_found = False
+                    for member in team_members:
+                        if member.get("user_id") == self.test_delete_user["id"]:
+                            user_found = True
+                            correct_email = member.get("email") == self.test_delete_user["email"]
+                            correct_name = member.get("name") == self.test_delete_user["name"]
+                            correct_role = member.get("role") == "auditor"
+                            
+                            success = correct_email and correct_name and correct_role
+                            details = f"Status: {response.status_code}, User found: {user_found}, Email: {correct_email}, Name: {correct_name}, Role: {correct_role}"
+                            break
+                    
+                    if not user_found:
+                        success = False
+                        details = f"Status: {response.status_code}, User not found in team list. Total members: {len(team_members)}"
+                else:
+                    success = False
+                    details = f"Status: {response.status_code}, Missing team_members field"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Verify User In Team List", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Verify User In Team List", False, str(e))
+            return False
+
+    def test_delete_user_endpoint(self):
+        """Test DELETE /api/organization/remove-user/{user_id} endpoint"""
+        if not self.owner_token or not hasattr(self, 'test_delete_user'):
+            self.log_test("Delete User Endpoint", False, "No owner token or test user")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            user_id = self.test_delete_user["id"]
+            
+            response = requests.delete(f"{self.api_url}/organization/remove-user/{user_id}", 
+                                     headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                success_message = "removed successfully" in data.get("message", "").lower()
+                
+                success = has_message and success_message
+                details = f"Status: {response.status_code}, Message: {has_message}, Success message: {success_message}"
+                
+                if has_message:
+                    message = data.get("message", "")
+                    details += f", Message: '{message}'"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Delete User Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Delete User Endpoint", False, str(e))
+            return False
+
+    def test_verify_user_removed_from_team(self):
+        """Verify the user is removed from team list after deletion"""
+        if not self.owner_token or not hasattr(self, 'test_delete_user'):
+            self.log_test("Verify User Removed From Team", False, "No owner token or test user")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_team_members = "team_members" in data
+                
+                if has_team_members:
+                    team_members = data.get("team_members", [])
+                    
+                    # Look for our test user (should NOT be found)
+                    user_found = False
+                    for member in team_members:
+                        if member.get("user_id") == self.test_delete_user["id"]:
+                            user_found = True
+                            break
+                    
+                    success = not user_found  # Success if user is NOT found
+                    details = f"Status: {response.status_code}, User found: {user_found}, Total members: {len(team_members)}"
+                else:
+                    success = False
+                    details = f"Status: {response.status_code}, Missing team_members field"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Verify User Removed From Team", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Verify User Removed From Team", False, str(e))
+            return False
+
+    def test_deleted_user_login_fails(self):
+        """Try to login with the deleted user (should fail)"""
+        if not hasattr(self, 'test_delete_user'):
+            self.log_test("Deleted User Login Fails", False, "No test user available")
+            return False
+            
+        try:
+            login_data = {
+                "email": self.test_delete_user["email"],
+                "password": self.test_delete_user["password"]
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            # Login should fail (401 or 404)
+            success = response.status_code in [401, 404]
+            details = f"Status: {response.status_code} (expected 401 or 404)"
+            
+            if not success:
+                # If login succeeded, that's a problem
+                if response.status_code == 200:
+                    details += " - ERROR: Deleted user can still login!"
+                else:
+                    try:
+                        error_data = response.json()
+                        details += f", Error: {error_data.get('detail', 'Unknown error')}"
+                    except:
+                        details += f", Response: {response.text[:100]}"
+            
+            self.log_test("Deleted User Login Fails", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Deleted User Login Fails", False, str(e))
+            return False
+
+    def test_delete_nonexistent_user(self):
+        """Test error handling - try to delete non-existent user"""
+        if not self.owner_token:
+            self.log_test("Delete Nonexistent User", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Use a fake UUID that doesn't exist
+            fake_user_id = "00000000-0000-0000-0000-000000000000"
+            
+            response = requests.delete(f"{self.api_url}/organization/remove-user/{fake_user_id}", 
+                                     headers=headers, timeout=10)
+            
+            # Should return 404 or 400 with appropriate error message
+            success = response.status_code in [404, 400]
+            details = f"Status: {response.status_code} (expected 404 or 400)"
+            
+            if success:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('detail', '').lower()
+                    has_appropriate_error = any(word in error_message for word in ['not found', 'does not exist', 'invalid'])
+                    details += f", Appropriate error: {has_appropriate_error}"
+                    success = success and has_appropriate_error
+                except:
+                    details += ", Could not parse error message"
+            
+            self.log_test("Delete Nonexistent User", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Delete Nonexistent User", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
