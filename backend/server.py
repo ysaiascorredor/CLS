@@ -1427,14 +1427,20 @@ async def create_team_user_directly(
     if existing_user:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
-    # Generar contraseña temporal segura
-    import secrets
-    import string
-    
-    # Contraseña temporal: 8 caracteres, fácil de recordar pero segura
-    temp_password_chars = string.ascii_letters + string.digits
-    temp_password = ''.join(secrets.choice(temp_password_chars) for _ in range(8))
-    temp_password = temp_password.capitalize() + "2024"  # Ej: Abc12def2024
+    # Usar contraseña personalizada o generar una temporal
+    if custom_password:
+        if len(custom_password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        temp_password = custom_password
+    else:
+        # Generar contraseña temporal segura si no se especifica
+        import secrets
+        import string
+        
+        # Contraseña temporal: 8 caracteres, fácil de recordar pero segura
+        temp_password_chars = string.ascii_letters + string.digits
+        temp_password = ''.join(secrets.choice(temp_password_chars) for _ in range(8))
+        temp_password = temp_password.capitalize() + "2024"  # Ej: Abc12def2024
     
     # Crear usuario directamente
     password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
