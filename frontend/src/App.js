@@ -2020,11 +2020,14 @@ function TeamManagement() {
         password: createUserForm.password || undefined  // Only send if provided
       });
       
+      const passwordInfo = response.data.user.temporary_password;
+      const passwordType = response.data.password_type;
+      
       toast({ 
         title: language === 'en' ? "✅ User Created Successfully!" : "✅ ¡Usuario Creado Exitosamente!",
         description: language === 'en' 
-          ? `${createUserForm.name} can now login with email: ${createUserForm.email}` 
-          : `${createUserForm.name} ya puede iniciar sesión con email: ${createUserForm.email}`
+          ? `${createUserForm.name} can login with: ${createUserForm.email} / ${passwordInfo} ${passwordType === 'generated' ? '(auto-generated)' : '(your password)'}`
+          : `${createUserForm.name} puede iniciar con: ${createUserForm.email} / ${passwordInfo} ${passwordType === 'generated' ? '(auto-generada)' : '(tu contraseña)'}`
       });
       
       console.log('✅ User created successfully:', response.data);
