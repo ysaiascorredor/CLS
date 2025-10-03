@@ -163,7 +163,7 @@ const translations = {
     nonCompliantAudits: "Non-Compliant Audits",
     averageScore: "Average Score",
     workTypeStats: "Work Type Statistics",
-    unlimitedPlan: "CSA Safety Pro",
+    unlimitedPlan: "CSA Seguridad Pro",
     auditsPerMonth: "audits/month",
     choosePlan: "Choose Plan",
     currentPlan: "Current Plan",
