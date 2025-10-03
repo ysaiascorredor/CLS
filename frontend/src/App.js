@@ -2010,8 +2010,11 @@ function TeamManagement() {
   };
 
   const createTeamUser = async () => {
+    console.log('🚀 CREATE USER FUNCTION CALLED - Starting user creation...');
+    console.log('📋 Form data:', createUserForm);
+    console.log('🔗 API endpoint:', `${API}/organization/create-user`);
+    
     try {
-      console.log('🚀 Creating team user:', createUserForm);
       
       const response = await axios.post(`${API}/organization/create-user`, {
         email: createUserForm.email,
