@@ -2870,6 +2870,12 @@ class CSABackendTester:
         self.test_email_settings_post()
         self.test_subscription_cancellation()
         
+        # URGENT: Gmail Account Subscription Issue
+        print("\n🚨 URGENT: Gmail Account Subscription Issue Testing...")
+        print("Testing CORRECT account: ysaias.corredor@gmail.com")
+        self.test_find_gmail_user_in_database()
+        self.test_gmail_account_subscription_issue()
+        
         # Summary
         print("=" * 60)
         print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} tests passed")
