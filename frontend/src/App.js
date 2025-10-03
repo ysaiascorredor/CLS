@@ -2314,7 +2314,13 @@ function TeamManagement() {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => deleteMember(member.id)}
+                      onClick={() => {
+                        console.log('🎯 DELETE BUTTON CLICKED for member:', member);
+                        console.log('🔍 Member ID:', member.id);
+                        console.log('🔍 Member data:', JSON.stringify(member));
+                        deleteMember(member.id);
+                      }}
+                      data-testid={`delete-button-${member.id}`}
                     >
                       {language === 'en' ? 'Delete' : 'Eliminar'}
                     </Button>
