@@ -1676,7 +1676,7 @@ function AdminDashboard() {
         subscription_plan: newPlan,
         subscription_expires: expiresAt.toISOString(),
         audits_used_this_month: 0
-      }, { withCredentials: true });
+      });
       
       toast({ title: "User plan updated successfully!" });
       loadAdminData();
