@@ -1301,9 +1301,88 @@ async def stripe_webhook(request: Request):
                 {"$set": {"payment_status": "paid", "stripe_status": "completed"}}
             )
             
+            # Get transaction details to activate subscription
+            transaction = await db.payment_transactions.find_one({"session_id": session_id})
+            if transaction:
+                user_id = transaction["user_id"]
+                package_type = transaction["package_type"]
+                
+                # Activate subscription
+                expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+                await db.users.update_one(
+                    {"id": user_id},
+                    {
+                        "$set": {
+                            "subscription_plan": package_type,
+                            "subscription_status": "active",
+                            "subscription_expires_at": expires_at.isoformat(),
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    }
+                )
+            
         return {"received": True}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/payments/fix-pending/{user_id}")
+async def fix_pending_payment(user_id: str, admin_user: User = Depends(require_admin)):
+    """Manual fix for pending payments - ADMIN ONLY"""
+    
+    # Find pending transactions for user
+    pending_transactions = await db.payment_transactions.find({
+        "user_id": user_id,
+        "payment_status": "pending"
+    }).to_list(None)
+    
+    if not pending_transactions:
+        raise HTTPException(status_code=404, detail="No pending transactions found")
+    
+    # Mark all as paid and activate subscription
+    for transaction in pending_transactions:
+        # Update transaction status
+        await db.payment_transactions.update_one(
+            {"session_id": transaction["session_id"]},
+            {"$set": {"payment_status": "paid", "stripe_status": "manually_completed"}}
+        )
+        
+        # Activate subscription
+        package_type = transaction["package_type"]
+        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        await db.users.update_one(
+            {"id": user_id},
+            {
+                "$set": {
+                    "subscription_plan": package_type,
+                    "subscription_status": "active", 
+                    "subscription_expires_at": expires_at.isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+    
+    return {"message": f"Fixed {len(pending_transactions)} pending payments and activated subscription"}
+
+@api_router.post("/payments/cancel-subscription")
+async def cancel_subscription(current_user: User = Depends(require_auth)):
+    """Cancel user subscription"""
+    
+    # Update user subscription to cancelled
+    await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "subscription_status": "cancelled",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+    )
+    
+    # Mark subscription as cancelled but keep access until expiration
+    return {
+        "message": "Subscription cancelled successfully. Access will continue until expiration date.",
+        "status": "cancelled"
+    }
 
 # ===== ENDPOINTS DE ADMINISTRACIÓN =====
 
