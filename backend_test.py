@@ -3877,6 +3877,227 @@ class CSABackendTester:
             self.log_test("Review Request - Delete User Setup", False, str(e))
             return False
 
+    def test_delete_user_functionality_review_request(self):
+        """URGENT: Test DELETE functionality with REAL user account - Review Request Testing"""
+        print("\n🗑️ URGENT REVIEW REQUEST: Testing DELETE user functionality with REAL user account")
+        print("User reports: Delete buttons don't work when clicked - buttons exist but clicking doesn't remove team members")
+        
+        try:
+            # Step 1: Login with ysaias.corredor@gmail.com / Clave.01
+            print("Step 1: Login with ysaias.corredor@gmail.com / Clave.01")
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            login_response = requests.post(f"{self.api_url}/auth/login", 
+                                         json=login_data, timeout=10)
+            
+            if login_response.status_code != 200:
+                self.log_test("DELETE User Functionality Review Request", False, 
+                            f"Login failed: {login_response.status_code}")
+                return False
+            
+            login_data_response = login_response.json()
+            owner_token = login_data_response.get("access_token")
+            user_info = login_data_response.get("user", {})
+            
+            print(f"✅ Login successful - User: {user_info.get('name')}, Role: {user_info.get('organization_role')}")
+            
+            # Step 2: Get the team list with GET /api/organization/team
+            print("Step 2: Get team list with GET /api/organization/team")
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            team_response = requests.get(f"{self.api_url}/organization/team", 
+                                       headers=headers, timeout=10)
+            
+            if team_response.status_code != 200:
+                self.log_test("DELETE User Functionality Review Request", False, 
+                            f"Team list failed: {team_response.status_code}")
+                return False
+            
+            team_data = team_response.json()
+            team_members = team_data.get("team_members", [])
+            organization = team_data.get("organization", {})
+            
+            print(f"✅ Team list retrieved - Organization: {organization.get('name')}, Team members: {len(team_members)}")
+            
+            # Step 3: Identify user IDs of team members (not the owner)
+            print("Step 3: Identify team member user IDs (excluding owner)")
+            
+            owner_user_id = user_info.get("id")
+            deletable_members = []
+            
+            for member in team_members:
+                member_user_id = member.get("user_id")
+                member_role = member.get("role")
+                member_email = member.get("email", "Unknown")
+                member_name = member.get("name", "Unknown")
+                
+                if member_user_id != owner_user_id and member_role != "owner":
+                    deletable_members.append({
+                        "user_id": member_user_id,
+                        "email": member_email,
+                        "name": member_name,
+                        "role": member_role
+                    })
+                    print(f"   Found deletable member: {member_name} ({member_email}) - ID: {member_user_id}")
+            
+            if not deletable_members:
+                # Create a test user to delete
+                print("No deletable members found. Creating test user for deletion test...")
+                
+                create_user_data = {
+                    "email": f"test.delete.review.{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com",
+                    "name": "Test Delete Review User",
+                    "role": "auditor",
+                    "password": "TestDelete123"
+                }
+                
+                create_response = requests.post(f"{self.api_url}/organization/create-user", 
+                                              json=create_user_data, headers=headers, timeout=10)
+                
+                if create_response.status_code == 200:
+                    create_data = create_response.json()
+                    test_user_id = create_data.get("user", {}).get("id")
+                    if test_user_id:
+                        deletable_members.append({
+                            "user_id": test_user_id,
+                            "email": create_user_data["email"],
+                            "name": create_user_data["name"],
+                            "role": create_user_data["role"]
+                        })
+                        print(f"✅ Created test user for deletion: {create_user_data['name']} - ID: {test_user_id}")
+                    else:
+                        self.log_test("DELETE User Functionality Review Request", False, 
+                                    "Could not create test user for deletion test")
+                        return False
+                else:
+                    self.log_test("DELETE User Functionality Review Request", False, 
+                                f"Failed to create test user: {create_response.status_code}")
+                    return False
+            
+            # Step 4: Test DELETE /api/organization/remove-user/{user_id} with REAL user ID
+            print("Step 4: Test DELETE /api/organization/remove-user/{user_id} with REAL user ID")
+            
+            test_results = []
+            
+            for member in deletable_members[:2]:  # Test up to 2 members to avoid removing too many
+                user_id = member["user_id"]
+                user_name = member["name"]
+                user_email = member["email"]
+                
+                print(f"   Testing DELETE for user: {user_name} ({user_email}) - ID: {user_id}")
+                
+                # Perform DELETE request
+                delete_response = requests.delete(f"{self.api_url}/organization/remove-user/{user_id}", 
+                                                headers=headers, timeout=10)
+                
+                test_result = {
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "user_email": user_email,
+                    "status_code": delete_response.status_code,
+                    "success": False,
+                    "error": None,
+                    "response_data": None
+                }
+                
+                if delete_response.status_code == 200:
+                    try:
+                        response_data = delete_response.json()
+                        test_result["response_data"] = response_data
+                        test_result["success"] = True
+                        print(f"   ✅ DELETE successful: {response_data.get('message', 'User removed')}")
+                        
+                        # Verify user was actually removed by checking team list again
+                        verify_response = requests.get(f"{self.api_url}/organization/team", 
+                                                     headers=headers, timeout=10)
+                        
+                        if verify_response.status_code == 200:
+                            verify_data = verify_response.json()
+                            verify_members = verify_data.get("team_members", [])
+                            
+                            # Check if user is still in the list
+                            user_still_exists = any(m.get("user_id") == user_id for m in verify_members)
+                            
+                            if not user_still_exists:
+                                print(f"   ✅ VERIFICATION: User {user_name} successfully removed from team")
+                                test_result["verified_removed"] = True
+                            else:
+                                print(f"   ❌ VERIFICATION FAILED: User {user_name} still in team after DELETE")
+                                test_result["verified_removed"] = False
+                                test_result["success"] = False
+                                test_result["error"] = "User still in team after DELETE"
+                        else:
+                            test_result["error"] = f"Could not verify removal: {verify_response.status_code}"
+                            
+                    except Exception as e:
+                        test_result["error"] = f"JSON parse error: {str(e)}"
+                        test_result["success"] = False
+                        
+                else:
+                    try:
+                        error_data = delete_response.json()
+                        test_result["error"] = error_data.get("detail", f"HTTP {delete_response.status_code}")
+                        test_result["response_data"] = error_data
+                    except:
+                        test_result["error"] = f"HTTP {delete_response.status_code}: {delete_response.text[:200]}"
+                    
+                    print(f"   ❌ DELETE failed: {test_result['error']}")
+                
+                test_results.append(test_result)
+            
+            # Step 5: Analyze results and provide diagnosis
+            print("Step 5: Analysis and Diagnosis")
+            
+            successful_deletes = [r for r in test_results if r["success"]]
+            failed_deletes = [r for r in test_results if not r["success"]]
+            
+            overall_success = len(successful_deletes) > 0 and len(failed_deletes) == 0
+            
+            details = f"Tested {len(test_results)} delete operations. "
+            details += f"Successful: {len(successful_deletes)}, Failed: {len(failed_deletes)}. "
+            
+            if failed_deletes:
+                details += "FAILURES: "
+                for fail in failed_deletes:
+                    details += f"{fail['user_name']} (HTTP {fail['status_code']}: {fail['error']}); "
+            
+            if successful_deletes:
+                details += "SUCCESSES: "
+                for success in successful_deletes:
+                    verified = success.get("verified_removed", False)
+                    details += f"{success['user_name']} (removed and verified: {verified}); "
+            
+            # Provide specific diagnosis for the user's issue
+            if overall_success:
+                diagnosis = "✅ DELETE functionality is WORKING correctly. "
+                diagnosis += "If user reports delete buttons not working, issue is likely FRONTEND-related: "
+                diagnosis += "1) JavaScript errors preventing API call, 2) Button not connected to delete function, "
+                diagnosis += "3) Frontend not refreshing team list after successful delete, 4) Browser/session issues."
+            else:
+                diagnosis = "❌ DELETE functionality has BACKEND issues. "
+                diagnosis += "Root causes found: "
+                for fail in failed_deletes:
+                    if fail["status_code"] == 403:
+                        diagnosis += "Permission denied (user not owner?), "
+                    elif fail["status_code"] == 404:
+                        diagnosis += "User not found in organization, "
+                    elif fail["status_code"] == 400:
+                        diagnosis += "Bad request (validation error), "
+                    else:
+                        diagnosis += f"HTTP {fail['status_code']} error, "
+            
+            print(f"\n🔍 DIAGNOSIS: {diagnosis}")
+            
+            self.log_test("DELETE User Functionality Review Request", overall_success, details + diagnosis)
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("DELETE User Functionality Review Request", False, f"Exception: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
