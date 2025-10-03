@@ -352,6 +352,155 @@ SAFETY_QUESTIONS = {
             "¿Hay monitoreo continuo para gases peligrosos?",
             "¿Están establecidos procedimientos de rescate para trabajo subterráneo?"
         ]
+    },
+    
+    # NEW CATEGORIES - Safety Planning & Analysis
+    "jsa": {
+        "en": [
+            "Is a Job Safety Analysis (JSA) completed for this specific task?",
+            "Are all identified hazards documented in the JSA?",
+            "Have control measures been established for each identified hazard?",
+            "Are workers trained on the JSA requirements before starting work?",
+            "Is the JSA reviewed and updated when conditions change?",
+            "Are job steps clearly defined and sequenced in the JSA?",
+            "Have emergency procedures been established for this job?"
+        ],
+        "es": [
+            "¿Se completó un Análisis de Seguridad del Trabajo (AST) para esta tarea específica?",
+            "¿Están documentados todos los riesgos identificados en el AST?",
+            "¿Se han establecido medidas de control para cada riesgo identificado?",
+            "¿Están los trabajadores entrenados en los requisitos del AST antes de comenzar el trabajo?",
+            "¿Se revisa y actualiza el AST cuando cambian las condiciones?",
+            "¿Están los pasos del trabajo claramente definidos y secuenciados en el AST?",
+            "¿Se han establecido procedimientos de emergencia para este trabajo?"
+        ]
+    },
+    
+    "jha": {
+        "en": [
+            "Is a Job Hazard Analysis (JHA) conducted before work begins?",
+            "Are all potential hazards identified and assessed for risk level?",
+            "Have appropriate PPE requirements been determined through JHA?",
+            "Are environmental hazards (weather, noise, etc.) considered in JHA?",
+            "Have workers participated in the JHA development process?",
+            "Are hazard elimination and engineering controls prioritized over PPE?",
+            "Is the JHA accessible and understood by all affected workers?"
+        ],
+        "es": [
+            "¿Se realizó un Análisis de Riesgos del Trabajo (ART) antes de comenzar el trabajo?",
+            "¿Están todos los riesgos potenciales identificados y evaluados por nivel de riesgo?",
+            "¿Se determinaron los requisitos apropiados de EPP a través del ART?",
+            "¿Se consideran los riesgos ambientales (clima, ruido, etc.) en el ART?",
+            "¿Participaron los trabajadores en el proceso de desarrollo del ART?",
+            "¿Se priorizan la eliminación de riesgos y controles de ingeniería sobre el EPP?",
+            "¿Es el ART accesible y entendido por todos los trabajadores afectados?"
+        ]
+    },
+    
+    "safety_daily_plan": {
+        "en": [
+            "Is a daily safety plan communicated to all workers at start of shift?",
+            "Are weather conditions and their impact on work activities discussed?",
+            "Have high-risk activities for the day been identified and planned?",
+            "Are emergency contact numbers and evacuation routes posted and reviewed?",
+            "Is proper PPE assignment verified for each worker and task?",
+            "Are equipment inspections completed and documented daily?",
+            "Have lessons learned from previous incidents been shared?"
+        ],
+        "es": [
+            "¿Se comunica un plan diario de seguridad a todos los trabajadores al inicio del turno?",
+            "¿Se discuten las condiciones climáticas y su impacto en las actividades de trabajo?",
+            "¿Se han identificado y planificado las actividades de alto riesgo del día?",
+            "¿Están publicados y revisados los números de contacto de emergencia y rutas de evacuación?",
+            "¿Se verifica la asignación apropiada de EPP para cada trabajador y tarea?",
+            "¿Se completan y documentan diariamente las inspecciones de equipos?",
+            "¿Se han compartido las lecciones aprendidas de incidentes previos?"
+        ]
+    },
+    
+    # NEW CATEGORIES - PPE & Equipment
+    "ppe": {
+        "en": [
+            "Is appropriate PPE provided for all workers based on job hazards?",
+            "Are hard hats, safety glasses, and work boots being worn consistently?",
+            "Is hearing protection used in high-noise areas (>85 dB)?",
+            "Are respirators properly fit-tested and maintained when required?",
+            "Is high-visibility clothing worn when working near vehicles or equipment?",
+            "Are fall protection harnesses and lanyards inspected before each use?",
+            "Is PPE properly stored, cleaned, and maintained according to manufacturer instructions?"
+        ],
+        "es": [
+            "¿Se proporciona EPP apropiado para todos los trabajadores basado en los riesgos del trabajo?",
+            "¿Se usan constantemente cascos, lentes de seguridad y botas de trabajo?",
+            "¿Se usa protección auditiva en áreas de alto ruido (>85 dB)?",
+            "¿Están los respiradores apropiadamente probados y mantenidos cuando se requieren?",
+            "¿Se usa ropa de alta visibilidad cuando se trabaja cerca de vehículos o equipos?",
+            "¿Se inspeccionan los arneses y eslingas de protección contra caídas antes de cada uso?",
+            "¿Se almacena, limpia y mantiene apropiadamente el EPP según las instrucciones del fabricante?"
+        ]
+    },
+    
+    "lifting_equipment": {
+        "en": [
+            "Are cranes and lifting equipment inspected daily before use?",
+            "Are load capacities clearly marked and never exceeded?",
+            "Are certified crane operators assigned to all lifting operations?",
+            "Is a lift plan developed for complex or critical lifts?",
+            "Are exclusion zones established around crane operations?",
+            "Are rigging hardware (slings, shackles, hooks) inspected before use?",
+            "Is proper communication established between crane operator and signal person?"
+        ],
+        "es": [
+            "¿Se inspeccionan diariamente las grúas y equipos de elevación antes del uso?",
+            "¿Están las capacidades de carga claramente marcadas y nunca se exceden?",
+            "¿Se asignan operadores certificados de grúa a todas las operaciones de elevación?",
+            "¿Se desarrolla un plan de elevación para izajes complejos o críticos?",
+            "¿Se establecen zonas de exclusión alrededor de las operaciones de grúa?",
+            "¿Se inspecciona el hardware de aparejo (eslingas, grilletes, ganchos) antes del uso?",
+            "¿Se establece comunicación apropiada entre el operador de grúa y la persona de señales?"
+        ]
+    },
+    
+    "housekeeping": {
+        "en": [
+            "Are work areas kept clean and free of debris throughout the shift?",
+            "Are materials properly stored and secured to prevent falling objects?",
+            "Are walkways and stairs clear of obstacles and slip hazards?",
+            "Is waste disposed of properly in designated containers?",
+            "Are tools and equipment returned to proper storage locations after use?",
+            "Are spill cleanup materials readily available for hazardous substances?",
+            "Is adequate lighting maintained in all work areas?"
+        ],
+        "es": [
+            "¿Se mantienen las áreas de trabajo limpias y libres de escombros durante el turno?",
+            "¿Se almacenan y aseguran apropiadamente los materiales para prevenir objetos que caigan?",
+            "¿Están los pasillos y escaleras libres de obstáculos y riesgos de resbalones?",
+            "¿Se desechan apropiadamente los desperdicios en contenedores designados?",
+            "¿Se devuelven las herramientas y equipos a ubicaciones apropiadas de almacenamiento después del uso?",
+            "¿Están fácilmente disponibles los materiales de limpieza de derrames para sustancias peligrosas?",
+            "¿Se mantiene iluminación adecuada en todas las áreas de trabajo?"
+        ]
+    },
+    
+    "chemical_work": {
+        "en": [
+            "Are Safety Data Sheets (SDS) available and accessible for all chemicals?",
+            "Is proper chemical-resistant PPE worn when handling hazardous materials?",
+            "Are chemicals properly labeled and stored in compatible groups?",
+            "Is emergency eyewash and shower equipment available and functional?",
+            "Are spill containment and cleanup materials readily available?",
+            "Is proper ventilation provided when working with volatile chemicals?",
+            "Are workers trained on chemical hazards and emergency procedures?"
+        ],
+        "es": [
+            "¿Están disponibles y accesibles las Hojas de Datos de Seguridad (HDS) para todos los químicos?",
+            "¿Se usa EPP resistente a químicos apropiado cuando se manejan materiales peligrosos?",
+            "¿Están los químicos apropiadamente etiquetados y almacenados en grupos compatibles?",
+            "¿Está disponible y funcional el equipo de lavado de ojos y ducha de emergencia?",
+            "¿Están fácilmente disponibles los materiales de contención y limpieza de derrames?",
+            "¿Se proporciona ventilación apropiada cuando se trabaja con químicos volátiles?",
+            "¿Están los trabajadores entrenados en riesgos químicos y procedimientos de emergencia?"
+        ]
     }
 }
 
