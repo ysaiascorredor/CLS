@@ -1384,6 +1384,50 @@ async def cancel_subscription(current_user: User = Depends(require_auth)):
         "status": "cancelled"
     }
 
+# ===== EMAIL CONFIGURATION =====
+
+@api_router.post("/settings/email")
+async def configure_email_settings(
+    email_config: dict,
+    current_user: User = Depends(require_auth)
+):
+    """Configure email settings for sending invitations"""
+    
+    # Validate email config
+    required_fields = ["smtp_server", "smtp_port", "email", "password", "sender_name"]
+    for field in required_fields:
+        if field not in email_config:
+            raise HTTPException(status_code=400, detail=f"Missing {field}")
+    
+    # Encrypt password (in real app, use proper encryption)
+    email_config["password"] = email_config["password"]  # TODO: Add encryption
+    email_config["user_id"] = current_user.id
+    email_config["created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Save or update email configuration
+    await db.email_settings.replace_one(
+        {"user_id": current_user.id},
+        email_config,
+        upsert=True
+    )
+    
+    return {"message": "Email settings saved successfully"}
+
+@api_router.get("/settings/email")
+async def get_email_settings(current_user: User = Depends(require_auth)):
+    """Get user's email settings (without password)"""
+    
+    settings = await db.email_settings.find_one({"user_id": current_user.id})
+    if not settings:
+        return {"configured": False}
+    
+    # Remove password from response
+    settings.pop("password", None)
+    settings.pop("_id", None)
+    settings["configured"] = True
+    
+    return settings
+
 # ===== ENDPOINTS DE ADMINISTRACIÓN =====
 
 @api_router.get("/admin/dashboard")
