@@ -3345,8 +3345,9 @@ class CSABackendTester:
                     for member in team_members:
                         if member.get("user_id") == self.test_delete_user["id"]:
                             user_found = True
-                            correct_email = member.get("email") == self.test_delete_user["email"]
-                            correct_name = member.get("name") == self.test_delete_user["name"]
+                            user_data = member.get("user", {})
+                            correct_email = user_data.get("email") == self.test_delete_user["email"]
+                            correct_name = user_data.get("name") == self.test_delete_user["name"]
                             correct_role = member.get("role") == "auditor"
                             
                             success = correct_email and correct_name and correct_role
