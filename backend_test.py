@@ -3883,6 +3883,11 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # PRIORITY: Review Request Test - Create test user for delete functionality
+        print("\n🎯 REVIEW REQUEST: Delete User Functionality Setup")
+        print("-" * 50)
+        self.test_review_request_delete_user_setup()
+        
         # ENHANCED USER CREATION SYSTEM TESTING (REVIEW REQUEST) - RUN FIRST
         self.test_enhanced_user_creation_with_custom_password()
         
