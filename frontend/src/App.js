@@ -818,7 +818,7 @@ function Dashboard() {
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t.nonCompliantAudits}</CardTitle>
                     <XCircle className="h-4 w-4 text-red-500" />
