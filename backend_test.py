@@ -3272,6 +3272,12 @@ class CSABackendTester:
 def main():
     import sys
     
+    # Check if we should run new user creation tests only
+    if len(sys.argv) > 1 and sys.argv[1] == "--new-user-creation":
+        tester = CSABackendTester()
+        success = tester.run_new_user_creation_tests()
+        return 0 if success else 1
+    
     # Check if we should run critical subscription tests only
     if len(sys.argv) > 1 and sys.argv[1] == "--subscription":
         tester = CSABackendTester()
