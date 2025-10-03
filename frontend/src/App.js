@@ -2323,9 +2323,9 @@ function TeamManagement() {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => removeMember(member.id)}
+                      onClick={() => deleteMember(member.id)}
                     >
-                      Remover
+                      {language === 'en' ? 'Delete' : 'Eliminar'}
                     </Button>
                   )}
                 </div>
