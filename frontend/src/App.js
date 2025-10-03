@@ -1694,8 +1694,10 @@ function TeamManagement() {
   const [teamData, setTeamData] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: 'auditor' });
+  const [createUserForm, setCreateUserForm] = useState({ email: '', name: '', role: 'auditor' });
   const { toast } = useToast();
 
   useEffect(() => {
