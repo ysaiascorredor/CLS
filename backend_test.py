@@ -4098,6 +4098,157 @@ class CSABackendTester:
             self.log_test("DELETE User Functionality Review Request", False, f"Exception: {str(e)}")
             return False
 
+    def test_review_request_create_real_team_members(self):
+        """REVIEW REQUEST: Create real team members for delete functionality testing"""
+        print("\n🎯 EXECUTING REVIEW REQUEST: Create Real Team Members for Delete Testing")
+        print("=" * 80)
+        
+        try:
+            # Step 1: Login with ysaias.corredor@gmail.com / Clave.01
+            print("Step 1: Login with ysaias.corredor@gmail.com / Clave.01")
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code != 200:
+                error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
+                self.log_test("Review Request - Owner Login", False, f"Status: {response.status_code}, Error: {error_data}")
+                return False
+            
+            data = response.json()
+            owner_token = data["access_token"]
+            user_data = data["user"]
+            
+            print(f"✅ Owner login successful - User ID: {user_data.get('id')}, Organization ID: {user_data.get('organization_id')}")
+            self.log_test("Review Request - Owner Login", True, f"Status: {response.status_code}, User: {user_data.get('email')}, Org: {user_data.get('organization_id')}")
+            
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            # Step 2: Create User 1 - delete.test.1@example.com
+            print("\nStep 2: Create User 1 - delete.test.1@example.com")
+            user1_data = {
+                "email": "delete.test.1@example.com",
+                "name": "Delete Test User 1",
+                "role": "auditor",
+                "password": "DeleteTest123"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user1_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                user1_id = data.get("user", {}).get("id")
+                print(f"✅ User 1 created successfully - ID: {user1_id}")
+                self.log_test("Review Request - Create User 1", True, f"Status: {response.status_code}, User ID: {user1_id}")
+            else:
+                error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
+                print(f"❌ User 1 creation failed - Status: {response.status_code}, Error: {error_data}")
+                self.log_test("Review Request - Create User 1", False, f"Status: {response.status_code}, Error: {error_data}")
+                return False
+            
+            # Step 3: Create User 2 - delete.test.2@example.com
+            print("\nStep 3: Create User 2 - delete.test.2@example.com")
+            user2_data = {
+                "email": "delete.test.2@example.com",
+                "name": "Delete Test User 2",
+                "role": "viewer",
+                "password": "DeleteTest456"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user2_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                user2_id = data.get("user", {}).get("id")
+                print(f"✅ User 2 created successfully - ID: {user2_id}")
+                self.log_test("Review Request - Create User 2", True, f"Status: {response.status_code}, User ID: {user2_id}")
+            else:
+                error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
+                print(f"❌ User 2 creation failed - Status: {response.status_code}, Error: {error_data}")
+                self.log_test("Review Request - Create User 2", False, f"Status: {response.status_code}, Error: {error_data}")
+                return False
+            
+            # Step 4: Verify users appear in GET /api/organization/team as actual team_members
+            print("\nStep 4: Verify users appear in team_members (not pending_invitations)")
+            response = requests.get(f"{self.api_url}/organization/team", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code != 200:
+                error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else response.text
+                self.log_test("Review Request - Get Team Data", False, f"Status: {response.status_code}, Error: {error_data}")
+                return False
+            
+            team_data = response.json()
+            team_members = team_data.get("team_members", [])
+            pending_invitations = team_data.get("pending_invitations", [])
+            
+            print(f"📊 Team Members Count: {len(team_members)}")
+            print(f"📊 Pending Invitations Count: {len(pending_invitations)}")
+            
+            # Check if our created users are in team_members
+            user1_found = any(member.get("email") == "delete.test.1@example.com" for member in team_members)
+            user2_found = any(member.get("email") == "delete.test.2@example.com" for member in team_members)
+            
+            # Check they are NOT in pending_invitations
+            user1_not_pending = not any(inv.get("invitee_email") == "delete.test.1@example.com" for inv in pending_invitations)
+            user2_not_pending = not any(inv.get("invitee_email") == "delete.test.2@example.com" for inv in pending_invitations)
+            
+            print(f"✅ User 1 in team_members: {user1_found}")
+            print(f"✅ User 2 in team_members: {user2_found}")
+            print(f"✅ User 1 NOT in pending_invitations: {user1_not_pending}")
+            print(f"✅ User 2 NOT in pending_invitations: {user2_not_pending}")
+            
+            # Step 5: Check that team_members array now has 3 members (owner + 2 new users)
+            expected_count = 3  # Owner + 2 new users
+            actual_count = len(team_members)
+            has_correct_count = actual_count >= expected_count
+            
+            print(f"📊 Expected minimum team members: {expected_count}")
+            print(f"📊 Actual team members: {actual_count}")
+            print(f"✅ Has correct count: {has_correct_count}")
+            
+            # Print team member details for verification
+            print("\n👥 TEAM MEMBERS DETAILS:")
+            for i, member in enumerate(team_members, 1):
+                print(f"  {i}. Email: {member.get('email')}, Name: {member.get('name')}, Role: {member.get('role')}")
+            
+            if pending_invitations:
+                print("\n📧 PENDING INVITATIONS:")
+                for i, inv in enumerate(pending_invitations, 1):
+                    print(f"  {i}. Email: {inv.get('invitee_email')}, Name: {inv.get('invitee_name')}, Role: {inv.get('role')}")
+            
+            # Overall success check
+            success = (user1_found and user2_found and user1_not_pending and 
+                      user2_not_pending and has_correct_count)
+            
+            details = f"User1 in team: {user1_found}, User2 in team: {user2_found}, User1 not pending: {user1_not_pending}, User2 not pending: {user2_not_pending}, Team count: {actual_count}/{expected_count}"
+            
+            self.log_test("Review Request - Verify Team Members", success, details)
+            
+            if success:
+                print("\n🎉 REVIEW REQUEST COMPLETED SUCCESSFULLY!")
+                print("✅ Both test users created as REAL team members (not invitations)")
+                print("✅ Users appear in team_members array")
+                print("✅ Users do NOT appear in pending_invitations")
+                print("✅ Team now has the expected number of members")
+                print("\n🗑️ DELETE BUTTONS SHOULD NOW BE VISIBLE IN FRONTEND!")
+            else:
+                print("\n❌ REVIEW REQUEST FAILED!")
+                print("Some requirements were not met. Check the details above.")
+            
+            return success
+            
+        except Exception as e:
+            self.log_test("Review Request - Create Real Team Members", False, str(e))
+            print(f"❌ Exception occurred: {str(e)}")
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
