@@ -1479,7 +1479,8 @@ async def create_team_user_directly(
             "role": role,
             "temporary_password": temp_password
         },
-        "instructions": f"Give these credentials to {name}: Email: {email} | Password: {temp_password} | They can change password after first login"
+        "instructions": f"Give these credentials to {name}: Email: {email} | Password: {temp_password} | They can change password after first login",
+        "password_type": "custom" if custom_password else "generated"
     }
 
 @api_router.post("/auth/change-password")
