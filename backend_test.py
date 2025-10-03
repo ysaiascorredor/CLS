@@ -4268,6 +4268,199 @@ class CSABackendTester:
             print(f"❌ Exception occurred: {str(e)}")
             return False
 
+    def test_new_audit_category_questions(self):
+        """Test POST /api/audits/questions with new categories - REVIEW REQUEST"""
+        try:
+            # Test with new categories as specified in review request
+            request_data = {
+                "work_types": ["jsa", "ppe", "chemical_work"],
+                "language": "en"
+            }
+            
+            response = requests.post(f"{self.api_url}/audits/questions", 
+                                   json=request_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_questions = "questions" in data
+                questions = data.get("questions", [])
+                
+                success = has_questions and len(questions) > 0
+                details = f"Status: {response.status_code}, Questions count: {len(questions)}"
+                
+                if success:
+                    # Verify questions for each work type
+                    jsa_questions = [q for q in questions if q.get("work_type") == "jsa"]
+                    ppe_questions = [q for q in questions if q.get("work_type") == "ppe"]
+                    chemical_questions = [q for q in questions if q.get("work_type") == "chemical_work"]
+                    
+                    has_jsa = len(jsa_questions) > 0
+                    has_ppe = len(ppe_questions) > 0
+                    has_chemical = len(chemical_questions) > 0
+                    
+                    success = has_jsa and has_ppe and has_chemical
+                    details += f", JSA questions: {len(jsa_questions)}, PPE questions: {len(ppe_questions)}, Chemical questions: {len(chemical_questions)}"
+                    
+                    # Verify question content is safety-related
+                    if jsa_questions:
+                        jsa_sample = jsa_questions[0].get("question", "")
+                        has_safety_content = any(word in jsa_sample.lower() for word in ["safety", "hazard", "analysis", "job"])
+                        details += f", Safety content in JSA: {has_safety_content}"
+                        success = success and has_safety_content
+                        
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("New Audit Category Questions", success, details)
+            return success
+        except Exception as e:
+            self.log_test("New Audit Category Questions", False, str(e))
+            return False
+
+    def test_owner_gmail_login(self):
+        """Test login with ysaias.corredor@gmail.com / Clave.01 - REVIEW REQUEST"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@gmail.com"
+                    user_role = user_data.get("role", "")
+                    subscription_plan = user_data.get("subscription_plan", "")
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Role: {user_role}, Plan: {subscription_plan}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Owner Gmail Login (ysaias.corredor@gmail.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Gmail Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+
+    def test_admin_dashboard_endpoint(self):
+        """Test GET /api/admin/dashboard - REVIEW REQUEST (should work without withCredentials)"""
+        if not self.owner_token:
+            self.log_test("Admin Dashboard Endpoint", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/admin/dashboard", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check for typical dashboard data
+                has_data = len(data) > 0
+                
+                success = has_data
+                details = f"Status: {response.status_code}, Has data: {has_data}"
+                
+                # Check for common dashboard fields
+                if isinstance(data, dict):
+                    common_fields = ["users", "audits", "statistics", "summary"]
+                    has_common_fields = any(field in data for field in common_fields)
+                    details += f", Has common dashboard fields: {has_common_fields}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Dashboard Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Dashboard Endpoint", False, str(e))
+            return False
+
+    def test_admin_users_endpoint(self):
+        """Test GET /api/admin/users - REVIEW REQUEST (should return user data for admin)"""
+        if not self.owner_token:
+            self.log_test("Admin Users Endpoint", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            response = requests.get(f"{self.api_url}/admin/users", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                success = True
+                details = f"Status: {response.status_code}"
+                
+                # Check if data is a list of users
+                if isinstance(data, list):
+                    user_count = len(data)
+                    details += f", Users count: {user_count}"
+                    
+                    # Check user structure if users exist
+                    if user_count > 0:
+                        first_user = data[0]
+                        user_fields = ["id", "email", "name"]
+                        has_user_fields = all(field in first_user for field in user_fields)
+                        details += f", User fields valid: {has_user_fields}"
+                        success = success and has_user_fields
+                        
+                        # Ensure no password_hash is exposed
+                        no_password_exposed = "password_hash" not in first_user
+                        details += f", No password exposed: {no_password_exposed}"
+                        success = success and no_password_exposed
+                        
+                elif isinstance(data, dict):
+                    # Could be paginated response
+                    has_users_key = "users" in data
+                    details += f", Has users key: {has_users_key}"
+                    success = success and has_users_key
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Admin Users Endpoint", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Admin Users Endpoint", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
