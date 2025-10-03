@@ -2016,7 +2016,8 @@ function TeamManagement() {
       const response = await axios.post(`${API}/organization/create-user`, {
         email: createUserForm.email,
         name: createUserForm.name,
-        role: createUserForm.role
+        role: createUserForm.role,
+        password: createUserForm.password || undefined  // Only send if provided
       });
       
       toast({ 
