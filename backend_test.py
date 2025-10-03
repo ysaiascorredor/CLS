@@ -2877,13 +2877,355 @@ class CSABackendTester:
             self.log_test("CRITICAL: Subscription Status Diagnosis", False, str(e))
             return False
 
+    # ===== ENHANCED USER CREATION WITH CUSTOM PASSWORD TESTS (REVIEW REQUEST) =====
+    
+    def test_enhanced_user_creation_with_custom_password(self):
+        """Test enhanced user creation system with custom password functionality - REVIEW REQUEST"""
+        print("\n🔧 TESTING ENHANCED USER CREATION WITH CUSTOM PASSWORD FUNCTIONALITY")
+        print("=" * 80)
+        
+        # Step 1: Login with ysaias.corredor@gmail.com / Clave.01
+        success = self.test_owner_gmail_login()
+        if not success:
+            return False
+            
+        # Step 2: Test POST /api/organization/create-user with CUSTOM password
+        success = self.test_create_user_with_custom_password()
+        if not success:
+            return False
+            
+        # Step 3: Verify the user was created with the specified password (not auto-generated)
+        success = self.test_login_with_custom_password()
+        if not success:
+            return False
+            
+        # Step 4: Test POST /api/organization/create-user WITHOUT password (auto-generate)
+        success = self.test_create_user_with_auto_password()
+        if not success:
+            return False
+            
+        # Step 5: Verify auto-generated password works for login
+        success = self.test_login_with_auto_password()
+        if not success:
+            return False
+            
+        # Step 6: Test password validation (password too short should fail)
+        success = self.test_password_validation_short_password()
+        if not success:
+            return False
+            
+        print("✅ ENHANCED USER CREATION SYSTEM WITH CUSTOM PASSWORD - ALL TESTS PASSED!")
+        return True
+
+    def test_owner_gmail_login(self):
+        """Test login with ysaias.corredor@gmail.com / Clave.01"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@gmail.com"
+                    has_organization = user_data.get("organization_id") is not None
+                    is_owner = user_data.get("organization_role") == "owner"
+                    success = success and correct_email and has_organization and is_owner
+                    details += f", Correct email: {correct_email}, Has org: {has_organization}, Owner role: {is_owner}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Owner Gmail Login (ysaias.corredor@gmail.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Owner Gmail Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+
+    def test_create_user_with_custom_password(self):
+        """Test POST /api/organization/create-user with CUSTOM password"""
+        if not self.owner_token:
+            self.log_test("Create User With Custom Password", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Create user with custom password
+            user_data = {
+                "email": "test.custom.password@example.com",
+                "name": "Test Custom Password User",
+                "role": "auditor",
+                "password": "MyCustomPass123"
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                has_password_type = "password_type" in data
+                
+                success = has_message and has_user and has_password_type
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}, Password type: {has_password_type}"
+                
+                if success:
+                    user_info = data.get("user", {})
+                    password_type = data.get("password_type")
+                    temp_password = user_info.get("temporary_password")
+                    
+                    correct_email = user_info.get("email") == "test.custom.password@example.com"
+                    correct_name = user_info.get("name") == "Test Custom Password User"
+                    correct_role = user_info.get("role") == "auditor"
+                    is_custom_password = password_type == "custom"
+                    password_matches = temp_password == "MyCustomPass123"
+                    
+                    success = success and correct_email and correct_name and correct_role and is_custom_password and password_matches
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, Custom: {is_custom_password}, Password matches: {password_matches}"
+                    
+                    # Store for later login test
+                    self.custom_password_user = {
+                        "email": "test.custom.password@example.com",
+                        "password": "MyCustomPass123"
+                    }
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Create User With Custom Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Create User With Custom Password", False, str(e))
+            return False
+
+    def test_login_with_custom_password(self):
+        """Test login with the new user using the custom password: test.custom.password@example.com / MyCustomPass123"""
+        if not hasattr(self, 'custom_password_user'):
+            self.log_test("Login With Custom Password", False, "Custom password user not created")
+            return False
+            
+        try:
+            login_data = self.custom_password_user
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                success = has_token and has_user
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "test.custom.password@example.com"
+                    correct_name = user_data.get("name") == "Test Custom Password User"
+                    correct_role = user_data.get("organization_role") == "auditor"
+                    has_organization = user_data.get("organization_id") is not None
+                    
+                    success = success and correct_email and correct_name and correct_role and has_organization
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, Has org: {has_organization}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Login With Custom Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Login With Custom Password", False, str(e))
+            return False
+
+    def test_create_user_with_auto_password(self):
+        """Test POST /api/organization/create-user WITHOUT password (auto-generate)"""
+        if not self.owner_token:
+            self.log_test("Create User With Auto Password", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Create user without password (should auto-generate)
+            user_data = {
+                "email": "test.auto.password@example.com",
+                "name": "Test Auto Password User",
+                "role": "viewer"
+                # No password field - should auto-generate
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                has_password_type = "password_type" in data
+                
+                success = has_message and has_user and has_password_type
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}, Password type: {has_password_type}"
+                
+                if success:
+                    user_info = data.get("user", {})
+                    password_type = data.get("password_type")
+                    temp_password = user_info.get("temporary_password")
+                    
+                    correct_email = user_info.get("email") == "test.auto.password@example.com"
+                    correct_name = user_info.get("name") == "Test Auto Password User"
+                    correct_role = user_info.get("role") == "viewer"
+                    is_generated_password = password_type == "generated"
+                    has_temp_password = temp_password is not None and len(temp_password) > 6
+                    
+                    success = success and correct_email and correct_name and correct_role and is_generated_password and has_temp_password
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, Generated: {is_generated_password}, Has temp password: {has_temp_password}"
+                    
+                    # Store for later login test
+                    self.auto_password_user = {
+                        "email": "test.auto.password@example.com",
+                        "password": temp_password
+                    }
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Create User With Auto Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Create User With Auto Password", False, str(e))
+            return False
+
+    def test_login_with_auto_password(self):
+        """Test login with auto-generated password"""
+        if not hasattr(self, 'auto_password_user'):
+            self.log_test("Login With Auto Password", False, "Auto password user not created")
+            return False
+            
+        try:
+            login_data = self.auto_password_user
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                success = has_token and has_user
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "test.auto.password@example.com"
+                    correct_name = user_data.get("name") == "Test Auto Password User"
+                    correct_role = user_data.get("organization_role") == "viewer"
+                    has_organization = user_data.get("organization_id") is not None
+                    
+                    success = success and correct_email and correct_name and correct_role and has_organization
+                    details += f", Email: {correct_email}, Name: {correct_name}, Role: {correct_role}, Has org: {has_organization}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Login With Auto Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Login With Auto Password", False, str(e))
+            return False
+
+    def test_password_validation_short_password(self):
+        """Test password validation (password too short should fail)"""
+        if not self.owner_token:
+            self.log_test("Password Validation Short Password", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Try to create user with password too short (should fail)
+            user_data = {
+                "email": "test.short.password@example.com",
+                "name": "Test Short Password User",
+                "role": "auditor",
+                "password": "123"  # Too short - should fail
+            }
+            
+            response = requests.post(f"{self.api_url}/organization/create-user", 
+                                   json=user_data, headers=headers, timeout=10)
+            
+            # Should return 400 error for password too short
+            success = response.status_code == 400
+            
+            if success:
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get('detail', '').lower()
+                    has_password_error = 'password' in error_message and ('short' in error_message or 'characters' in error_message or '6' in error_message)
+                    success = success and has_password_error
+                    details = f"Status: {response.status_code} (expected 400), Password error: {has_password_error}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code} (expected 400), Response: {response.text[:200]}"
+            else:
+                details = f"Status: {response.status_code} (expected 400 for short password)"
+            
+            self.log_test("Password Validation Short Password", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Password Validation Short Password", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
-        # CRITICAL BUSINESS ISSUE - Run first
+        # ENHANCED USER CREATION SYSTEM TESTING (REVIEW REQUEST) - RUN FIRST
+        self.test_enhanced_user_creation_with_custom_password()
+        
+        # CRITICAL BUSINESS ISSUE - Run second
         self.test_critical_subscription_diagnosis()
         
         # Basic connectivity tests
