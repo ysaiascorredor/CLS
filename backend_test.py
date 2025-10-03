@@ -3744,7 +3744,7 @@ class CSABackendTester:
         # Bonus: Verify deleted user can still login but has no organization
         try:
             login_data = {
-                "email": "test.delete.function@example.com",
+                "email": test_email,
                 "password": "DeleteTest123"
             }
             
