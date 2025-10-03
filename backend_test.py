@@ -4590,10 +4590,14 @@ class CSABackendTester:
                     
                     if dashboard_works:
                         dashboard_data = dashboard_response.json()
-                        has_metrics = "total_users" in dashboard_data or "total_audits" in dashboard_data
+                        # Check for the actual structure returned by the dashboard
+                        has_metrics = "metrics" in dashboard_data
+                        has_users_by_plan = "users_by_plan" in dashboard_data
+                        has_revenue_by_month = "revenue_by_month" in dashboard_data
+                        has_top_users = "top_users" in dashboard_data
                         
                         success = dashboard_works and has_metrics
-                        details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Dashboard: {dashboard_works}, Has metrics: {has_metrics}"
+                        details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Dashboard: {dashboard_works}, Has metrics: {has_metrics}, Has users_by_plan: {has_users_by_plan}, Has revenue_by_month: {has_revenue_by_month}, Has top_users: {has_top_users}"
                     else:
                         success = False
                         details = f"Login: 200, Admin role: {is_admin}, Enterprise plan: {is_enterprise}, Dashboard: {dashboard_response.status_code}"
