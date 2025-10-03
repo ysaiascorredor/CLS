@@ -2227,9 +2227,9 @@ function TeamManagement() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{language === 'en' ? 'Create New Team User' : 'Crear Nuevo Usuario'}</DialogTitle>
+                <DialogTitle>🚀 CREATE NEW TEAM USER</DialogTitle>
                 <DialogDescription>
-                  {language === 'en' ? 'Create a user account directly - much easier than invitations!' : 'Crear usuario directamente - ¡mucho más fácil que invitaciones!'}
+                  Create a user account directly with email and password - NO invitations needed!
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
