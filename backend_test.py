@@ -3271,8 +3271,12 @@ class CSABackendTester:
             headers = {"Authorization": f"Bearer {self.owner_token}"}
             
             # Create user with specific credentials as mentioned in review request
+            import time
+            timestamp = str(int(time.time()))
+            test_email = f"test.delete.user.{timestamp}@example.com"
+            
             user_data = {
-                "email": "test.delete.user@example.com",
+                "email": test_email,
                 "name": "Test Delete User",
                 "role": "auditor",
                 "password": "TestPass123"
