@@ -1372,7 +1372,7 @@ function UserSettings() {
               placeholder={language === 'en' ? 'Confirm new password' : 'Confirmar nueva contraseña'}
             />
           </div>
-          <Button onClick={changePassword} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={changePassword} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             {language === 'en' ? '🔐 Change Password' : '🔐 Cambiar Contraseña'}
           </Button>
         </CardContent>
