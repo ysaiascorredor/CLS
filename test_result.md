@@ -465,10 +465,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "NEW USER CREATION SYSTEM - Direct User Creation (Replaces Invitations) - COMPLETED"
+    - "ENHANCED USER CREATION SYSTEM - Custom Password Functionality - COMPLETED"
   stuck_tasks: []
   test_all: false
-  test_priority: "new_user_creation_completed"
+  test_priority: "enhanced_user_creation_completed"
 
 agent_communication:
     - agent: "main"
