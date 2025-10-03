@@ -2048,18 +2048,18 @@ function TeamManagement() {
         </div>
         
         {user?.organization_role === 'owner' && (
-          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Users className="w-4 h-4 mr-2" />
-                {t.inviteMember}
+                {language === 'en' ? 'Add User' : 'Agregar Usuario'}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{language === 'en' ? 'Invite New Member' : 'Invitar Nuevo Miembro'}</DialogTitle>
+                <DialogTitle>{language === 'en' ? 'Create New Team User' : 'Crear Nuevo Usuario'}</DialogTitle>
                 <DialogDescription>
-                  Invite a team member to collaborate on audits
+                  {language === 'en' ? 'Create a user account directly - much easier than invitations!' : 'Crear usuario directamente - ¡mucho más fácil que invitaciones!'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -2068,34 +2068,35 @@ function TeamManagement() {
                   <Input
                     id="email"
                     type="email"
-                    value={inviteForm.email}
-                    onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
-                    placeholder="user@company.com"
+                    value={createUserForm.email}
+                    onChange={(e) => setCreateUserForm({...createUserForm, email: e.target.value})}
+                    placeholder="empleado@empresa.com"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="name">Nombre</Label>
+                  <Label htmlFor="name">{language === 'en' ? 'Full Name' : 'Nombre Completo'}</Label>
                   <Input
                     id="name"
-                    value={inviteForm.name}
-                    onChange={(e) => setInviteForm({...inviteForm, name: e.target.value})}
-                    placeholder="Full name"
+                    type="text"
+                    value={createUserForm.name}
+                    onChange={(e) => setCreateUserForm({...createUserForm, name: e.target.value})}
+                    placeholder={language === 'en' ? 'Juan Pérez' : 'Juan Pérez'}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="role">Rol</Label>
-                  <Select value={inviteForm.role} onValueChange={(role) => setInviteForm({...inviteForm, role})}>
+                  <Label htmlFor="role">{language === 'en' ? 'Role' : 'Rol'}</Label>
+                  <Select value={createUserForm.role} onValueChange={(value) => setCreateUserForm({...createUserForm, role: value})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="auditor">Auditor - Can create and edit audits</SelectItem>
-                      <SelectItem value="viewer">Observer - Can only view audits</SelectItem>
+                      <SelectItem value="auditor">{language === 'en' ? 'Auditor - Can create and edit audits' : 'Auditor - Puede crear y editar auditorías'}</SelectItem>
+                      <SelectItem value="viewer">{language === 'en' ? 'Observer - Can only view audits' : 'Observador - Solo puede ver auditorías'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={inviteMember} className="w-full">
-                  {language === 'en' ? 'Send Invitation' : 'Enviar Invitación'}
+                <Button onClick={createTeamUser} className="w-full">
+                  {language === 'en' ? '🚀 Create User Account' : '🚀 Crear Cuenta de Usuario'}
                 </Button>
               </div>
             </DialogContent>
