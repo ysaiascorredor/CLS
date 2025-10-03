@@ -3306,7 +3306,7 @@ class CSABackendTester:
                     # Store user info for deletion test
                     self.test_delete_user = {
                         "id": user_id,
-                        "email": "test.delete.user@example.com",
+                        "email": test_email,
                         "name": "Test Delete User",
                         "password": "TestPass123"
                     }
