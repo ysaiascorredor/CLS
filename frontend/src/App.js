@@ -798,7 +798,7 @@ function Dashboard() {
             {/* Dashboard Tab */}
             <TabsContent value="dashboard" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card>
+                <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t.totalAudits}</CardTitle>
                     <FileText className="h-4 w-4 text-muted-foreground" />
