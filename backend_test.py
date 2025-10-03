@@ -3715,7 +3715,7 @@ class CSABackendTester:
                 # Verify our test user is no longer in the team
                 test_user_still_found = False
                 for member in team_members:
-                    if member.get("email") == "test.delete.function@example.com":
+                    if member.get("user", {}).get("email") == test_email:
                         test_user_still_found = True
                         break
                 
