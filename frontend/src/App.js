@@ -1953,11 +1953,17 @@ function TeamManagement() {
   };
 
   const inviteMember = async () => {
-    console.log('🚀 CONVERTING OLD INVITE TO NEW CREATE USER SYSTEM');
+    console.log('🚀 FORCE CREATE USER INSTEAD OF INVITE - HIJACKED FUNCTION EXECUTED');
     console.log('📋 Form data:', inviteForm);
     
+    // Clear any previous error toasts
+    document.querySelectorAll('[data-sonner-toaster]').forEach(el => el.innerHTML = '');
+    
     try {
-      // *** USING NEW CREATE USER SYSTEM INSTEAD OF INVITATIONS ***
+      console.log('📡 Making API call to CREATE USER endpoint...');
+      console.log('🔗 URL:', `${API}/organization/create-user`);
+      
+      // *** FORCE USE NEW CREATE USER SYSTEM ***
       const response = await axios.post(`${API}/organization/create-user`, {
         email: inviteForm.email,
         name: inviteForm.name,
@@ -1965,32 +1971,44 @@ function TeamManagement() {
         password: undefined  // Auto-generate password
       });
       
+      console.log('✅ API Response received:', response.data);
+      
       const passwordInfo = response.data.user.temporary_password;
       
+      // Show success notification  
       toast({ 
-        title: "✅ ¡Usuario Creado Exitosamente!",
-        description: `${inviteForm.name} puede iniciar sesión con: Email: ${inviteForm.email} | Password: ${passwordInfo}`,
-        duration: 10000  // Show longer so user can copy
+        title: "🎉 ¡USUARIO CREADO EXITOSAMENTE!",
+        description: `CREDENCIALES PARA ${inviteForm.name}:\n📧 Email: ${inviteForm.email}\n🔐 Password: ${passwordInfo}\n\n¡Guarda estas credenciales!`,
+        duration: 15000  // Show longer so user can copy
       });
       
-      console.log('✅ User created successfully:', response.data);
-      console.log('🔑 CREDENTIALS TO SHARE:');
+      console.log('🎉 SUCCESS! User created successfully');
+      console.log('🔑 SHARE THESE CREDENTIALS:');
+      console.log(`👤 Name: ${inviteForm.name}`);
       console.log(`📧 Email: ${inviteForm.email}`);
       console.log(`🔐 Password: ${passwordInfo}`);
-      console.log(`👤 Name: ${inviteForm.name}`);
+      console.log('💾 SAVE THESE CREDENTIALS NOW!');
       
+      // Close dialog and clear form
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
-      loadAllTeamData(); // Reload to show new team member
+      
+      // Force reload team data
+      console.log('🔄 Reloading team data to show new member...');
+      setTimeout(() => {
+        loadAllTeamData();
+      }, 1000);
       
     } catch (error) {
-      console.error('❌ Create user error:', error);
+      console.error('💥 CRITICAL ERROR creating user:', error);
+      console.error('📋 Error details:', error.response?.data);
       
-      const errorMessage = error.response?.data?.detail || "Error creando usuario";
+      const errorMessage = error.response?.data?.detail || `Error creando usuario: ${error.message}`;
       toast({ 
-        title: "❌ Error Creando Usuario", 
+        title: "💥 ERROR CRITICO CREANDO USUARIO", 
         description: errorMessage,
-        variant: "destructive" 
+        variant: "destructive",
+        duration: 8000
       });
     }
   };
