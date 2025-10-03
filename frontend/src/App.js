@@ -1860,7 +1860,7 @@ function TeamManagement() {
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: 'auditor' });
-  const [createUserForm, setCreateUserForm] = useState({ email: '', name: '', role: 'auditor' });
+  const [createUserForm, setCreateUserForm] = useState({ email: '', name: '', role: 'auditor', password: '' });
   const { toast } = useToast();
 
   useEffect(() => {
