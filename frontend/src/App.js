@@ -1846,6 +1846,41 @@ function TeamManagement() {
     }
   };
 
+  const createTeamUser = async () => {
+    try {
+      console.log('🚀 Creating team user:', createUserForm);
+      
+      const response = await axios.post(`${API}/organization/create-user`, {
+        email: createUserForm.email,
+        name: createUserForm.name,
+        role: createUserForm.role
+      });
+      
+      toast({ 
+        title: language === 'en' ? "✅ User Created Successfully!" : "✅ ¡Usuario Creado Exitosamente!",
+        description: language === 'en' 
+          ? `${createUserForm.name} can now login with email: ${createUserForm.email}` 
+          : `${createUserForm.name} ya puede iniciar sesión con email: ${createUserForm.email}`
+      });
+      
+      console.log('✅ User created successfully:', response.data);
+      
+      setShowCreateUserDialog(false);
+      setCreateUserForm({ email: '', name: '', role: 'auditor' });
+      loadAllTeamData(); // Reload to show new team member
+      
+    } catch (error) {
+      console.error('❌ Create user error:', error);
+      
+      const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error creating user" : "Error creando usuario");
+      toast({ 
+        title: language === 'en' ? "❌ User Creation Failed" : "❌ Error Creando Usuario", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
+    }
+  };
+
   const removeMember = async (memberId) => {
     const confirmMessage = language === 'en' ? 
       "Are you sure you want to remove this member?" : 
