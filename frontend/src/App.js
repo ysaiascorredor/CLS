@@ -2222,7 +2222,7 @@ function TeamManagement() {
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Users className="w-4 h-4 mr-2" />
-                {language === 'en' ? 'Add User' : 'Agregar Usuario'}
+                {language === 'en' ? '➕ Add User' : '➕ Agregar Usuario'}
               </Button>
             </DialogTrigger>
             <DialogContent>
