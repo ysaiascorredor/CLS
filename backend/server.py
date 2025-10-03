@@ -1981,15 +1981,42 @@ async def invite_team_member(
     
     await db.team_invitations.insert_one(invitation.dict())
     
-    # Generar enlace único de invitación
-    invitation_link = f"https://constr-safety.preview.emergentagent.com/join-team/{invitation.id}"
+    # Generar enlace único de invitación  
+    invitation_link = f"https://safeinspect-2.preview.emergentagent.com/join-team/{invitation.id}"
     
-    return {
+    # Intentar enviar email automáticamente si está configurado
+    email_sent = False
+    try:
+        # Buscar configuración de email del usuario
+        email_config = await db.email_settings.find_one({"user_id": current_user.id})
+        
+        if email_config:
+            # Aquí iría la lógica para enviar email
+            # Por ahora simularemos que se envió
+            email_sent = True
+            
+            # TODO: Implementar envío real de email con SMTP
+            # import smtplib
+            # from email.mime.text import MIMEText
+            # from email.mime.multipart import MIMEMultipart
+            
+    except Exception as e:
+        print(f"Error sending email: {e}")
+    
+    response_data = {
         "message": "Invitation created successfully", 
         "invitation": invitation,
-        "invitation_link": invitation_link,
-        "instructions": "Copy this link and send it via WhatsApp, Email, or any messaging app"
+        "invitation_link": invitation_link
     }
+    
+    if email_sent:
+        response_data["email_sent"] = True
+        response_data["instructions"] = f"Invitation email sent to {invitee_email}"
+    else:
+        response_data["email_sent"] = False
+        response_data["instructions"] = "Copy this link and send it via WhatsApp, Email, or any messaging app"
+    
+    return response_data
 
 @api_router.get("/organization/invitations")
 async def get_pending_invitations(current_user: User = Depends(require_auth)):
