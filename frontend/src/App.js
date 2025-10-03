@@ -2052,13 +2052,15 @@ function TeamManagement() {
   };
 
   const deleteMember = async (memberId) => {
-    const confirmMessage = language === 'en' ? 
-      "Are you sure you want to delete this user?" : 
-      "¿Estás seguro de que quieres eliminar este usuario?";
+    console.log('🗑️ DELETE FUNCTION CALLED for member:', memberId);
+    
+    const confirmMessage = "⚠️ Are you sure you want to delete this user? This action cannot be undone!";
       
     if (window.confirm(confirmMessage)) {
+      console.log('✅ User confirmed deletion, proceeding...');
+      console.log('🔗 DELETE URL:', `${API}/organization/remove-user/${memberId}`);
+      
       try {
-        console.log('🗑️ Deleting user:', memberId);
         await axios.delete(`${API}/organization/remove-user/${memberId}`);
         
         toast({ 
