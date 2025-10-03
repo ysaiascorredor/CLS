@@ -1518,37 +1518,26 @@ function CompanySettings() {
   );
 }
 
-// Subscription Settings Component
+// Subscription Settings Component - Single Unlimited Plan
 function SubscriptionSettings() {
   const { t, language } = React.useContext(LanguageContext);
-  const [packages, setPackages] = useState({});
   const { user } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadPackages();
-  }, []);
+  // Single unlimited plan data
+  const unlimitedPlan = SUBSCRIPTION_PACKAGES.unlimited;
 
-  const loadPackages = async () => {
+  const handleSubscribe = async () => {
     try {
-      const response = await axios.get(`${API}/payments/packages`);
-      setPackages(response.data);
-    } catch (error) {
-      toast({ title: "Error loading packages", variant: "destructive" });
-    }
-  };
-
-  const handleUpgrade = async (packageId) => {
-    try {
-      console.log('🚀 Starting upgrade process for package:', packageId);
+      console.log('🚀 Starting subscription process for CSA Safety Pro');
       
       const originUrl = window.location.origin;
       const requestData = {
-        package_id: packageId,
+        package_id: "unlimited",
         origin_url: originUrl
       };
       
-      console.log('📤 Sending upgrade request:', requestData);
+      console.log('📤 Sending subscription request:', requestData);
       
       const response = await axios.post(`${API}/payments/checkout/session`, requestData);
       
@@ -1559,21 +1548,21 @@ function SubscriptionSettings() {
         if (response.data.url.includes('/demo-checkout')) {
           toast({ 
             title: language === 'en' ? "🎭 Demo Mode: Payment simulation" : "🎭 Modo Demo: Simulación de pago",
-            description: language === 'en' ? "This is a demo payment. In production, this would redirect to Stripe." : "Este es un pago demo. En producción, esto redirigiría a Stripe."
+            description: language === 'en' ? "This is a demo payment for CSA Safety Pro" : "Este es un pago demo para CSA Seguridad Pro"
           });
           
           // For demo, simulate successful payment after 2 seconds
           setTimeout(() => {
             toast({ 
-              title: language === 'en' ? "✅ Demo payment completed!" : "✅ ¡Pago demo completado!",
-              description: language === 'en' ? "Your subscription has been updated (demo mode)" : "Tu suscripción ha sido actualizada (modo demo)"
+              title: language === 'en' ? "✅ Welcome to CSA Safety Pro!" : "✅ ¡Bienvenido a CSA Seguridad Pro!",
+              description: language === 'en' ? "You now have unlimited audits and team members!" : "¡Ahora tienes auditorías y miembros de equipo ilimitados!"
             });
           }, 2000);
         } else {
           // Real Stripe redirect
           toast({
             title: language === 'en' ? "🔄 Redirecting to Stripe..." : "🔄 Redirigiendo a Stripe...",
-            description: language === 'en' ? "Opening secure payment page" : "Abriendo página de pago segura"
+            description: language === 'en' ? "Opening secure payment for CSA Safety Pro" : "Abriendo pago seguro para CSA Seguridad Pro"
           });
           window.location.href = response.data.url;
         }
@@ -1581,52 +1570,94 @@ function SubscriptionSettings() {
         throw new Error('No checkout URL received');
       }
     } catch (error) {
-      console.error('❌ Upgrade error:', error);
+      console.error('❌ Subscription error:', error);
       const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
       toast({ 
-        title: language === 'en' ? "❌ Error creating checkout session" : "❌ Error creando sesión de pago", 
+        title: language === 'en' ? "❌ Error creating subscription" : "❌ Error creando suscripción", 
         description: `${errorMessage}. Please try again or contact support.`,
         variant: "destructive" 
       });
     }
   };
 
+  const isSubscribed = user?.subscription_plan === 'unlimited' || user?.subscription_plan === 'enterprise';
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.currentPlan}</CardTitle>
+      <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            🚀 {t.unlimitedPlan}
+          </CardTitle>
+          <CardDescription className="text-xl">
+            <span className="text-4xl font-bold text-green-600">${unlimitedPlan.price}</span>
+            <span className="text-gray-600">/mes</span>
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p>{user?.subscription_plan || "No active subscription"}</p>
+        <CardContent className="text-center space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+              <span className="text-2xl">✅</span>
+              <span>{language === 'en' ? 'Unlimited Audits' : 'Auditorías Ilimitadas'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+              <span className="text-2xl">👥</span>
+              <span>{language === 'en' ? 'Unlimited Team Members' : 'Miembros de Equipo Ilimitados'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+              <span className="text-2xl">📊</span>
+              <span>{language === 'en' ? 'Advanced Analytics' : 'Análisis Avanzado'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+              <span className="text-2xl">📋</span>
+              <span>{language === 'en' ? '22 Audit Categories' : '22 Categorías de Auditoría'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+              <span className="text-2xl">📄</span>
+              <span>{language === 'en' ? 'PDF Reports' : 'Reportes en PDF'}</span>
+            </div>
+          </div>
+          
+          {isSubscribed ? (
+            <div className="space-y-2">
+              <Badge className="bg-green-500 text-white text-lg px-4 py-2">
+                ✅ {language === 'en' ? 'Active Subscription' : 'Suscripción Activa'}
+              </Badge>
+              <p className="text-sm text-gray-600">
+                {language === 'en' ? 'You have full access to all features!' : '¡Tienes acceso completo a todas las funciones!'}
+              </p>
+            </div>
+          ) : (
+            <Button 
+              onClick={handleSubscribe}
+              className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-bold py-3 px-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              data-testid="subscribe-unlimited-btn"
+            >
+              🚀 {language === 'en' ? 'Subscribe Now' : 'Suscribirse Ahora'}
+            </Button>
+          )}
         </CardContent>
       </Card>
       
-      <div className="grid md:grid-cols-3 gap-6">
-        {Object.entries(packages).map(([key, pkg]) => (
-          <Card key={key}>
-            <CardHeader>
-              <CardTitle>{pkg.name}</CardTitle>
-              <CardDescription>
-                <span className="text-2xl font-bold">${pkg.price}</span>/month
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">
-                {pkg.audits_per_month === -1 ? 'Unlimited' : pkg.audits_per_month} {t.auditsPerMonth}
-              </p>
-              <Button 
-                onClick={() => handleUpgrade(key)}
-                className="w-full"
-                disabled={user?.subscription_plan === key}
-                data-testid={`upgrade-${key}-btn`}
-              >
-                {user?.subscription_plan === key ? t.currentPlan : t.upgradeNow}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Current Status */}
+      <Card className="bg-gray-50">
+        <CardHeader>
+          <CardTitle>{language === 'en' ? 'Current Status' : 'Estado Actual'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-lg">
+            <span className="font-semibold">{language === 'en' ? 'Plan:' : 'Plan:'} </span>
+            <span className="text-blue-600 font-bold">
+              {isSubscribed ? t.unlimitedPlan : (language === 'en' ? 'No Active Subscription' : 'Sin Suscripción Activa')}
+            </span>
+          </p>
+          {user?.subscription_expires_at && (
+            <p className="text-sm text-gray-600 mt-2">
+              {language === 'en' ? 'Expires:' : 'Expira:'} {new Date(user.subscription_expires_at).toLocaleDateString()}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
