@@ -900,6 +900,7 @@ function Dashboard() {
             {/* Settings Tab */}
             <TabsContent value="settings">
               <div className="space-y-6">
+                <UserSettings />
                 <CompanySettings />
                 <SubscriptionSettings />
               </div>
