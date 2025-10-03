@@ -1953,56 +1953,42 @@ function TeamManagement() {
   };
 
   const inviteMember = async () => {
+    console.log('🚀 CONVERTING OLD INVITE TO NEW CREATE USER SYSTEM');
+    console.log('📋 Form data:', inviteForm);
+    
     try {
-      console.log('📧 Inviting member:', inviteForm);
-      
-      // Backend expects query parameters, not JSON body
-      const params = new URLSearchParams({
-        invitee_email: inviteForm.email,
-        invitee_name: inviteForm.name,
-        role: inviteForm.role
+      // *** USING NEW CREATE USER SYSTEM INSTEAD OF INVITATIONS ***
+      const response = await axios.post(`${API}/organization/create-user`, {
+        email: inviteForm.email,
+        name: inviteForm.name,
+        role: inviteForm.role,
+        password: undefined  // Auto-generate password
       });
       
-      const response = await axios.post(`${API}/organization/invite?${params}`);
-      
-      // Show invitation link for easy copying
-      const invitationLink = response.data.invitation_link;
-      
-      // Try to copy to clipboard, but don't fail if it's blocked
-      let clipboardSuccess = false;
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(invitationLink);
-          clipboardSuccess = true;
-        }
-      } catch (clipError) {
-        console.log('📋 Clipboard access denied, showing link in console instead');
-      }
-      
-      // Show success message
-      const successMessage = clipboardSuccess 
-        ? (language === 'en' ? "✅ Invitation sent! Link copied to clipboard." : "✅ ¡Invitación enviada! Enlace copiado al portapapeles.")
-        : (language === 'en' ? "✅ Invitation sent! Check Pending Invitations list." : "✅ Invitation sent! Check Pending Invitations list.");
+      const passwordInfo = response.data.user.temporary_password;
       
       toast({ 
-        title: language === 'en' ? "Invitation Sent" : "Invitación Enviada",
-        description: successMessage
+        title: "✅ ¡Usuario Creado Exitosamente!",
+        description: `${inviteForm.name} puede iniciar sesión con: Email: ${inviteForm.email} | Password: ${passwordInfo}`,
+        duration: 10000  // Show longer so user can copy
       });
       
-      // Always show in console for easy access
-      console.log('🔗 Invitation Link Generated:', invitationLink);
-      console.log('📧 Send this link to', inviteForm.name + ':', invitationLink);
+      console.log('✅ User created successfully:', response.data);
+      console.log('🔑 CREDENTIALS TO SHARE:');
+      console.log(`📧 Email: ${inviteForm.email}`);
+      console.log(`🔐 Password: ${passwordInfo}`);
+      console.log(`👤 Name: ${inviteForm.name}`);
       
       setShowInviteDialog(false);
       setInviteForm({ email: '', name: '', role: 'auditor' });
-      loadAllTeamData(); // Reload to show new invitation
+      loadAllTeamData(); // Reload to show new team member
       
     } catch (error) {
-      console.error('❌ Invite error:', error);
+      console.error('❌ Create user error:', error);
       
-      const errorMessage = error.response?.data?.detail || (language === 'en' ? "Error sending invitation" : "Error enviando invitación");
+      const errorMessage = error.response?.data?.detail || "Error creando usuario";
       toast({ 
-        title: language === 'en' ? "Invitation Failed" : "Error en Invitación", 
+        title: "❌ Error Creando Usuario", 
         description: errorMessage,
         variant: "destructive" 
       });
