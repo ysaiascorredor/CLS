@@ -2030,7 +2030,7 @@ function TeamManagement() {
       console.log('✅ User created successfully:', response.data);
       
       setShowCreateUserDialog(false);
-      setCreateUserForm({ email: '', name: '', role: 'auditor' });
+      setCreateUserForm({ email: '', name: '', role: 'auditor', password: '' });
       loadAllTeamData(); // Reload to show new team member
       
     } catch (error) {
