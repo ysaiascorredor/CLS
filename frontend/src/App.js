@@ -2970,7 +2970,7 @@ db.users.updateOne(
                 <div className="flex space-x-2">
                   <Button 
                     onClick={() => window.open('mailto:ysaias.corredor@clsolution.net?subject=CSA Support Request')}
-                    className="bg-blue-600 hover:bg-blue-700 flex-1"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex-1"
                   >
                     📧 {t.language === 'en' ? 'Send Email' : 'Enviar Email'}
                   </Button>
