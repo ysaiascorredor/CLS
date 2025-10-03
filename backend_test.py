@@ -3539,7 +3539,10 @@ class CSABackendTester:
         # ENHANCED USER CREATION SYSTEM TESTING (REVIEW REQUEST) - RUN FIRST
         self.test_enhanced_user_creation_with_custom_password()
         
-        # CRITICAL BUSINESS ISSUE - Run second
+        # DELETE USER FUNCTIONALITY TEST (REVIEW REQUEST) - RUN SECOND
+        self.test_delete_user_functionality()
+        
+        # CRITICAL BUSINESS ISSUE - Run third
         self.test_critical_subscription_diagnosis()
         
         # Basic connectivity tests
