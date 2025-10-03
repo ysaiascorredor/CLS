@@ -723,7 +723,7 @@ function Dashboard() {
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-orange-600 shadow-lg border-b border-blue-200">
           <div className="container mx-auto px-6 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-3">
               <Shield className="w-8 h-8 text-blue-600" />
