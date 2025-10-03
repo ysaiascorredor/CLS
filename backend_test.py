@@ -3773,6 +3773,110 @@ class CSABackendTester:
         print("🎯 DELETE USER FUNCTIONALITY REVIEW REQUEST TESTING COMPLETE")
         return True
 
+    def test_review_request_delete_user_setup(self):
+        """REVIEW REQUEST: Create test user for delete functionality testing"""
+        try:
+            # Step 1: Login with ysaias.corredor@gmail.com / Clave.01
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code != 200:
+                self.log_test("Review Request - Owner Login", False, f"Login failed: {response.status_code}")
+                return False
+                
+            data = response.json()
+            owner_token = data.get("access_token")
+            user_data = data.get("user", {})
+            
+            if not owner_token:
+                self.log_test("Review Request - Owner Login", False, "No access token received")
+                return False
+                
+            self.log_test("Review Request - Owner Login", True, f"Login successful, role: {user_data.get('organization_role', 'N/A')}")
+            
+            # Step 2: Create test user with specific details
+            headers = {"Authorization": f"Bearer {owner_token}"}
+            
+            user_create_data = {
+                "email": "test.delete.now@example.com",
+                "name": "Test Delete Now User", 
+                "role": "auditor",
+                "password": "DeleteNow123"
+            }
+            
+            create_response = requests.post(f"{self.api_url}/organization/create-user",
+                                          json=user_create_data, headers=headers, timeout=10)
+            
+            if create_response.status_code == 200:
+                create_data = create_response.json()
+                test_user_id = create_data.get("user", {}).get("id")
+                
+                success = test_user_id is not None
+                details = f"User created with ID: {test_user_id}, Email: {user_create_data['email']}"
+                self.log_test("Review Request - Create Test User", success, details)
+                
+                if not success:
+                    return False
+                    
+            else:
+                try:
+                    error_data = create_response.json()
+                    details = f"Status: {create_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {create_response.status_code}, Response: {create_response.text[:200]}"
+                    
+                self.log_test("Review Request - Create Test User", False, details)
+                return False
+            
+            # Step 3: Verify user appears in team list
+            team_response = requests.get(f"{self.api_url}/organization/team",
+                                       headers=headers, timeout=10)
+            
+            if team_response.status_code == 200:
+                team_data = team_response.json()
+                team_members = team_data.get("team_members", [])
+                
+                # Look for our test user
+                test_user_found = False
+                for member in team_members:
+                    if member.get("email") == "test.delete.now@example.com":
+                        test_user_found = True
+                        break
+                
+                success = test_user_found
+                details = f"Team members count: {len(team_members)}, Test user found: {test_user_found}"
+                self.log_test("Review Request - Verify User in Team", success, details)
+                
+                if success:
+                    print(f"✅ REVIEW REQUEST COMPLETED SUCCESSFULLY:")
+                    print(f"   - Owner login: ysaias.corredor@gmail.com ✅")
+                    print(f"   - Test user created: test.delete.now@example.com ✅") 
+                    print(f"   - User appears in team list ✅")
+                    print(f"   - User ID: {test_user_id}")
+                    print(f"   - Total team members: {len(team_members)}")
+                    print(f"   - Ready for frontend delete button testing")
+                    
+                return success
+                
+            else:
+                try:
+                    error_data = team_response.json()
+                    details = f"Status: {team_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {team_response.status_code}, Response: {team_response.text[:200]}"
+                    
+                self.log_test("Review Request - Verify User in Team", False, details)
+                return False
+                
+        except Exception as e:
+            self.log_test("Review Request - Delete User Setup", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
