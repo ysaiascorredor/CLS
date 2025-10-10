@@ -4730,6 +4730,322 @@ class CSABackendTester:
         
         return self.tests_passed == self.tests_run
 
+    def test_stripe_user_login(self):
+        """Test login with ysaias.corredor@gmail.com / Clave.01 (review request user)"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                has_message = "message" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                
+                success = has_token and has_user and has_message
+                details = f"Status: {response.status_code}, Token: {has_token}, User: {has_user}, Message: {has_message}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@gmail.com"
+                    subscription_plan = user_data.get("subscription_plan")
+                    subscription_expires = user_data.get("subscription_expires")
+                    user_role = user_data.get("role")
+                    success = success and correct_email
+                    details += f", Correct email: {correct_email}, Plan: {subscription_plan}, Expires: {subscription_expires}, Role: {user_role}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("Stripe User Login (ysaias.corredor@gmail.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe User Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+
+    def test_stripe_checkout_session_creation(self):
+        """Test POST /api/payments/checkout/session with CSA Safety Pro package"""
+        if not self.owner_token:
+            self.log_test("Stripe Checkout Session Creation", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test checkout session creation for unlimited package
+            checkout_data = {
+                "package_id": "unlimited",
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_session_id = "session_id" in data
+                has_url = "url" in data
+                
+                success = has_session_id and has_url
+                details = f"Status: {response.status_code}, Session ID: {has_session_id}, URL: {has_url}"
+                
+                if success:
+                    session_id = data.get("session_id", "")
+                    url = data.get("url", "")
+                    
+                    # Check if it's live mode (real Stripe) or demo mode
+                    is_live_mode = session_id.startswith("cs_live_") or not session_id.startswith("cs_demo_")
+                    is_demo_mode = session_id.startswith("cs_demo_")
+                    
+                    details += f", Live mode: {is_live_mode}, Demo mode: {is_demo_mode}"
+                    
+                    # For live mode, URL should be Stripe's checkout
+                    if is_live_mode:
+                        is_stripe_url = "checkout.stripe.com" in url
+                        details += f", Stripe URL: {is_stripe_url}"
+                        success = success and is_stripe_url
+                    
+                    # Store session ID for further testing
+                    self.stripe_session_id = session_id
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("Stripe Checkout Session Creation (CSA Safety Pro)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Checkout Session Creation (CSA Safety Pro)", False, str(e))
+            return False
+
+    def test_stripe_api_key_configuration(self):
+        """Test if Stripe API key is properly configured by attempting checkout"""
+        if not self.owner_token:
+            self.log_test("Stripe API Key Configuration", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test with a valid package to see if Stripe integration works
+            checkout_data = {
+                "package_id": "unlimited",
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=checkout_data, headers=headers, timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                session_id = data.get("session_id", "")
+                
+                # If we get a live session ID, Stripe is configured
+                is_live_configured = session_id.startswith("cs_live_")
+                is_demo_mode = session_id.startswith("cs_demo_")
+                
+                success = is_live_configured or is_demo_mode
+                details = f"Status: {response.status_code}, Live configured: {is_live_configured}, Demo mode: {is_demo_mode}, Session ID: {session_id[:20]}..."
+                
+            elif response.status_code == 400:
+                # Check if error is related to Stripe configuration
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', '')
+                    is_stripe_error = 'stripe' in error_detail.lower() or 'api key' in error_detail.lower()
+                    success = False
+                    details = f"Status: {response.status_code}, Stripe config error: {is_stripe_error}, Error: {error_detail}"
+                except:
+                    success = False
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            else:
+                success = False
+                details = f"Status: {response.status_code}"
+            
+            self.log_test("Stripe API Key Configuration", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe API Key Configuration", False, str(e))
+            return False
+
+    def test_stripe_webhook_endpoint(self):
+        """Test if Stripe webhook endpoint is accessible"""
+        try:
+            # Test webhook endpoint accessibility (should return method not allowed for GET)
+            response = requests.get(f"{self.api_url}/payments/webhook/stripe", timeout=10)
+            
+            # Webhook endpoint should return 405 (Method Not Allowed) for GET requests
+            # or 400 (Bad Request) if it expects POST with specific headers
+            success = response.status_code in [405, 400, 422]
+            details = f"Status: {response.status_code} (expected 405/400/422 for GET request)"
+            
+            self.log_test("Stripe Webhook Endpoint Accessibility", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Webhook Endpoint Accessibility", False, str(e))
+            return False
+
+    def test_stripe_payment_status_check(self):
+        """Test payment status checking functionality"""
+        if not self.owner_token:
+            self.log_test("Stripe Payment Status Check", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # First create a checkout session to get a session ID
+            checkout_data = {
+                "package_id": "unlimited",
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
+            }
+            
+            checkout_response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                            json=checkout_data, headers=headers, timeout=15)
+            
+            if checkout_response.status_code == 200:
+                checkout_data = checkout_response.json()
+                session_id = checkout_data.get("session_id", "")
+                
+                if session_id:
+                    # Test payment status endpoint
+                    status_response = requests.get(f"{self.api_url}/payments/checkout/status/{session_id}", 
+                                                 headers=headers, timeout=10)
+                    
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        has_session_id = "session_id" in status_data
+                        has_payment_status = "payment_status" in status_data
+                        has_status = "status" in status_data
+                        
+                        success = has_session_id and has_payment_status and has_status
+                        details = f"Status: {status_response.status_code}, Session ID: {has_session_id}, Payment Status: {has_payment_status}, Status: {has_status}"
+                        
+                        if success:
+                            payment_status = status_data.get("payment_status", "")
+                            status = status_data.get("status", "")
+                            is_demo = status_data.get("demo_mode", False)
+                            details += f", Payment: {payment_status}, Status: {status}, Demo: {is_demo}"
+                        
+                    else:
+                        success = False
+                        details = f"Status check failed: {status_response.status_code}"
+                else:
+                    success = False
+                    details = "No session ID from checkout"
+            else:
+                success = False
+                details = f"Checkout failed: {checkout_response.status_code}"
+            
+            self.log_test("Stripe Payment Status Check", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Payment Status Check", False, str(e))
+            return False
+
+    def test_stripe_error_handling(self):
+        """Test Stripe error handling with invalid requests"""
+        if not self.owner_token:
+            self.log_test("Stripe Error Handling", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Test with invalid package ID
+            invalid_checkout_data = {
+                "package_id": "invalid_package",
+                "origin_url": "https://constr-safety.preview.emergentagent.com"
+            }
+            
+            response = requests.post(f"{self.api_url}/payments/checkout/session", 
+                                   json=invalid_checkout_data, headers=headers, timeout=10)
+            
+            # Should return 400 for invalid package
+            success = response.status_code == 400
+            
+            if success:
+                try:
+                    error_data = response.json()
+                    has_error_detail = "detail" in error_data
+                    error_message = error_data.get("detail", "")
+                    is_package_error = "package" in error_message.lower() or "invalid" in error_message.lower()
+                    
+                    success = success and has_error_detail and is_package_error
+                    details = f"Status: {response.status_code}, Has error: {has_error_detail}, Package error: {is_package_error}, Message: {error_message}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            else:
+                details = f"Status: {response.status_code} (expected 400)"
+            
+            self.log_test("Stripe Error Handling", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Stripe Error Handling", False, str(e))
+            return False
+
+    def run_stripe_tests(self):
+        """Run specific Stripe integration tests as requested in review"""
+        print("🔥 STRIPE INTEGRATION TESTING - REVIEW REQUEST")
+        print("=" * 60)
+        print("Testing Stripe integration and payment system errors...")
+        print()
+        
+        # Test user login first
+        if not self.test_stripe_user_login():
+            print("❌ Cannot proceed with Stripe tests - user login failed")
+            return False
+        
+        # Test subscription packages endpoint
+        self.test_subscription_packages_endpoint()
+        
+        # Test Stripe configuration
+        self.test_stripe_api_key_configuration()
+        
+        # Test checkout session creation
+        self.test_stripe_checkout_session_creation()
+        
+        # Test webhook endpoint
+        self.test_stripe_webhook_endpoint()
+        
+        # Test payment status checking
+        self.test_stripe_payment_status_check()
+        
+        # Test error handling
+        self.test_stripe_error_handling()
+        
+        print("\n" + "=" * 60)
+        print(f"🏁 STRIPE TESTING COMPLETE")
+        print(f"📊 Results: {self.tests_passed}/{self.tests_run} tests passed")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 ALL STRIPE TESTS PASSED! Payment system is operational.")
+        else:
+            failed_tests = self.tests_run - self.tests_passed
+            print(f"⚠️  {failed_tests} Stripe test(s) failed. Check the details above.")
+        
+        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
+        print(f"✅ Success Rate: {success_rate:.1f}%")
+        
+        return self.tests_passed == self.tests_run
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
