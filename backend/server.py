@@ -71,8 +71,6 @@ WORK_TYPES = [
     
     # NEW CATEGORIES - Safety Planning & Analysis
     {"id": "jsa", "name_en": "Job Safety Analysis (JSA)", "name_es": "Análisis de Seguridad del Trabajo (AST)"},
-    {"id": "jha", "name_en": "Job Hazard Analysis (JHA)", "name_es": "Análisis de Riesgos del Trabajo (ART)"},
-    {"id": "safety_daily_plan", "name_en": "Safety Daily Plan", "name_es": "Plan Diario de Seguridad"},
     
     # NEW CATEGORIES - PPE & Equipment
     {"id": "ppe", "name_en": "Personal Protective Equipment (PPE)", "name_es": "Equipo de Protección Personal (EPP)"},
