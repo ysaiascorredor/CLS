@@ -900,6 +900,14 @@ function Dashboard() {
                           <Button variant="outline" size="sm" onClick={() => viewAudit(audit.id)}>
                             👁️ {language === 'en' ? 'View' : 'Ver'}
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => downloadAuditPDF(audit.id, audit.site_name)}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                          >
+                            📄 {language === 'en' ? 'PDF' : 'PDF'}
+                          </Button>
                         </div>
                       </div>
                     ))}
