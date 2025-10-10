@@ -812,33 +812,63 @@ function Dashboard() {
                   </CardContent>
                 </Card>
                 
-                <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
+                <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-lg hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t.compliantAudits}</CardTitle>
+                    <CardTitle className="text-sm font-medium text-green-800">{t.compliantAudits}</CardTitle>
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-green-600">{statistics?.compliant_audits || 0}</div>
+                    <div className="text-xs text-green-600 mt-1">
+                      {statistics?.total_audits > 0 ? 
+                        `${((statistics?.compliant_audits || 0) / statistics?.total_audits * 100).toFixed(1)}% of total` :
+                        '0% of total'
+                      }
+                    </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
+                <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-50 to-red-100 border-red-200 shadow-lg hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t.nonCompliantAudits}</CardTitle>
+                    <CardTitle className="text-sm font-medium text-red-800">{t.nonCompliantAudits}</CardTitle>
                     <XCircle className="h-4 w-4 text-red-500" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-red-600">{statistics?.non_compliant_audits || 0}</div>
+                    <div className="text-xs text-red-600 mt-1">
+                      {statistics?.total_audits > 0 ? 
+                        `${((statistics?.non_compliant_audits || 0) / statistics?.total_audits * 100).toFixed(1)}% of total` :
+                        '0% of total'
+                      }
+                    </div>
                   </CardContent>
                 </Card>
                 
-                <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
+                <Card className="hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-purple-100 border-blue-200 shadow-lg hover:scale-105">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{t.averageScore}</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium text-blue-800">{language === 'en' ? 'Average Compliance' : 'Promedio de Cumplimiento'}</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-blue-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{statistics?.average_compliance_score?.toFixed(1) || 0}%</div>
+                    <div className="text-2xl font-bold" style={{
+                      color: (statistics?.average_compliance_score || 0) >= 80 ? '#22c55e' : 
+                             (statistics?.average_compliance_score || 0) >= 60 ? '#f59e0b' : '#ef4444'
+                    }}>
+                      {statistics?.average_compliance_score?.toFixed(1) || 0}%
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {language === 'en' ? 'Overall performance' : 'Rendimiento general'}
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
+                      <div 
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${statistics?.average_compliance_score || 0}%`,
+                          backgroundColor: (statistics?.average_compliance_score || 0) >= 80 ? '#22c55e' : 
+                                         (statistics?.average_compliance_score || 0) >= 60 ? '#f59e0b' : '#ef4444'
+                        }}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               </div>
