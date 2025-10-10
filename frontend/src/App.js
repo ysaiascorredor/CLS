@@ -855,26 +855,42 @@ function Dashboard() {
                       )
                       .map((audit) => (
                       <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
+                        <div className="flex-grow">
                           <h4 className="font-medium">{audit.site_name}</h4>
                           <p className="text-sm text-muted-foreground">{audit.auditor_name}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(audit.created_at).toLocaleDateString()} • {audit.work_types?.join(', ') || 'N/A'}
+                          </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={audit.status === 'completed' ? 'default' : 'secondary'}>
-                            {audit.status}
+                        <div className="flex items-center space-x-3">
+                          {/* Compliance Score with Progress Bar */}
+                          <div className="text-right min-w-24">
+                            <div className="text-lg font-bold" style={{
+                              color: audit.overall_compliance_score >= 80 ? '#22c55e' : 
+                                     audit.overall_compliance_score >= 60 ? '#f59e0b' : '#ef4444'
+                            }}>
+                              {audit.overall_compliance_score?.toFixed(1) || 0}%
+                            </div>
+                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full transition-all duration-300"
+                                style={{
+                                  width: `${audit.overall_compliance_score || 0}%`,
+                                  backgroundColor: audit.overall_compliance_score >= 80 ? '#22c55e' : 
+                                                 audit.overall_compliance_score >= 60 ? '#f59e0b' : '#ef4444'
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <Badge variant={audit.overall_compliance_score >= 80 ? "default" : "secondary"}>
+                            {audit.overall_compliance_score >= 80 ? 
+                              (language === 'en' ? "✅ Compliant" : "✅ Cumple") : 
+                              (language === 'en' ? "⚠️ Non-Compliant" : "⚠️ No Cumple")
+                            }
                           </Badge>
-                          <Button variant="outline" size="sm">
-                            {t.viewAudit}
+                          <Button variant="outline" size="sm" onClick={() => viewAudit(audit.id)}>
+                            👁️ {language === 'en' ? 'View' : 'Ver'}
                           </Button>
-                          {audit.status === 'completed' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => downloadAuditPDF(audit.id, audit.site_name)}
-                            >
-                              📄 PDF
-                            </Button>
-                          )}
                         </div>
                       </div>
                     ))}
