@@ -82,24 +82,35 @@ class CSABackendTester:
             return False
 
     def test_subscription_packages_endpoint(self):
-        """Test subscription packages endpoint (public)"""
+        """Test subscription packages endpoint (public) - UPDATED FOR CSA SAFETY PRO"""
         try:
             response = requests.get(f"{self.api_url}/payments/packages", timeout=10)
             success = response.status_code == 200
             
             if success:
                 data = response.json()
-                expected_packages = ['basic', 'professional', 'enterprise']
-                has_all_packages = all(pkg in data for pkg in expected_packages)
-                details = f"Packages: {list(data.keys())}, Has all expected: {has_all_packages}"
-                success = has_all_packages
+                # Updated to check for the single unlimited package
+                has_unlimited_package = "unlimited" in data
+                
+                if has_unlimited_package:
+                    unlimited_pkg = data["unlimited"]
+                    has_correct_price = unlimited_pkg.get("price") == 49.99
+                    has_correct_name = unlimited_pkg.get("name") == "CSA Safety Pro"
+                    has_unlimited_audits = unlimited_pkg.get("audits_per_month") == -1
+                    has_unlimited_members = unlimited_pkg.get("team_members") == -1
+                    
+                    success = has_correct_price and has_correct_name and has_unlimited_audits and has_unlimited_members
+                    details = f"Package: unlimited, Price: ${unlimited_pkg.get('price')}, Name: {unlimited_pkg.get('name')}, Audits: {unlimited_pkg.get('audits_per_month')}, Members: {unlimited_pkg.get('team_members')}"
+                else:
+                    success = False
+                    details = f"Packages: {list(data.keys())}, Missing unlimited package"
             else:
                 details = f"Status: {response.status_code}"
                 
-            self.log_test("Subscription Packages Endpoint", success, details)
+            self.log_test("Subscription Packages Endpoint (CSA Safety Pro)", success, details)
             return success
         except Exception as e:
-            self.log_test("Subscription Packages Endpoint", False, str(e))
+            self.log_test("Subscription Packages Endpoint (CSA Safety Pro)", False, str(e))
             return False
 
     def test_admin_login(self):
