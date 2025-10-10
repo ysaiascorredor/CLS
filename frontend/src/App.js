@@ -654,6 +654,7 @@ function Dashboard() {
   const [workTypes, setWorkTypes] = useState([]);
   const [audits, setAudits] = useState([]);
   const [statistics, setStatistics] = useState(null);
+  const [auditSearch, setAuditSearch] = useState('');
   const [currentAudit, setCurrentAudit] = useState(null);
   const { toast } = useToast();
 
