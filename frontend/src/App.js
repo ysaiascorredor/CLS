@@ -705,6 +705,15 @@ function Dashboard() {
     }
   };
 
+  const viewAudit = (auditId) => {
+    // Navigate to audit details or open audit view modal
+    toast({ 
+      title: language === 'en' ? "Opening audit details..." : "Abriendo detalles de auditoría...",
+      description: `Audit ID: ${auditId}`
+    });
+    // TODO: Implement audit detail view
+  };
+
   const loadStatistics = async () => {
     try {
       const response = await axios.get(`${API}/statistics`);
