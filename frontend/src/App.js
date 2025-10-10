@@ -833,14 +833,26 @@ function Dashboard() {
                 </Card>
               </div>
               
-              {/* Recent Audits */}
+              {/* All Audits with Search */}
               <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
-                <CardHeader>
-                  <CardTitle>{t.recentAudits}</CardTitle>
+                <CardHeader className="space-y-4">
+                  <CardTitle>{language === 'en' ? 'All Audits' : 'Todas las Auditorías'} ({audits.length})</CardTitle>
+                  <Input 
+                    placeholder={language === 'en' ? 'Search audits by site name or auditor...' : 'Buscar auditorías por sitio o auditor...'}
+                    className="max-w-sm"
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    value={auditSearch || ''}
+                  />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {audits.slice(0, 5).map((audit) => (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {audits
+                      .filter(audit => 
+                        !auditSearch || 
+                        audit.site_name?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                        audit.auditor_name?.toLowerCase().includes(auditSearch.toLowerCase())
+                      )
+                      .map((audit) => (
                       <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div>
                           <h4 className="font-medium">{audit.site_name}</h4>
