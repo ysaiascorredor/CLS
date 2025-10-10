@@ -374,48 +374,6 @@ SAFETY_QUESTIONS = {
         ]
     },
     
-    "jha": {
-        "en": [
-            "Is a Job Hazard Analysis (JHA) conducted before work begins?",
-            "Are all potential hazards identified and assessed for risk level?",
-            "Have appropriate PPE requirements been determined through JHA?",
-            "Are environmental hazards (weather, noise, etc.) considered in JHA?",
-            "Have workers participated in the JHA development process?",
-            "Are hazard elimination and engineering controls prioritized over PPE?",
-            "Is the JHA accessible and understood by all affected workers?"
-        ],
-        "es": [
-            "¿Se realizó un Análisis de Riesgos del Trabajo (ART) antes de comenzar el trabajo?",
-            "¿Están todos los riesgos potenciales identificados y evaluados por nivel de riesgo?",
-            "¿Se determinaron los requisitos apropiados de EPP a través del ART?",
-            "¿Se consideran los riesgos ambientales (clima, ruido, etc.) en el ART?",
-            "¿Participaron los trabajadores en el proceso de desarrollo del ART?",
-            "¿Se priorizan la eliminación de riesgos y controles de ingeniería sobre el EPP?",
-            "¿Es el ART accesible y entendido por todos los trabajadores afectados?"
-        ]
-    },
-    
-    "safety_daily_plan": {
-        "en": [
-            "Is a daily safety plan communicated to all workers at start of shift?",
-            "Are weather conditions and their impact on work activities discussed?",
-            "Have high-risk activities for the day been identified and planned?",
-            "Are emergency contact numbers and evacuation routes posted and reviewed?",
-            "Is proper PPE assignment verified for each worker and task?",
-            "Are equipment inspections completed and documented daily?",
-            "Have lessons learned from previous incidents been shared?"
-        ],
-        "es": [
-            "¿Se comunica un plan diario de seguridad a todos los trabajadores al inicio del turno?",
-            "¿Se discuten las condiciones climáticas y su impacto en las actividades de trabajo?",
-            "¿Se han identificado y planificado las actividades de alto riesgo del día?",
-            "¿Están publicados y revisados los números de contacto de emergencia y rutas de evacuación?",
-            "¿Se verifica la asignación apropiada de EPP para cada trabajador y tarea?",
-            "¿Se completan y documentan diariamente las inspecciones de equipos?",
-            "¿Se han compartido las lecciones aprendidas de incidentes previos?"
-        ]
-    },
-    
     # NEW CATEGORIES - PPE & Equipment
     "ppe": {
         "en": [
