@@ -1108,12 +1108,12 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
     }
   };
 
-  const handleAnswerQuestion = async (isCompliant, photo, comment, actionTaken) => {
+  const handleAnswerQuestion = async (complianceStatus, photo, comment, actionTaken) => {
     const currentQ = auditQuestions[currentQuestionIndex];
     const finding = {
       question: currentQ?.question || currentQ,
       work_type: currentQ?.work_type || 'general',
-      is_compliant: isCompliant,
+      compliance_status: complianceStatus,
       photo_url: photo,
       comment: comment,
       action_taken: actionTaken
