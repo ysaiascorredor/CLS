@@ -1145,14 +1145,36 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
     if findings:
         story.append(Paragraph("FINDINGS SUMMARY", heading_style))
         
-        compliant_count = sum(1 for f in findings if f.get('is_compliant', True))
-        non_compliant_count = len(findings) - compliant_count
+        # Count findings by status
+        compliant_count = 0
+        non_compliant_count = 0
+        na_count = 0
+        
+        for f in findings:
+            status = f.get('compliance_status')
+            if status == "compliant":
+                compliant_count += 1
+            elif status == "non_compliant":
+                non_compliant_count += 1
+            elif status == "n/a":
+                na_count += 1
+            elif status is None:
+                # Backward compatibility with old is_compliant field
+                if f.get('is_compliant', True):
+                    compliant_count += 1
+                else:
+                    non_compliant_count += 1
+        
+        # Calculate compliance rate excluding N/A
+        applicable_count = compliant_count + non_compliant_count
+        compliance_rate = f"{(compliant_count/applicable_count*100):.1f}%" if applicable_count > 0 else "N/A"
         
         summary_data = [
             ['Total Questions:', str(len(findings))],
             ['Compliant:', str(compliant_count)],
             ['Non-Compliant:', str(non_compliant_count)],
-            ['Compliance Rate:', f"{(compliant_count/len(findings)*100):.1f}%" if findings else "0%"]
+            ['N/A (Not Applicable):', str(na_count)],
+            ['Compliance Rate:', compliance_rate]
         ]
         
         summary_table = Table(summary_data, colWidths=[2*inch, 2*inch])
