@@ -839,7 +839,18 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     if not audit:
         raise HTTPException(status_code=404, detail="Audit not found")
     
-    finding = Finding(**finding_data.dict())
+    # Convert to dict and handle backward compatibility
+    finding_dict = finding_data.dict()
+    
+    # If compliance_status is not set but is_compliant is, convert it
+    if not finding_dict.get('compliance_status') and finding_dict.get('is_compliant') is not None:
+        finding_dict['compliance_status'] = 'compliant' if finding_dict['is_compliant'] else 'non_compliant'
+    
+    # Ensure compliance_status is set
+    if not finding_dict.get('compliance_status'):
+        raise HTTPException(status_code=400, detail="compliance_status is required")
+    
+    finding = Finding(**finding_dict)
     
     # Add finding to audit
     await db.audits.update_one(
