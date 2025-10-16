@@ -1950,7 +1950,7 @@ function AdminDashboard() {
                       <SelectItem value="basic">Basic</SelectItem>
                       <SelectItem value="professional">Professional</SelectItem>
                       <SelectItem value="enterprise">Enterprise</SelectItem>
-                      <SelectItem value="">Remove Plan</SelectItem>
+                      <SelectItem value="none">Remove Plan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
