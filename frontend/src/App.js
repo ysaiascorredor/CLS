@@ -923,23 +923,46 @@ function Dashboard() {
                               />
                             </div>
                           </div>
-                          <Badge variant={audit.overall_compliance_score >= 80 ? "default" : "secondary"}>
-                            {audit.overall_compliance_score >= 80 ? 
-                              (language === 'en' ? "✅ Compliant" : "✅ Cumple") : 
-                              (language === 'en' ? "⚠️ Non-Compliant" : "⚠️ No Cumple")
-                            }
-                          </Badge>
-                          <Button variant="outline" size="sm" onClick={() => viewAudit(audit.id)}>
-                            👁️ {language === 'en' ? 'View' : 'Ver'}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => downloadAuditPDF(audit.id, audit.site_name)}
-                            className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
-                          >
-                            📄 {language === 'en' ? 'PDF' : 'PDF'}
-                          </Button>
+                          {audit.status === 'completed' ? (
+                            <Badge variant={audit.overall_compliance_score >= 80 ? "default" : "secondary"}>
+                              {audit.overall_compliance_score >= 80 ? 
+                                (language === 'en' ? "✅ Compliant" : "✅ Cumple") : 
+                                (language === 'en' ? "⚠️ Non-Compliant" : "⚠️ No Cumple")
+                              }
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                              ⏳ {language === 'en' ? 'In Progress' : 'En Progreso'}
+                            </Badge>
+                          )}
+                          
+                          {audit.status === 'completed' ? (
+                            <>
+                              <Button variant="outline" size="sm" onClick={() => viewAudit(audit.id)}>
+                                👁️ {language === 'en' ? 'View' : 'Ver'}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => downloadAuditPDF(audit.id, audit.site_name)}
+                                className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                              >
+                                📄 {language === 'en' ? 'PDF' : 'PDF'}
+                              </Button>
+                            </>
+                          ) : (
+                            <Button 
+                              variant="default" 
+                              size="sm" 
+                              onClick={() => {
+                                setCurrentAudit(audit);
+                                setActiveTab('new-audit');
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              ▶️ {language === 'en' ? 'Continue' : 'Continuar'}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
