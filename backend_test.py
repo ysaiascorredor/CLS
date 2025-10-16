@@ -5840,6 +5840,11 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # 🎯 PRIORITY: N/A OPTION IMPLEMENTATION TESTING - REVIEW REQUEST
+        print("\n🎯 PRIORITY REVIEW REQUEST: N/A Option Implementation Testing")
+        print("=" * 80)
+        self.test_na_option_implementation()
+        
         # 🚨 URGENT INVESTIGATION: Run comprehensive audit counting investigation first
         self.test_urgent_audit_counting_investigation()
         
