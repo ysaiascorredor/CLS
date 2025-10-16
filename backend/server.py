@@ -856,11 +856,27 @@ async def complete_audit(audit_id: str, current_user: User = Depends(require_aut
     if not audit_doc:
         raise HTTPException(status_code=404, detail="Audit not found")
     
-    # Calculate compliance score
+    # Calculate compliance score (excluding N/A responses)
     findings = audit_doc.get("findings", [])
     if findings:
-        compliant_count = sum(1 for f in findings if f["is_compliant"])
-        compliance_score = (compliant_count / len(findings)) * 100
+        # Count responses by status
+        applicable_findings = []
+        for f in findings:
+            # Handle both new compliance_status field and old is_compliant field
+            status = f.get("compliance_status")
+            if status and status != "n/a":
+                applicable_findings.append(f)
+            elif status is None and "is_compliant" in f:
+                # Backward compatibility
+                applicable_findings.append(f)
+        
+        if applicable_findings:
+            compliant_count = sum(1 for f in applicable_findings 
+                                if f.get("compliance_status") == "compliant" 
+                                or (f.get("compliance_status") is None and f.get("is_compliant") == True))
+            compliance_score = (compliant_count / len(applicable_findings)) * 100
+        else:
+            compliance_score = 0.0
     else:
         compliance_score = 0.0
     
