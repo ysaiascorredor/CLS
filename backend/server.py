@@ -575,7 +575,7 @@ class AuditCreate(BaseModel):
 
 class FindingCreate(BaseModel):
     question: str
-    compliance_status: str  # "compliant", "non_compliant", "n/a"
+    compliance_status: Optional[str] = None  # "compliant", "non_compliant", "n/a"
     is_compliant: Optional[bool] = None  # Kept for backward compatibility
     photo_url: Optional[str] = None
     comment: Optional[str] = None
