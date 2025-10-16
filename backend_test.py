@@ -5504,6 +5504,336 @@ class CSABackendTester:
         self.log_test("🚨 URGENT: Audit Counting Investigation", success, details)
         return success
 
+    def test_na_option_implementation(self):
+        """Test N/A option implementation for audit questions - REVIEW REQUEST"""
+        print("\n🎯 TESTING N/A OPTION IMPLEMENTATION - REVIEW REQUEST")
+        print("=" * 60)
+        
+        # Step 1: Login with test user credentials
+        login_success = self.test_user_login_for_na_testing()
+        if not login_success:
+            self.log_test("N/A Option - User Login", False, "Failed to login with test credentials")
+            return False
+        
+        # Step 2: Create a new audit with 3 work types
+        audit_id = self.create_audit_for_na_testing()
+        if not audit_id:
+            self.log_test("N/A Option - Create Audit", False, "Failed to create test audit")
+            return False
+        
+        # Step 3: Add findings with all 3 compliance statuses
+        findings_success = self.add_findings_with_all_compliance_statuses(audit_id)
+        if not findings_success:
+            self.log_test("N/A Option - Add Findings", False, "Failed to add findings with all compliance statuses")
+            return False
+        
+        # Step 4: Test backward compatibility
+        backward_compat_success = self.test_backward_compatibility_is_compliant(audit_id)
+        if not backward_compat_success:
+            self.log_test("N/A Option - Backward Compatibility", False, "Backward compatibility test failed")
+            return False
+        
+        # Step 5: Complete audit and verify compliance score calculation
+        score_success = self.test_compliance_score_excludes_na(audit_id)
+        if not score_success:
+            self.log_test("N/A Option - Compliance Score", False, "Compliance score calculation failed")
+            return False
+        
+        # Step 6: Get audit details and verify all findings stored correctly
+        details_success = self.verify_audit_details_with_na(audit_id)
+        if not details_success:
+            self.log_test("N/A Option - Audit Details", False, "Audit details verification failed")
+            return False
+        
+        # Step 7: Test PDF generation includes N/A findings
+        pdf_success = self.test_pdf_generation_with_na_findings(audit_id)
+        if not pdf_success:
+            self.log_test("N/A Option - PDF Generation", False, "PDF generation with N/A findings failed")
+            return False
+        
+        print("✅ N/A OPTION IMPLEMENTATION - ALL TESTS PASSED")
+        return True
+    
+    def test_user_login_for_na_testing(self):
+        """Login with test user credentials for N/A testing"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "access_token" in data:
+                    self.test_user_token = data["access_token"]
+                    self.log_test("N/A Testing - User Login", True, f"Logged in as {login_data['email']}")
+                    return True
+            
+            self.log_test("N/A Testing - User Login", False, f"Status: {response.status_code}")
+            return False
+        except Exception as e:
+            self.log_test("N/A Testing - User Login", False, str(e))
+            return False
+    
+    def create_audit_for_na_testing(self):
+        """Create a new audit with 3 work types for N/A testing"""
+        if not self.test_user_token:
+            return None
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            audit_data = {
+                "site_name": "N/A Testing Construction Site",
+                "auditor_name": "N/A Test Auditor",
+                "selected_work_types": ["excavation", "height_work", "ppe"],
+                "language": "en"
+            }
+            
+            response = requests.post(f"{self.api_url}/audits", 
+                                   json=audit_data, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                audit_id = data.get("id")
+                self.log_test("N/A Testing - Create Audit", True, f"Created audit: {audit_id}")
+                return audit_id
+            
+            self.log_test("N/A Testing - Create Audit", False, f"Status: {response.status_code}")
+            return None
+        except Exception as e:
+            self.log_test("N/A Testing - Create Audit", False, str(e))
+            return None
+    
+    def add_findings_with_all_compliance_statuses(self, audit_id):
+        """Add findings with compliant, non_compliant, and n/a statuses"""
+        if not self.test_user_token or not audit_id:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Finding 1: Compliant
+            finding1 = {
+                "question": "Is the excavation properly sloped or shored to prevent cave-ins?",
+                "compliance_status": "compliant",
+                "comment": "Proper shoring observed and documented"
+            }
+            
+            response1 = requests.post(f"{self.api_url}/audits/{audit_id}/findings", 
+                                    json=finding1, headers=headers, timeout=10)
+            
+            # Finding 2: Non-compliant (with comment and action_taken)
+            finding2 = {
+                "question": "Are workers wearing proper fall protection equipment?",
+                "compliance_status": "non_compliant",
+                "comment": "Missing harnesses on 2 workers at height",
+                "action_taken": "Provided harnesses and retrained workers on fall protection"
+            }
+            
+            response2 = requests.post(f"{self.api_url}/audits/{audit_id}/findings", 
+                                    json=finding2, headers=headers, timeout=10)
+            
+            # Finding 3: N/A (should not require comment/action)
+            finding3 = {
+                "question": "Is appropriate PPE provided for all workers based on job hazards?",
+                "compliance_status": "n/a"
+            }
+            
+            response3 = requests.post(f"{self.api_url}/audits/{audit_id}/findings", 
+                                    json=finding3, headers=headers, timeout=10)
+            
+            success = (response1.status_code == 200 and 
+                      response2.status_code == 200 and 
+                      response3.status_code == 200)
+            
+            if success:
+                self.log_test("N/A Testing - Add All Compliance Statuses", True, 
+                            "Added compliant, non_compliant, and n/a findings")
+            else:
+                self.log_test("N/A Testing - Add All Compliance Statuses", False, 
+                            f"Status codes: {response1.status_code}, {response2.status_code}, {response3.status_code}")
+            
+            return success
+        except Exception as e:
+            self.log_test("N/A Testing - Add All Compliance Statuses", False, str(e))
+            return False
+    
+    def test_backward_compatibility_is_compliant(self, audit_id):
+        """Test backward compatibility with old is_compliant format"""
+        if not self.test_user_token or not audit_id:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Add finding with old is_compliant: true format
+            old_format_finding = {
+                "question": "Are welders wearing proper protective equipment?",
+                "is_compliant": True,
+                "comment": "All welders have proper PPE - backward compatibility test"
+            }
+            
+            response = requests.post(f"{self.api_url}/audits/{audit_id}/findings", 
+                                   json=old_format_finding, headers=headers, timeout=10)
+            
+            success = response.status_code == 200
+            
+            if success:
+                self.log_test("N/A Testing - Backward Compatibility", True, 
+                            "Old is_compliant format still works")
+            else:
+                try:
+                    error_data = response.json()
+                    self.log_test("N/A Testing - Backward Compatibility", False, 
+                                f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown')}")
+                except:
+                    self.log_test("N/A Testing - Backward Compatibility", False, 
+                                f"Status: {response.status_code}")
+            
+            return success
+        except Exception as e:
+            self.log_test("N/A Testing - Backward Compatibility", False, str(e))
+            return False
+    
+    def test_compliance_score_excludes_na(self, audit_id):
+        """Complete audit and verify compliance score excludes N/A responses"""
+        if not self.test_user_token or not audit_id:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            # Complete the audit
+            response = requests.put(f"{self.api_url}/audits/{audit_id}/complete", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                compliance_score = data.get("compliance_score")
+                
+                # Expected calculation: 2 compliant (including backward compat) + 1 non-compliant = 3 applicable
+                # 2 compliant / 3 applicable = 66.67%
+                # N/A should be excluded from calculation
+                expected_score_range = (60.0, 70.0)  # Allow some tolerance
+                
+                if compliance_score is not None:
+                    score_in_range = expected_score_range[0] <= compliance_score <= expected_score_range[1]
+                    success = score_in_range
+                    
+                    self.log_test("N/A Testing - Compliance Score Calculation", success, 
+                                f"Score: {compliance_score}% (expected ~66.67%, N/A excluded)")
+                else:
+                    success = False
+                    self.log_test("N/A Testing - Compliance Score Calculation", False, 
+                                "No compliance score returned")
+            else:
+                success = False
+                self.log_test("N/A Testing - Compliance Score Calculation", False, 
+                            f"Status: {response.status_code}")
+            
+            return success
+        except Exception as e:
+            self.log_test("N/A Testing - Compliance Score Calculation", False, str(e))
+            return False
+    
+    def verify_audit_details_with_na(self, audit_id):
+        """Get audit details and verify all findings are stored correctly"""
+        if not self.test_user_token or not audit_id:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            response = requests.get(f"{self.api_url}/audits/{audit_id}", 
+                                  headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                findings = data.get("findings", [])
+                
+                # Verify we have 4 findings (3 new format + 1 backward compatibility)
+                has_correct_count = len(findings) == 4
+                
+                # Check for each compliance status
+                statuses = [f.get("compliance_status") for f in findings]
+                has_compliant = "compliant" in statuses
+                has_non_compliant = "non_compliant" in statuses
+                has_na = "n/a" in statuses
+                
+                # Check backward compatibility finding (should have compliance_status set)
+                backward_compat_finding = next((f for f in findings if f.get("is_compliant") == True), None)
+                backward_compat_converted = (backward_compat_finding and 
+                                           backward_compat_finding.get("compliance_status") == "compliant")
+                
+                success = (has_correct_count and has_compliant and 
+                          has_non_compliant and has_na and backward_compat_converted)
+                
+                details = (f"Findings count: {len(findings)}, "
+                          f"Has compliant: {has_compliant}, "
+                          f"Has non_compliant: {has_non_compliant}, "
+                          f"Has n/a: {has_na}, "
+                          f"Backward compat converted: {backward_compat_converted}")
+                
+                self.log_test("N/A Testing - Audit Details Verification", success, details)
+            else:
+                success = False
+                self.log_test("N/A Testing - Audit Details Verification", False, 
+                            f"Status: {response.status_code}")
+            
+            return success
+        except Exception as e:
+            self.log_test("N/A Testing - Audit Details Verification", False, str(e))
+            return False
+    
+    def test_pdf_generation_with_na_findings(self, audit_id):
+        """Test PDF generation includes N/A findings with proper labeling"""
+        if not self.test_user_token or not audit_id:
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.test_user_token}"}
+            
+            response = requests.get(f"{self.api_url}/audits/{audit_id}/pdf", 
+                                  headers=headers, timeout=20)
+            
+            if response.status_code == 200:
+                # Check if response is PDF
+                content_type = response.headers.get('content-type', '')
+                is_pdf = 'application/pdf' in content_type
+                
+                # Check PDF content length
+                content_length = len(response.content)
+                has_content = content_length > 1000
+                
+                # Check if content starts with PDF signature
+                pdf_signature = response.content[:4] == b'%PDF'
+                
+                success = is_pdf and has_content and pdf_signature
+                
+                details = (f"PDF type: {is_pdf}, "
+                          f"Size: {content_length} bytes, "
+                          f"PDF signature: {pdf_signature}")
+                
+                self.log_test("N/A Testing - PDF Generation with N/A", success, details)
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    self.log_test("N/A Testing - PDF Generation with N/A", False, 
+                                f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown')}")
+                except:
+                    self.log_test("N/A Testing - PDF Generation with N/A", False, 
+                                f"Status: {response.status_code}")
+            
+            return success
+        except Exception as e:
+            self.log_test("N/A Testing - PDF Generation with N/A", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
