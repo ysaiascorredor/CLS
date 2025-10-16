@@ -1785,9 +1785,13 @@ function AdminDashboard() {
       const expiresAt = new Date();
       expiresAt.setMonth(expiresAt.getMonth() + 1);
       
+      // Handle "none" as removing the plan
+      const planToSet = newPlan === 'none' ? null : newPlan;
+      const expiresAtToSet = newPlan === 'none' ? null : expiresAt.toISOString();
+      
       await axios.put(`${API}/admin/user/${userId}`, {
-        subscription_plan: newPlan,
-        subscription_expires: expiresAt.toISOString(),
+        subscription_plan: planToSet,
+        subscription_expires: expiresAtToSet,
         audits_used_this_month: 0
       });
       
