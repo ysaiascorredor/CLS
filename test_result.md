@@ -543,13 +543,24 @@ metadata:
 
 test_plan:
   current_focus:
-    - "STRIPE INTEGRATION TESTING - COMPLETED"
-    - "URGENT REVIEW REQUEST - ADMIN ACCESS GRANTED - COMPLETED"
-    - "NEW AUDIT CATEGORIES - COMPLETED" 
-    - "ADMIN DASHBOARD FUNCTIONALITY - COMPLETED"
+    - "N/A OPTION FOR AUDIT QUESTIONS - NEW FEATURE"
+    - "Audit Counting Investigation - Pending User Clarification"
   stuck_tasks: []
   test_all: false
-  test_priority: "stripe_integration_testing_completed_all_requirements_fulfilled"
+  test_priority: "test_na_option_first"
+
+backend:
+  - task: "N/A Option Implementation for Audit Questions"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "Implemented 3-state compliance system: Compliant, Non-Compliant, N/A. Changes: 1) Updated Finding and FindingCreate models with compliance_status field (replaces is_compliant boolean), 2) Added backward compatibility for old is_compliant field, 3) Updated compliance score calculation to exclude N/A responses, 4) Updated PDF generation to show N/A findings with grey color, 5) Updated add_finding endpoint to handle both old and new formats. Need backend testing to verify all endpoints work correctly."
 
   - task: "🚨 URGENT: Audit Counting Discrepancy Investigation"
     implemented: true
