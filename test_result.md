@@ -551,6 +551,18 @@ test_plan:
   test_all: false
   test_priority: "stripe_integration_testing_completed_all_requirements_fulfilled"
 
+  - task: "🚨 URGENT: Audit Counting Discrepancy Investigation"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "🚨 CRITICAL DATA INCONSISTENCY DISCOVERED: User ysaias.corredor@gmail.com reports having 12 audits but backend investigation reveals ZERO audits. COMPREHENSIVE INVESTIGATION RESULTS: ✅ 1) User login working perfectly (User ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8, enterprise plan, organization ID: 84826630-0df0-4ce3-8f4b-dcbf8d411061), ✅ 2) GET /api/audits returns 0 audits for this user, ✅ 3) GET /api/statistics shows 0 total_audits for this user, ❌ 4) MAJOR DISCREPANCY: User reports 12 audits but backend shows 0, ❌ 5) Database verification shows audits_used_this_month: 0 (doesn't match user report of 12 or dashboard display of 9), ✅ 6) Global audit count: 60 total audits in system across 66 users. ROOT CAUSE ANALYSIS: The user's audits may be: 1) Associated with different user account, 2) Stored under organization instead of individual user, 3) Lost due to data migration issue, 4) User counting audits from different time period or system. BUSINESS IMPACT: CRITICAL - Customer believes they have 12 audits but system shows none, indicating potential data loss or account confusion. URGENT ACTION REQUIRED: Manual database investigation needed to locate user's missing audits."
+
 agent_communication:
     - agent: "main"
       message: "Fixed critical workTypes reference error by properly passing workTypes prop from NewAuditForm to AuditProgressForm. Application now loads without JavaScript errors. However, noticed that user login might not be working properly during testing. Need backend testing to verify auth endpoints are functioning correctly."
