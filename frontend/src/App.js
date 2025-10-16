@@ -1214,20 +1214,20 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
 // Audit Progress Form Component
 function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, language, workTypes }) {
   const { t } = React.useContext(LanguageContext);
-  const [isCompliant, setIsCompliant] = useState(null);
+  const [complianceStatus, setComplianceStatus] = useState(null); // "compliant", "non_compliant", "n/a"
   const [photo, setPhoto] = useState('');
   const [comment, setComment] = useState('');
   const [actionTaken, setActionTaken] = useState('');
 
   const handleSubmit = () => {
-    if (isCompliant === false && (!comment || !actionTaken)) {
+    if (complianceStatus === 'non_compliant' && (!comment || !actionTaken)) {
       return;
     }
     
-    onAnswer(isCompliant, photo, comment, actionTaken);
+    onAnswer(complianceStatus, photo, comment, actionTaken);
     
     // Reset form
-    setIsCompliant(null);
+    setComplianceStatus(null);
     setPhoto('');
     setComment('');
     setActionTaken('');
