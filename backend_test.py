@@ -5351,11 +5351,167 @@ class CSABackendTester:
             self.log_test("🚨 URGENT: Database Audit Count Verification", False, str(e))
             return False
 
+    def test_urgent_audit_counting_investigation(self):
+        """🚨 URGENT: Investigate audit counting discrepancy for ysaias.corredor@gmail.com"""
+        print("\n🚨 URGENT AUDIT COUNT INVESTIGATION")
+        print("=" * 60)
+        print("User reports having 12 audits, but dashboard shows 0 audits")
+        print("Investigating with credentials: ysaias.corredor@gmail.com / Clave.01")
+        print("=" * 60)
+        
+        # Step 1: Login with user credentials
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                user_token = data.get("access_token")
+                user_data = data.get("user", {})
+                user_id = user_data.get("id")
+                organization_id = user_data.get("organization_id")
+                
+                print(f"✅ 1) LOGIN SUCCESSFUL")
+                print(f"   User ID: {user_id}")
+                print(f"   Organization ID: {organization_id}")
+                print(f"   Subscription Plan: {user_data.get('subscription_plan')}")
+                print(f"   Audits Used This Month: {user_data.get('audits_used_this_month')}")
+                
+                headers = {"Authorization": f"Bearer {user_token}"}
+                
+                # Step 2: Check GET /api/audits endpoint
+                print(f"\n🔍 2) CHECKING GET /api/audits ENDPOINT")
+                audits_response = requests.get(f"{self.api_url}/audits", 
+                                             headers=headers, timeout=10)
+                
+                if audits_response.status_code == 200:
+                    audits_data = audits_response.json()
+                    audit_count = len(audits_data)
+                    print(f"   Status: 200 OK")
+                    print(f"   Audits returned: {audit_count}")
+                    
+                    if audit_count > 0:
+                        print(f"   Sample audit IDs: {[audit.get('id') for audit in audits_data[:3]]}")
+                        print(f"   Sample audit statuses: {[audit.get('status') for audit in audits_data[:3]]}")
+                    else:
+                        print(f"   ❌ NO AUDITS FOUND for this user")
+                else:
+                    print(f"   ❌ Error: {audits_response.status_code}")
+                    audit_count = 0
+                
+                # Step 3: Check GET /api/organization/audits endpoint (if exists)
+                print(f"\n🔍 3) CHECKING GET /api/organization/audits ENDPOINT")
+                org_audits_response = requests.get(f"{self.api_url}/organization/audits", 
+                                                 headers=headers, timeout=10)
+                
+                if org_audits_response.status_code == 200:
+                    org_audits_data = org_audits_response.json()
+                    org_audit_count = len(org_audits_data) if isinstance(org_audits_data, list) else 0
+                    print(f"   Status: 200 OK")
+                    print(f"   Organization audits returned: {org_audit_count}")
+                elif org_audits_response.status_code == 404:
+                    print(f"   Status: 404 - Endpoint does not exist")
+                else:
+                    print(f"   Status: {org_audits_response.status_code}")
+                
+                # Step 4: Check user statistics
+                print(f"\n🔍 4) CHECKING GET /api/statistics ENDPOINT")
+                stats_response = requests.get(f"{self.api_url}/statistics", 
+                                            headers=headers, timeout=10)
+                
+                if stats_response.status_code == 200:
+                    stats_data = stats_response.json()
+                    total_audits = stats_data.get("total_audits", 0)
+                    print(f"   Status: 200 OK")
+                    print(f"   Total audits in statistics: {total_audits}")
+                    print(f"   Compliant audits: {stats_data.get('compliant_audits', 0)}")
+                    print(f"   Non-compliant audits: {stats_data.get('non_compliant_audits', 0)}")
+                else:
+                    print(f"   Status: {stats_response.status_code}")
+                    total_audits = 0
+                
+                # Step 5: Check organization team if user has organization
+                if organization_id:
+                    print(f"\n🔍 5) CHECKING ORGANIZATION TEAM MEMBERS")
+                    team_response = requests.get(f"{self.api_url}/organization/team", 
+                                               headers=headers, timeout=10)
+                    
+                    if team_response.status_code == 200:
+                        team_data = team_response.json()
+                        team_members = team_data.get("team_members", [])
+                        print(f"   Status: 200 OK")
+                        print(f"   Organization: {team_data.get('organization', {}).get('name', 'Unknown')}")
+                        print(f"   Team members count: {len(team_members)}")
+                        
+                        # Check if there are audits from other team members
+                        member_user_ids = [member.get("user_id") for member in team_members if member.get("user_id")]
+                        print(f"   Team member user IDs: {member_user_ids}")
+                        
+                        # Note: We can't directly query other users' audits without admin access
+                        print(f"   Note: Cannot check other team members' audits without admin access")
+                    else:
+                        print(f"   Status: {team_response.status_code}")
+                else:
+                    print(f"\n🔍 5) USER HAS NO ORGANIZATION")
+                
+                # Step 6: Summary and diagnosis
+                print(f"\n📊 INVESTIGATION SUMMARY")
+                print(f"=" * 40)
+                print(f"User ID: {user_id}")
+                print(f"Organization ID: {organization_id}")
+                print(f"GET /api/audits returned: {audit_count} audits")
+                print(f"GET /api/statistics shows: {total_audits} total audits")
+                print(f"User reports having: 12 audits")
+                print(f"Dashboard shows: 0 audits")
+                
+                # Determine the issue
+                if audit_count == 0 and total_audits == 0:
+                    print(f"\n🚨 CRITICAL FINDING: USER HAS NO AUDITS IN SYSTEM")
+                    print(f"   - Backend shows 0 audits for this user")
+                    print(f"   - Statistics show 0 audits for this user")
+                    print(f"   - User claims to have 12 audits")
+                    print(f"   - POSSIBLE CAUSES:")
+                    print(f"     1. User is confusing accounts (different email)")
+                    print(f"     2. Audits were deleted or lost during migration")
+                    print(f"     3. Audits are associated with different user_id")
+                    print(f"     4. Audits are in organization but not showing")
+                    print(f"     5. Database inconsistency or corruption")
+                elif audit_count > 0:
+                    print(f"\n✅ AUDITS FOUND: User has {audit_count} audits")
+                    print(f"   - This contradicts the dashboard showing 0")
+                    print(f"   - Issue is likely frontend-related")
+                else:
+                    print(f"\n⚠️  MIXED RESULTS: Need further investigation")
+                
+                success = True
+                details = f"Investigation completed. User has {audit_count} audits in backend"
+                
+            else:
+                success = False
+                details = f"Login failed with status {response.status_code}"
+                print(f"❌ LOGIN FAILED: {details}")
+        
+        except Exception as e:
+            success = False
+            details = f"Investigation failed: {str(e)}"
+            print(f"❌ INVESTIGATION ERROR: {details}")
+        
+        self.log_test("🚨 URGENT: Audit Counting Investigation", success, details)
+        return success
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
+        
+        # 🚨 URGENT INVESTIGATION: Run comprehensive audit counting investigation first
+        self.test_urgent_audit_counting_investigation()
         
         # 🚨 URGENT INVESTIGATION: Audit Counting Discrepancy - HIGHEST PRIORITY
         print("\n🚨 URGENT INVESTIGATION: Audit Counting Discrepancy")
