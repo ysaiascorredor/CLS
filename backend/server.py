@@ -548,7 +548,7 @@ class UserSession(BaseModel):
 class Finding(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     question: str
-    compliance_status: str  # "compliant", "non_compliant", "n/a"
+    compliance_status: Optional[str] = None  # "compliant", "non_compliant", "n/a"
     is_compliant: Optional[bool] = None  # Kept for backward compatibility
     photo_url: Optional[str] = None
     comment: Optional[str] = None
