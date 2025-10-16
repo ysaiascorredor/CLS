@@ -4,7 +4,7 @@
 
 ### 🔐 **ACCESO DE ADMINISTRADOR**
 - **Email**: admin@csaaudit.com
-- **URL**: https://constr-safety.preview.emergentagent.com
+- **URL**: https://safetyscan-5.preview.emergentagent.com
 - **Tipo**: Administrador con acceso completo
 
 ---

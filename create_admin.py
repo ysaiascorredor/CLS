@@ -64,7 +64,7 @@ async def create_admin_user():
     # Mostrar información de acceso
     print("\n📋 INFORMACIÓN DE ACCESO:")
     print("=" * 40)
-    print(f"🌐 URL de la aplicación: https://constr-safety.preview.emergentagent.com")
+    print(f"🌐 URL de la aplicación: https://safetyscan-5.preview.emergentagent.com")
     print(f"👤 Email: {admin_email}")
     print(f"🔐 Tipo de usuario: Administrador")
     print("\n🎯 FUNCIONES DISPONIBLES:")
