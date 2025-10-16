@@ -1330,7 +1330,7 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
         
         <Button 
           onClick={handleSubmit}
-          disabled={isCompliant === null || (isCompliant === false && (!comment || !actionTaken))}
+          disabled={complianceStatus === null || (complianceStatus === 'non_compliant' && (!comment || !actionTaken))}
           className="w-full"
           data-testid="next-question-btn"
         >
