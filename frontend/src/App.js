@@ -1302,7 +1302,7 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
           />
         </div>
         
-        {isCompliant === false && (
+        {complianceStatus === 'non_compliant' && (
           <>
             <div>
               <Label htmlFor="comment">{t.comment}</Label>
