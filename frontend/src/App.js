@@ -1940,29 +1940,30 @@ function AdminDashboard() {
       {/* Lista de Usuarios */}
       <Card>
         <CardHeader>
-          <CardTitle>Gestión de Usuarios</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Gestión de Usuarios</span>
+            <Badge variant="outline">{users.length} usuarios</Badge>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {users.slice(0, 10).map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <img 
-                    src={user.picture || 'https://via.placeholder.com/40'} 
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <h4 className="font-medium">{user.name}</h4>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {user.total_audits} auditorías • 
-                      ${user.total_paid?.toFixed(2) || 0} pagado
-                    </p>
+          <div className="space-y-3">
+            {users.filter(u => u.email !== 'admin@csaaudit.com' && u.email !== 'demo@csaaudit.com').slice(0, 15).map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{user.name}</h4>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                  <div className="text-right mr-4">
+                    <p className="text-sm font-medium text-gray-700">{user.total_audits || 0} auditorías</p>
+                    <p className="text-xs text-gray-500">${user.total_paid?.toFixed(2) || '0.00'}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge variant={user.subscription_plan ? 'default' : 'secondary'}>
+                  <Badge variant={user.subscription_plan ? 'default' : 'secondary'} className="min-w-24 justify-center">
                     {user.subscription_plan || 'free'}
                   </Badge>
                   {user.role === 'admin' && (
@@ -1970,7 +1971,7 @@ function AdminDashboard() {
                   )}
                   
                   <Select onValueChange={(plan) => updateUserPlan(user.id, plan)}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-36">
                       <SelectValue placeholder="Cambiar Plan" />
                     </SelectTrigger>
                     <SelectContent>
