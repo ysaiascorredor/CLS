@@ -5046,13 +5046,332 @@ class CSABackendTester:
         
         return self.tests_passed == self.tests_run
 
+    def test_owner_login_audit_investigation(self):
+        """URGENT: Test owner login and audit counting discrepancy for ysaias.corredor@gmail.com"""
+        try:
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_token = "access_token" in data
+                has_user = "user" in data
+                
+                if has_token:
+                    self.owner_token = data["access_token"]
+                    user_data = data["user"]
+                    user_id = user_data.get("id")
+                    
+                success = has_token and has_user
+                details = f"Status: {response.status_code}, Token: {has_token}, User ID: {user_id}"
+                
+                if success and "user" in data:
+                    user_data = data["user"]
+                    correct_email = user_data.get("email") == "ysaias.corredor@gmail.com"
+                    subscription_plan = user_data.get("subscription_plan")
+                    organization_id = user_data.get("organization_id")
+                    success = success and correct_email
+                    details += f", Email: {correct_email}, Plan: {subscription_plan}, Org ID: {organization_id}"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+            
+            self.log_test("🚨 URGENT: Owner Login (ysaias.corredor@gmail.com)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("🚨 URGENT: Owner Login (ysaias.corredor@gmail.com)", False, str(e))
+            return False
+
+    def test_audit_count_discrepancy_investigation(self):
+        """URGENT: Investigate audit counting discrepancy - User reports 12 audits but dashboard shows 9"""
+        if not self.owner_token:
+            self.log_test("🚨 URGENT: Audit Count Investigation", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # 1. GET ALL AUDITS for this user
+            audits_response = requests.get(f"{self.api_url}/audits", 
+                                         headers=headers, timeout=15)
+            
+            if audits_response.status_code == 200:
+                audits_data = audits_response.json()
+                total_audits_from_api = len(audits_data)
+                
+                # Analyze audit data
+                completed_audits = [audit for audit in audits_data if audit.get("status") == "completed"]
+                in_progress_audits = [audit for audit in audits_data if audit.get("status") == "in_progress"]
+                
+                completed_count = len(completed_audits)
+                in_progress_count = len(in_progress_audits)
+                
+                # Check for any filtering issues
+                audit_dates = []
+                audit_statuses = []
+                for audit in audits_data:
+                    audit_dates.append(audit.get("created_at"))
+                    audit_statuses.append(audit.get("status"))
+                
+                # 2. GET STATISTICS to check total_audits count
+                stats_response = requests.get(f"{self.api_url}/statistics", 
+                                            headers=headers, timeout=10)
+                
+                stats_total_audits = 0
+                stats_working = False
+                if stats_response.status_code == 200:
+                    stats_data = stats_response.json()
+                    stats_total_audits = stats_data.get("total_audits", 0)
+                    stats_working = True
+                
+                # 3. Check for discrepancies
+                api_vs_stats_match = total_audits_from_api == stats_total_audits
+                user_reported_count = 12
+                api_vs_user_match = total_audits_from_api == user_reported_count
+                stats_vs_user_match = stats_total_audits == user_reported_count
+                
+                # Determine success based on investigation
+                success = audits_response.status_code == 200 and stats_working
+                
+                details = f"🔍 AUDIT COUNT INVESTIGATION RESULTS:\n"
+                details += f"   📊 GET /api/audits returned: {total_audits_from_api} audits\n"
+                details += f"   📈 GET /api/statistics shows: {stats_total_audits} total_audits\n"
+                details += f"   👤 User reports having: {user_reported_count} audits\n"
+                details += f"   ✅ Completed audits: {completed_count}\n"
+                details += f"   🔄 In-progress audits: {in_progress_count}\n"
+                details += f"   🔍 API vs Stats match: {api_vs_stats_match}\n"
+                details += f"   🔍 API vs User match: {api_vs_user_match}\n"
+                details += f"   🔍 Stats vs User match: {stats_vs_user_match}\n"
+                
+                # Check for potential filtering issues
+                if not api_vs_user_match:
+                    details += f"   🚨 DISCREPANCY FOUND: Expected {user_reported_count}, got {total_audits_from_api}\n"
+                    details += f"   📅 Audit date range: {min(audit_dates) if audit_dates else 'None'} to {max(audit_dates) if audit_dates else 'None'}\n"
+                    details += f"   📋 Status breakdown: {dict(zip(*[audit_statuses, [audit_statuses.count(s) for s in set(audit_statuses)]]))}\n"
+                
+                # Mark as failed if there's a discrepancy
+                if not api_vs_user_match or not stats_vs_user_match:
+                    success = False
+                    details += f"   ❌ DATA INCONSISTENCY DETECTED"
+                
+            else:
+                success = False
+                try:
+                    error_data = audits_response.json()
+                    details = f"GET /api/audits failed - Status: {audits_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"GET /api/audits failed - Status: {audits_response.status_code}"
+            
+            self.log_test("🚨 URGENT: Audit Count Discrepancy Investigation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("🚨 URGENT: Audit Count Discrepancy Investigation", False, str(e))
+            return False
+
+    def test_audit_filtering_issues_investigation(self):
+        """URGENT: Check for audit filtering issues that might exclude audits"""
+        if not self.owner_token:
+            self.log_test("🚨 URGENT: Audit Filtering Investigation", False, "No owner token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.owner_token}"}
+            
+            # Get user info to check organization_id
+            user_response = requests.get(f"{self.api_url}/auth/me", 
+                                       headers=headers, timeout=10)
+            
+            if user_response.status_code == 200:
+                user_data = user_response.json()
+                user_id = user_data.get("id")
+                organization_id = user_data.get("organization_id")
+                
+                # Get all audits
+                audits_response = requests.get(f"{self.api_url}/audits", 
+                                             headers=headers, timeout=15)
+                
+                if audits_response.status_code == 200:
+                    audits_data = audits_response.json()
+                    
+                    # Analyze potential filtering issues
+                    filtering_analysis = {
+                        "total_returned": len(audits_data),
+                        "user_id_matches": 0,
+                        "different_user_ids": set(),
+                        "status_breakdown": {},
+                        "date_range_issues": [],
+                        "organization_issues": []
+                    }
+                    
+                    for audit in audits_data:
+                        # Check user_id filtering
+                        audit_user_id = audit.get("user_id")
+                        if audit_user_id == user_id:
+                            filtering_analysis["user_id_matches"] += 1
+                        else:
+                            filtering_analysis["different_user_ids"].add(audit_user_id)
+                        
+                        # Status breakdown
+                        status = audit.get("status", "unknown")
+                        filtering_analysis["status_breakdown"][status] = filtering_analysis["status_breakdown"].get(status, 0) + 1
+                        
+                        # Check for date/time issues
+                        created_at = audit.get("created_at")
+                        completed_at = audit.get("completed_at")
+                        if created_at and not completed_at and status == "completed":
+                            filtering_analysis["date_range_issues"].append(audit.get("id"))
+                    
+                    # Check organization access
+                    if organization_id:
+                        # If user is part of organization, check if there might be org-level audits
+                        filtering_analysis["organization_issues"].append(f"User is part of organization {organization_id}")
+                    
+                    success = audits_response.status_code == 200
+                    
+                    details = f"🔍 FILTERING ANALYSIS RESULTS:\n"
+                    details += f"   👤 User ID: {user_id}\n"
+                    details += f"   🏢 Organization ID: {organization_id}\n"
+                    details += f"   📊 Total audits returned: {filtering_analysis['total_returned']}\n"
+                    details += f"   ✅ Audits matching user ID: {filtering_analysis['user_id_matches']}\n"
+                    details += f"   ❓ Different user IDs found: {len(filtering_analysis['different_user_ids'])}\n"
+                    details += f"   📋 Status breakdown: {filtering_analysis['status_breakdown']}\n"
+                    
+                    if filtering_analysis["date_range_issues"]:
+                        details += f"   📅 Date/time issues found in audits: {filtering_analysis['date_range_issues']}\n"
+                    
+                    if filtering_analysis["organization_issues"]:
+                        details += f"   🏢 Organization issues: {filtering_analysis['organization_issues']}\n"
+                    
+                    # Check for potential issues
+                    if filtering_analysis["user_id_matches"] != filtering_analysis["total_returned"]:
+                        success = False
+                        details += f"   🚨 FILTERING ISSUE: Not all audits belong to current user\n"
+                    
+                    if len(filtering_analysis["different_user_ids"]) > 0:
+                        details += f"   ⚠️  WARNING: Found audits from other users: {filtering_analysis['different_user_ids']}\n"
+                
+                else:
+                    success = False
+                    details = f"Failed to get audits - Status: {audits_response.status_code}"
+            else:
+                success = False
+                details = f"Failed to get user info - Status: {user_response.status_code}"
+            
+            self.log_test("🚨 URGENT: Audit Filtering Issues Investigation", success, details)
+            return success
+        except Exception as e:
+            self.log_test("🚨 URGENT: Audit Filtering Issues Investigation", False, str(e))
+            return False
+
+    def test_database_audit_count_verification(self):
+        """URGENT: Verify actual audit count in database through admin endpoints"""
+        if not self.admin_token:
+            self.log_test("🚨 URGENT: Database Audit Count Verification", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {"Authorization": f"Bearer {self.admin_token}"}
+            
+            # Get admin dashboard data which might show global audit counts
+            dashboard_response = requests.get(f"{self.api_url}/admin/dashboard", 
+                                            headers=headers, timeout=15)
+            
+            if dashboard_response.status_code == 200:
+                dashboard_data = dashboard_response.json()
+                
+                # Look for audit-related metrics
+                metrics = dashboard_data.get("metrics", {})
+                total_audits_global = metrics.get("total_audits", 0)
+                total_users = metrics.get("total_users", 0)
+                
+                # Get user list to find our specific user
+                users_response = requests.get(f"{self.api_url}/admin/users", 
+                                            headers=headers, timeout=10)
+                
+                target_user_found = False
+                target_user_data = {}
+                
+                if users_response.status_code == 200:
+                    users_data = users_response.json()
+                    users_list = users_data.get("users", [])
+                    
+                    for user in users_list:
+                        if user.get("email") == "ysaias.corredor@gmail.com":
+                            target_user_found = True
+                            target_user_data = user
+                            break
+                
+                success = dashboard_response.status_code == 200 and users_response.status_code == 200
+                
+                details = f"🔍 DATABASE VERIFICATION RESULTS:\n"
+                details += f"   🌐 Global total audits: {total_audits_global}\n"
+                details += f"   👥 Total users in system: {total_users}\n"
+                details += f"   🎯 Target user found: {target_user_found}\n"
+                
+                if target_user_found:
+                    user_id = target_user_data.get("id")
+                    user_plan = target_user_data.get("subscription_plan")
+                    user_org_id = target_user_data.get("organization_id")
+                    audits_used = target_user_data.get("audits_used_this_month", 0)
+                    
+                    details += f"   👤 User ID: {user_id}\n"
+                    details += f"   💳 Subscription plan: {user_plan}\n"
+                    details += f"   🏢 Organization ID: {user_org_id}\n"
+                    details += f"   📊 Audits used this month: {audits_used}\n"
+                    
+                    # This gives us insight into potential discrepancies
+                    if audits_used != 12 and audits_used != 9:
+                        details += f"   ⚠️  WARNING: audits_used_this_month ({audits_used}) doesn't match user report (12) or dashboard (9)\n"
+                
+                else:
+                    success = False
+                    details += f"   ❌ CRITICAL: Target user ysaias.corredor@gmail.com not found in admin user list\n"
+            
+            else:
+                success = False
+                try:
+                    error_data = dashboard_response.json()
+                    details = f"Admin dashboard failed - Status: {dashboard_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Admin dashboard failed - Status: {dashboard_response.status_code}"
+            
+            self.log_test("🚨 URGENT: Database Audit Count Verification", success, details)
+            return success
+        except Exception as e:
+            self.log_test("🚨 URGENT: Database Audit Count Verification", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
-        # NEW REVIEW REQUEST TESTS - HIGHEST PRIORITY
+        # 🚨 URGENT INVESTIGATION: Audit Counting Discrepancy - HIGHEST PRIORITY
+        print("\n🚨 URGENT INVESTIGATION: Audit Counting Discrepancy")
+        print("-" * 80)
+        print("User ysaias.corredor@gmail.com reports having 12 audits but dashboard shows 9")
+        print("Investigating potential data inconsistency issues...")
+        
+        self.test_owner_login_audit_investigation()
+        self.test_audit_count_discrepancy_investigation()
+        self.test_audit_filtering_issues_investigation()
+        
+        # Get admin token for database verification
+        self.test_admin_login()
+        self.test_database_audit_count_verification()
+        
+        # NEW REVIEW REQUEST TESTS - SECOND PRIORITY
         print("\n🔍 NEW REVIEW REQUEST: Audit Categories & Admin Dashboard Testing")
         print("-" * 80)
         self.test_new_audit_category_questions()
