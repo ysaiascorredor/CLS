@@ -1254,8 +1254,8 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
           
           <div className="flex space-x-4 mb-4">
             <Button
-              variant={isCompliant === true ? "default" : "outline"}
-              onClick={() => setIsCompliant(true)}
+              variant={complianceStatus === 'compliant' ? "default" : "outline"}
+              onClick={() => setComplianceStatus('compliant')}
               className="flex items-center space-x-2"
               data-testid="compliant-btn"
             >
@@ -1264,13 +1264,23 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
             </Button>
             
             <Button
-              variant={isCompliant === false ? "destructive" : "outline"}
-              onClick={() => setIsCompliant(false)}
+              variant={complianceStatus === 'non_compliant' ? "destructive" : "outline"}
+              onClick={() => setComplianceStatus('non_compliant')}
               className="flex items-center space-x-2"
               data-testid="non-compliant-btn"
             >
               <XCircle className="w-4 h-4" />
               <span>{t.nonCompliant}</span>
+            </Button>
+            
+            <Button
+              variant={complianceStatus === 'n/a' ? "secondary" : "outline"}
+              onClick={() => setComplianceStatus('n/a')}
+              className="flex items-center space-x-2"
+              data-testid="na-btn"
+            >
+              <span className="w-4 h-4 text-center">—</span>
+              <span>{t.notApplicable}</span>
             </Button>
           </div>
         </div>
