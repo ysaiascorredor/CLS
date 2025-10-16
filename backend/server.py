@@ -1195,9 +1195,22 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
         story.append(Paragraph("DETAILED FINDINGS", heading_style))
         
         for i, finding in enumerate(findings, 1):
-            # Finding header
-            compliance_status = "✓ COMPLIANT" if finding.get('is_compliant', True) else "✗ NON-COMPLIANT"
-            status_color = colors.green if finding.get('is_compliant', True) else colors.red
+            # Finding header - handle both new and old formats
+            status = finding.get('compliance_status')
+            if status == "compliant":
+                compliance_status = "✓ COMPLIANT"
+                status_color = colors.green
+            elif status == "non_compliant":
+                compliance_status = "✗ NON-COMPLIANT"
+                status_color = colors.red
+            elif status == "n/a":
+                compliance_status = "○ N/A (NOT APPLICABLE)"
+                status_color = colors.grey
+            else:
+                # Backward compatibility
+                is_compliant = finding.get('is_compliant', True)
+                compliance_status = "✓ COMPLIANT" if is_compliant else "✗ NON-COMPLIANT"
+                status_color = colors.green if is_compliant else colors.red
             
             finding_title = f"<font color='{status_color.hexval() if hasattr(status_color, 'hexval') else 'black'}'><b>Finding #{i}: {compliance_status}</b></font>"
             story.append(Paragraph(finding_title, styles['Heading2']))
