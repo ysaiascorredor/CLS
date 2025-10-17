@@ -477,12 +477,7 @@ function AuthForm() {
 // Landing Page Component
 function LandingPage() {
   const { register, login } = useAuth();
-  const [language, setLanguage] = useState('en');
-  
-  // Force English language for all interface
-  React.useEffect(() => {
-    setLanguage('en');
-  }, []);
+  const { language, setLanguage, t } = React.useContext(LanguageContext);
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', name: '', password: '' });
   const [loading, setLoading] = useState(false);
