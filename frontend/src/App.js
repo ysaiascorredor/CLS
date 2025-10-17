@@ -1034,7 +1034,7 @@ function Dashboard() {
           </div>
         </div>
       </div>
-    </LanguageContext.Provider>
+    </div>
   );
 }
 
