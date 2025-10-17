@@ -3295,25 +3295,27 @@ function ProtectedRoute({ children }) {
 // Main App Component
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <SessionHandler>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/test" element={<TestAudit />} />
-            <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-            <Route path="/demo-checkout" element={<DemoCheckout />} />
-            <Route path="/join-team/:invitationId" element={<JoinTeamPage />} />
-          </Routes>
-          <Toaster />
-        </SessionHandler>
-      </Router>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+          <SessionHandler>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/test" element={<TestAudit />} />
+              <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+              <Route path="/demo-checkout" element={<DemoCheckout />} />
+              <Route path="/join-team/:invitationId" element={<JoinTeamPage />} />
+            </Routes>
+            <Toaster />
+          </SessionHandler>
+        </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
