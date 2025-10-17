@@ -328,12 +328,8 @@ function AuthProvider({ children }) {
 // Auth Component
 function AuthForm() {
   const { register, login } = useAuth();
-  const [language, setLanguage] = useState('en');
+  const { language, setLanguage, t } = React.useContext(LanguageContext);
   
-  // Force English language for all interface
-  React.useEffect(() => {
-    setLanguage('en');
-  }, []);
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ email: '', name: '', password: '' });
   const [loading, setLoading] = useState(false);
