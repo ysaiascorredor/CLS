@@ -61,6 +61,19 @@ const SUBSCRIPTION_PACKAGES = {
 // Language context
 const LanguageContext = React.createContext();
 
+// Global Language Provider
+function LanguageProvider({ children }) {
+  const [language, setLanguage] = useState('en');
+  
+  const t = language === 'en' ? translations.en : translations.es;
+  
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
 const translations = {
   en: {
     appName: "CSA Construction Safety Audit",
