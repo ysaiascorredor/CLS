@@ -5997,6 +5997,11 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # 🚨 URGENT INVESTIGATION: Audit with no questions issue
+        print("\n🚨 URGENT INVESTIGATION: Audit with no questions issue")
+        print("=" * 80)
+        self.test_audit_with_no_questions_investigation()
+        
         # 🎯 PRIORITY: N/A OPTION IMPLEMENTATION TESTING - REVIEW REQUEST
         print("\n🎯 PRIORITY REVIEW REQUEST: N/A Option Implementation Testing")
         print("=" * 80)
