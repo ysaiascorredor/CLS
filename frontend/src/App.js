@@ -640,7 +640,7 @@ function LandingPage() {
 // Main Dashboard Component  
 function Dashboard() {
   const { user, logout } = useAuth();
-  const { language, setLanguage, t } = React.useContext(LanguageContext);
+  const [language, setLanguage] = useState('en');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [workTypes, setWorkTypes] = useState([]);
   const [audits, setAudits] = useState([]);
