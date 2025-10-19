@@ -5834,6 +5834,163 @@ class CSABackendTester:
             self.log_test("N/A Testing - PDF Generation with N/A", False, str(e))
             return False
 
+    def test_audit_with_no_questions_investigation(self):
+        """URGENT INVESTIGATION: Audit with no questions issue - User ysaias.corredor@gmail.com / Clave.01"""
+        try:
+            # Step 1: Login as the specific user mentioned in the review request
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/login", 
+                                   json=login_data, timeout=10)
+            
+            if response.status_code != 200:
+                self.log_test("URGENT: Audit Investigation - User Login", False, f"Login failed: {response.status_code}")
+                return False
+            
+            login_data_response = response.json()
+            user_token = login_data_response.get("access_token")
+            user_info = login_data_response.get("user", {})
+            
+            if not user_token:
+                self.log_test("URGENT: Audit Investigation - User Login", False, "No access token received")
+                return False
+            
+            headers = {"Authorization": f"Bearer {user_token}"}
+            
+            print(f"✅ User Login Successful - ID: {user_info.get('id')}, Email: {user_info.get('email')}")
+            
+            # Step 2: GET /api/audits - find the audit with site_name "rdu" that is in_progress
+            audits_response = requests.get(f"{self.api_url}/audits", headers=headers, timeout=10)
+            
+            if audits_response.status_code != 200:
+                self.log_test("URGENT: Audit Investigation - Get Audits", False, f"Failed to get audits: {audits_response.status_code}")
+                return False
+            
+            audits_data = audits_response.json()
+            print(f"📋 Total audits found: {len(audits_data)}")
+            
+            # Find the specific audit with site_name "rdu" and status "in_progress"
+            target_audit = None
+            for audit in audits_data:
+                if audit.get("site_name", "").lower() == "rdu" and audit.get("status") == "in_progress":
+                    target_audit = audit
+                    break
+            
+            if not target_audit:
+                # Look for any in_progress audits
+                in_progress_audits = [a for a in audits_data if a.get("status") == "in_progress"]
+                print(f"🔍 No 'rdu' audit found. In-progress audits: {len(in_progress_audits)}")
+                
+                if in_progress_audits:
+                    target_audit = in_progress_audits[0]  # Use the first in-progress audit
+                    print(f"📝 Using audit: {target_audit.get('site_name')} (ID: {target_audit.get('id')})")
+                else:
+                    self.log_test("URGENT: Audit Investigation - Find Target Audit", False, "No in-progress audits found")
+                    return False
+            else:
+                print(f"🎯 Found target audit 'rdu' - ID: {target_audit.get('id')}")
+            
+            # Step 3: Analyze the audit document structure
+            audit_id = target_audit.get("id")
+            site_name = target_audit.get("site_name")
+            selected_work_types = target_audit.get("selected_work_types", [])
+            findings = target_audit.get("findings", [])
+            status = target_audit.get("status")
+            language = target_audit.get("language", "en")
+            
+            print(f"🔍 AUDIT ANALYSIS:")
+            print(f"   Site Name: {site_name}")
+            print(f"   Status: {status}")
+            print(f"   Selected Work Types: {selected_work_types}")
+            print(f"   Number of Findings: {len(findings)}")
+            print(f"   Language: {language}")
+            
+            # Step 4: Check what questions should be generated for those work types
+            if selected_work_types:
+                questions_request = {
+                    "work_types": selected_work_types,
+                    "language": language
+                }
+                
+                questions_response = requests.post(f"{self.api_url}/audits/questions", 
+                                                 json=questions_request, headers=headers, timeout=10)
+                
+                if questions_response.status_code == 200:
+                    questions_data = questions_response.json()
+                    expected_questions = questions_data.get("questions", [])
+                    
+                    print(f"📝 QUESTIONS ANALYSIS:")
+                    print(f"   Expected questions for work types {selected_work_types}: {len(expected_questions)}")
+                    
+                    if expected_questions:
+                        print(f"   First question: {expected_questions[0].get('question', 'N/A')[:100]}...")
+                        print(f"   Work type of first question: {expected_questions[0].get('work_type', 'N/A')}")
+                    else:
+                        print(f"   ❌ NO QUESTIONS GENERATED for work types: {selected_work_types}")
+                else:
+                    print(f"   ❌ Failed to get questions: {questions_response.status_code}")
+            else:
+                print(f"   ❌ NO WORK TYPES SELECTED in audit")
+            
+            # Step 5: GET /api/work-types - verify work types are properly loaded
+            work_types_response = requests.get(f"{self.api_url}/work-types", timeout=10)
+            
+            if work_types_response.status_code == 200:
+                work_types_data = work_types_response.json()
+                print(f"🏗️  WORK TYPES ANALYSIS:")
+                print(f"   Total work types available: {len(work_types_data)}")
+                
+                # Check if selected work types exist in available work types
+                available_ids = [wt.get("id") for wt in work_types_data]
+                missing_work_types = [wt for wt in selected_work_types if wt not in available_ids]
+                
+                if missing_work_types:
+                    print(f"   ❌ MISSING WORK TYPES: {missing_work_types}")
+                else:
+                    print(f"   ✅ All selected work types are available")
+                    
+                # Show available work types for reference
+                print(f"   Available work type IDs: {available_ids[:10]}...")  # Show first 10
+            else:
+                print(f"   ❌ Failed to get work types: {work_types_response.status_code}")
+            
+            # Step 6: Check backend logs for any errors (if possible)
+            print(f"🔍 DIAGNOSIS SUMMARY:")
+            
+            # Determine the root cause
+            root_cause_found = False
+            
+            if not selected_work_types:
+                print(f"   🚨 ROOT CAUSE: Audit has NO selected work types")
+                root_cause_found = True
+            elif missing_work_types:
+                print(f"   🚨 ROOT CAUSE: Selected work types {missing_work_types} don't exist in system")
+                root_cause_found = True
+            elif 'expected_questions' in locals() and len(expected_questions) == 0:
+                print(f"   🚨 ROOT CAUSE: No questions defined for work types {selected_work_types}")
+                root_cause_found = True
+            elif 'expected_questions' in locals() and len(expected_questions) > 0:
+                print(f"   ✅ Questions should be available ({len(expected_questions)} questions)")
+                print(f"   🚨 POSSIBLE CAUSE: Frontend not properly displaying questions or question index issue")
+                root_cause_found = True
+            
+            if not root_cause_found:
+                print(f"   ❓ Unable to determine root cause - need further investigation")
+            
+            # Success if we completed the investigation
+            success = True
+            details = f"Investigation completed. Audit: {site_name}, Work types: {len(selected_work_types)}, Expected questions: {len(expected_questions) if 'expected_questions' in locals() else 'Unknown'}"
+            
+            self.log_test("URGENT: Audit Investigation - Complete Analysis", success, details)
+            return success
+            
+        except Exception as e:
+            self.log_test("URGENT: Audit Investigation - Complete Analysis", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
