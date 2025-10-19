@@ -648,6 +648,8 @@ function Dashboard() {
   const [auditSearch, setAuditSearch] = useState('');
   const [currentAudit, setCurrentAudit] = useState(null);
   const { toast } = useToast();
+  
+  const t = language === 'en' ? translations.en : translations.es;
 
   useEffect(() => {
     loadWorkTypes();
