@@ -569,9 +569,10 @@ test_plan:
   current_focus:
     - "N/A OPTION FOR AUDIT QUESTIONS - NEW FEATURE"
     - "Audit Counting Investigation - Pending User Clarification"
+    - "URGENT INVESTIGATION: Audit with No Questions Issue - COMPLETED"
   stuck_tasks: []
   test_all: false
-  test_priority: "test_na_option_first"
+  test_priority: "urgent_investigation_complete"
 
 backend:
   - task: "N/A Option Implementation for Audit Questions"
