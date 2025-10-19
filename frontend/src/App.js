@@ -1050,6 +1050,44 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [findings, setFindings] = useState([]);
   const { toast } = useToast();
+  
+  // Load questions when currentAudit is passed (for continuing existing audit)
+  React.useEffect(() => {
+    const loadAuditForContinue = async () => {
+      if (currentAudit && currentAudit.id) {
+        console.log('Loading audit to continue:', currentAudit);
+        
+        // Pre-fill form with existing audit data
+        setFormData({
+          siteName: currentAudit.site_name || '',
+          auditorName: currentAudit.auditor_name || '',
+          selectedWorkTypes: currentAudit.selected_work_types || []
+        });
+        
+        // Load questions for this audit's work types
+        try {
+          const questionsResponse = await axios.post(`${API}/audits/questions`, {
+            work_types: currentAudit.selected_work_types || [],
+            language: language
+          });
+          
+          setAuditQuestions(questionsResponse.data.questions || []);
+          
+          // Set current question index based on existing findings
+          const existingFindings = currentAudit.findings || [];
+          setFindings(existingFindings);
+          setCurrentQuestionIndex(existingFindings.length); // Start where they left off
+          
+          console.log(`Loaded ${questionsResponse.data.questions.length} questions, continuing from question ${existingFindings.length + 1}`);
+        } catch (error) {
+          console.error('Error loading questions for audit:', error);
+          toast({ title: "Error loading audit questions", variant: "destructive" });
+        }
+      }
+    };
+    
+    loadAuditForContinue();
+  }, [currentAudit]);
 
   const questions = {
     en: [
