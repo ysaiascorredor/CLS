@@ -1664,16 +1664,13 @@ function SubscriptionSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Single unlimited plan data
-  const unlimitedPlan = SUBSCRIPTION_PACKAGES.unlimited;
-
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (planId) => {
     try {
-      console.log('🚀 Starting subscription process for CSA Safety Pro');
+      console.log(`🚀 Starting subscription process for ${planId}`);
       
       const originUrl = window.location.origin;
       const requestData = {
-        package_id: "unlimited",
+        package_id: planId,
         origin_url: originUrl
       };
       
@@ -1684,28 +1681,12 @@ function SubscriptionSettings() {
       console.log('📥 Checkout response:', response.data);
       
       if (response.data.url) {
-        // Check if it's demo mode
-        if (response.data.url.includes('/demo-checkout')) {
-          toast({ 
-            title: language === 'en' ? "🎭 Demo Mode: Payment simulation" : "🎭 Modo Demo: Simulación de pago",
-            description: language === 'en' ? "This is a demo payment for CSA Safety Pro" : "Este es un pago demo para CSA Seguridad Pro"
-          });
-          
-          // For demo, simulate successful payment after 2 seconds
-          setTimeout(() => {
-            toast({ 
-              title: language === 'en' ? "✅ Welcome to CSA Safety Pro!" : "✅ ¡Bienvenido a CSA Seguridad Pro!",
-              description: language === 'en' ? "You now have unlimited audits and team members!" : "¡Ahora tienes auditorías y miembros de equipo ilimitados!"
-            });
-          }, 2000);
-        } else {
-          // Real Stripe redirect
-          toast({
-            title: language === 'en' ? "🔄 Redirecting to Stripe..." : "🔄 Redirigiendo a Stripe...",
-            description: language === 'en' ? "Opening secure payment for CSA Safety Pro" : "Abriendo pago seguro para CSA Seguridad Pro"
-          });
-          window.location.href = response.data.url;
-        }
+        const planName = SUBSCRIPTION_PACKAGES[planId]?.name || planId;
+        toast({
+          title: language === 'en' ? `🔄 Redirecting to Stripe...` : `🔄 Redirigiendo a Stripe...`,
+          description: language === 'en' ? `Opening secure payment for ${planName}` : `Abriendo pago seguro para ${planName}`
+        });
+        window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL received');
       }
@@ -1720,7 +1701,132 @@ function SubscriptionSettings() {
     }
   };
 
-  const isSubscribed = user?.subscription_plan === 'unlimited' || user?.subscription_plan === 'enterprise';
+  const isSubscribed = user?.subscription_plan !== null && user?.subscription_plan !== undefined;
+  const currentPlan = user?.subscription_plan;
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-center mb-6">
+        {language === 'en' ? 'Choose Your Plan' : 'Elige Tu Plan'}
+      </h2>
+      
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Personal Plan */}
+        <Card className={`hover:shadow-xl transition-all duration-300 ${currentPlan === 'personal' ? 'border-4 border-green-500' : 'border-2 border-blue-200'}`}>
+          <CardHeader className="text-center">
+            <div className="mb-4">
+              <span className="text-5xl">👤</span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-blue-600">
+              {language === 'en' ? 'Personal' : 'Personal'}
+            </CardTitle>
+            {currentPlan === 'personal' && (
+              <Badge variant="default" className="mt-2 bg-green-500">
+                {language === 'en' ? 'Current Plan' : 'Plan Actual'}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <p className="text-4xl font-bold text-gray-800">$5.99</p>
+              <p className="text-gray-600">{language === 'en' ? 'per month' : 'por mes'}</p>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                <span>{language === 'en' ? 'Unlimited audits' : 'Auditorías ilimitadas'}</span>
+              </li>
+              <li className="flex items-center">
+                <User className="w-5 h-5 text-blue-500 mr-2" />
+                <span>{language === 'en' ? '1 user only' : '1 usuario solamente'}</span>
+              </li>
+              <li className="flex items-center">
+                <FileText className="w-5 h-5 text-purple-500 mr-2" />
+                <span>{language === 'en' ? 'PDF reports' : 'Reportes PDF'}</span>
+              </li>
+            </ul>
+            {currentPlan !== 'personal' && (
+              <Button 
+                onClick={() => handleSubscribe('personal')} 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={currentPlan === 'corporate'}
+              >
+                {currentPlan === 'corporate' 
+                  ? (language === 'en' ? 'Downgrade' : 'Cambiar') 
+                  : (language === 'en' ? 'Subscribe' : 'Suscribirse')}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Corporate Plan */}
+        <Card className={`hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-50 to-blue-50 ${currentPlan === 'corporate' ? 'border-4 border-green-500' : 'border-2 border-purple-200'}`}>
+          <CardHeader className="text-center">
+            <div className="mb-4">
+              <span className="text-5xl">💼</span>
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              {language === 'en' ? 'Corporate' : 'Corporativa'}
+            </CardTitle>
+            {currentPlan === 'corporate' && (
+              <Badge variant="default" className="mt-2 bg-green-500">
+                {language === 'en' ? 'Current Plan' : 'Plan Actual'}
+              </Badge>
+            )}
+            <Badge variant="secondary" className="mt-2">
+              {language === 'en' ? 'Most Popular' : 'Más Popular'}
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-center">
+              <p className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">$49.99</p>
+              <p className="text-gray-600">{language === 'en' ? 'per month' : 'por mes'}</p>
+            </div>
+            <ul className="space-y-3">
+              <li className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                <span className="font-bold">{language === 'en' ? 'Unlimited audits' : 'Auditorías ilimitadas'}</span>
+              </li>
+              <li className="flex items-center">
+                <Users className="w-5 h-5 text-blue-500 mr-2" />
+                <span className="font-bold">{language === 'en' ? 'Unlimited team members' : 'Miembros de equipo ilimitados'}</span>
+              </li>
+              <li className="flex items-center">
+                <Building className="w-5 h-5 text-purple-500 mr-2" />
+                <span>{language === 'en' ? 'Organization management' : 'Gestión de organización'}</span>
+              </li>
+              <li className="flex items-center">
+                <FileText className="w-5 h-5 text-green-500 mr-2" />
+                <span>{language === 'en' ? 'Advanced PDF reports' : 'Reportes PDF avanzados'}</span>
+              </li>
+            </ul>
+            {currentPlan !== 'corporate' && (
+              <Button 
+                onClick={() => handleSubscribe('corporate')} 
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {language === 'en' ? 'Subscribe' : 'Suscribirse'}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Free Trial Info */}
+      {!isSubscribed && (
+        <Card className="bg-yellow-50 border-yellow-300">
+          <CardContent className="pt-6">
+            <p className="text-center text-yellow-800">
+              ⚠️ {language === 'en' 
+                ? `You have a free trial of 5 audits. After that, you need to subscribe.`
+                : `Tienes un trial gratuito de 5 auditorías. Después, necesitas suscribirte.`}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
   return (
     <div className="space-y-6">
