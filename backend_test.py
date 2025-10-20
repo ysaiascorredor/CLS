@@ -5991,11 +5991,202 @@ class CSABackendTester:
             self.log_test("URGENT: Audit Investigation - Complete Analysis", False, str(e))
             return False
 
+    def test_user_registration_critical(self):
+        """🚨 CRITICAL TEST: User registration endpoint as reported in review request"""
+        try:
+            # Test the exact scenario from review request
+            registration_data = {
+                "email": "testexternal789@example.com",
+                "name": "Test External User", 
+                "password": "TestPassword123"
+            }
+            
+            print(f"🔍 Testing registration with: {registration_data['email']}")
+            
+            response = requests.post(f"{self.api_url}/auth/register", 
+                                   json=registration_data, timeout=15)
+            
+            print(f"📡 Registration Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                has_message = "message" in data
+                has_user = "user" in data
+                has_token = "access_token" in data
+                has_token_type = "token_type" in data
+                
+                success = has_message and has_user and has_token and has_token_type
+                details = f"Status: {response.status_code}, Message: {has_message}, User: {has_user}, Token: {has_token}, Token Type: {has_token_type}"
+                
+                if success:
+                    user_data = data.get("user", {})
+                    correct_email = user_data.get("email") == registration_data["email"]
+                    correct_name = user_data.get("name") == registration_data["name"]
+                    has_user_id = "id" in user_data
+                    no_password_exposed = "password" not in user_data and "password_hash" not in user_data
+                    
+                    success = success and correct_email and correct_name and has_user_id and no_password_exposed
+                    details += f", Correct email: {correct_email}, Correct name: {correct_name}, Has ID: {has_user_id}, No password exposed: {no_password_exposed}"
+                    
+                    # Test immediate login with new credentials
+                    if success:
+                        login_data = {
+                            "email": registration_data["email"],
+                            "password": registration_data["password"]
+                        }
+                        
+                        login_response = requests.post(f"{self.api_url}/auth/login", 
+                                                     json=login_data, timeout=10)
+                        
+                        can_login = login_response.status_code == 200
+                        success = success and can_login
+                        details += f", Can login immediately: {can_login}"
+                        
+                        if can_login:
+                            # Store token for further testing
+                            login_data_response = login_response.json()
+                            if "access_token" in login_data_response:
+                                self.test_user_token = login_data_response["access_token"]
+                                
+            elif response.status_code == 400:
+                # Check if it's a validation error or duplicate email
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get("detail", "")
+                    
+                    if "already registered" in error_detail.lower():
+                        # User already exists - try with different email
+                        import time
+                        unique_email = f"testexternal{int(time.time())}@example.com"
+                        registration_data["email"] = unique_email
+                        
+                        retry_response = requests.post(f"{self.api_url}/auth/register", 
+                                                     json=registration_data, timeout=15)
+                        
+                        if retry_response.status_code == 200:
+                            success = True
+                            details = f"Original email existed, retry with {unique_email} succeeded"
+                        else:
+                            success = False
+                            details = f"Original email existed, retry failed: {retry_response.status_code}"
+                    else:
+                        success = False
+                        details = f"Status: {response.status_code}, Validation Error: {error_detail}"
+                except:
+                    success = False
+                    details = f"Status: {response.status_code}, Could not parse error response"
+                    
+            else:
+                success = False
+                try:
+                    error_data = response.json()
+                    details = f"Status: {response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Status: {response.status_code}, Response: {response.text[:200]}"
+            
+            self.log_test("🚨 CRITICAL: User Registration (Review Request)", success, details)
+            return success
+        except Exception as e:
+            self.log_test("🚨 CRITICAL: User Registration (Review Request)", False, str(e))
+            return False
+
+    def test_registration_validation_rules(self):
+        """Test registration validation rules and error handling"""
+        test_cases = [
+            {
+                "name": "Empty Email",
+                "data": {"email": "", "name": "Test User", "password": "TestPass123"},
+                "expected_status": 422
+            },
+            {
+                "name": "Invalid Email Format", 
+                "data": {"email": "invalid-email", "name": "Test User", "password": "TestPass123"},
+                "expected_status": 422
+            },
+            {
+                "name": "Empty Name",
+                "data": {"email": "test@example.com", "name": "", "password": "TestPass123"},
+                "expected_status": 422
+            },
+            {
+                "name": "Short Password",
+                "data": {"email": "test@example.com", "name": "Test User", "password": "123"},
+                "expected_status": [400, 422]  # Could be either depending on validation
+            },
+            {
+                "name": "Missing Password",
+                "data": {"email": "test@example.com", "name": "Test User"},
+                "expected_status": 422
+            }
+        ]
+        
+        all_passed = True
+        for test_case in test_cases:
+            try:
+                response = requests.post(f"{self.api_url}/auth/register", 
+                                       json=test_case["data"], timeout=10)
+                
+                expected_statuses = test_case["expected_status"] if isinstance(test_case["expected_status"], list) else [test_case["expected_status"]]
+                success = response.status_code in expected_statuses
+                
+                details = f"Status: {response.status_code} (expected: {test_case['expected_status']})"
+                self.log_test(f"Registration Validation - {test_case['name']}", success, details)
+                
+                if not success:
+                    all_passed = False
+                    
+            except Exception as e:
+                self.log_test(f"Registration Validation - {test_case['name']}", False, str(e))
+                all_passed = False
+        
+        return all_passed
+
+    def test_registration_duplicate_email(self):
+        """Test registration with duplicate email (should fail appropriately)"""
+        try:
+            # First, try to register with admin email (should fail)
+            duplicate_data = {
+                "email": "admin@csaaudit.com",
+                "name": "Duplicate Admin",
+                "password": "TestPassword123"
+            }
+            
+            response = requests.post(f"{self.api_url}/auth/register", 
+                                   json=duplicate_data, timeout=10)
+            
+            success = response.status_code == 400
+            
+            if success:
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get("detail", "")
+                    has_duplicate_message = "already registered" in error_detail.lower() or "exists" in error_detail.lower()
+                    success = success and has_duplicate_message
+                    details = f"Status: {response.status_code}, Proper duplicate message: {has_duplicate_message}"
+                except:
+                    details = f"Status: {response.status_code}, Could not parse error"
+            else:
+                details = f"Status: {response.status_code} (expected 400 for duplicate email)"
+            
+            self.log_test("Registration Duplicate Email", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Registration Duplicate Email", False, str(e))
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
+        
+        # 🚨 CRITICAL: Test registration first (review request priority)
+        print("\n🚨 CRITICAL PRIORITY: Testing User Registration (Review Request)")
+        print("=" * 80)
+        self.test_user_registration_critical()
+        self.test_registration_validation_rules()
+        self.test_registration_duplicate_email()
+        print("=" * 40)
         
         # 🚨 URGENT INVESTIGATION: Audit with no questions issue
         print("\n🚨 URGENT INVESTIGATION: Audit with no questions issue")
