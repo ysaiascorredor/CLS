@@ -593,10 +593,10 @@ test_plan:
   current_focus:
     - "N/A OPTION FOR AUDIT QUESTIONS - NEW FEATURE"
     - "Audit Counting Investigation - Pending User Clarification"
-    - "User Registration Flow Testing - COMPLETED SUCCESSFULLY"
+    - "COMPLETE DELETE USER FLOW TESTING - COMPLETED SUCCESSFULLY"
   stuck_tasks: []
   test_all: false
-  test_priority: "registration_testing_complete"
+  test_priority: "delete_flow_testing_complete"
 
 backend:
   - task: "N/A Option Implementation for Audit Questions"
