@@ -2194,7 +2194,7 @@ async def get_system_logs(current_admin: User = Depends(require_admin)):
                 backend_log_cmd = "tail -n 50 /var/log/supervisor/backend*.log 2>/dev/null || echo 'No backend logs found'"
                 backend_result = subprocess.run(backend_log_cmd, shell=True, capture_output=True, text=True, timeout=10)
                 backend_logs = backend_result.stdout
-            except:
+            except Exception:
                 backend_logs = "Error reading backend logs"
             
             # Frontend logs
@@ -2202,7 +2202,7 @@ async def get_system_logs(current_admin: User = Depends(require_admin)):
                 frontend_log_cmd = "tail -n 50 /var/log/supervisor/frontend*.log 2>/dev/null || echo 'No frontend logs found'"
                 frontend_result = subprocess.run(frontend_log_cmd, shell=True, capture_output=True, text=True, timeout=10)
                 frontend_logs = frontend_result.stdout
-            except:
+            except Exception:
                 frontend_logs = "Error reading frontend logs"
             
             combined_logs = f"""=== BACKEND LOGS ===
