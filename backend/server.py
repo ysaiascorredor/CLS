@@ -462,8 +462,24 @@ SAFETY_QUESTIONS = {
 
 # Subscription packages - Single unlimited plan
 SUBSCRIPTION_PACKAGES = {
-    "unlimited": {"price": 49.99, "name": "CSA Safety Pro", "audits_per_month": -1, "team_members": -1}  # unlimited everything
+    "personal": {
+        "price": 5.99, 
+        "name": "CSA Safety Personal", 
+        "audits_per_month": -1,  # unlimited audits
+        "team_members": 1,  # single user only
+        "stripe_price_id": "price_PERSONAL_PLACEHOLDER"  # UPDATE THIS with your Stripe Price ID
+    },
+    "corporate": {
+        "price": 49.99, 
+        "name": "CSA Safety Corporate", 
+        "audits_per_month": -1,  # unlimited audits
+        "team_members": -1,  # unlimited team members
+        "stripe_price_id": "price_CORPORATE_PLACEHOLDER"  # UPDATE THIS with your Stripe Price ID
+    }
 }
+
+# Free trial limits
+FREE_TRIAL_AUDITS = 5  # Users get 5 free audits before requiring subscription
 
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY')
