@@ -2594,11 +2594,13 @@ function TeamManagement() {
                       size="sm"
                       onClick={() => {
                         console.log('🎯 DELETE BUTTON CLICKED for member:', member);
-                        console.log('🔍 Member ID:', member.id);
+                        console.log('🔍 Member user_id:', member.user_id);
+                        console.log('🔍 Member user.id:', member.user?.id);
                         console.log('🔍 Member data:', JSON.stringify(member));
-                        deleteMember(member.id);
+                        // Use user_id which is the actual user ID
+                        deleteMember(member.user_id || member.user?.id);
                       }}
-                      data-testid={`delete-button-${member.id}`}
+                      data-testid={`delete-button-${member.user_id}`}
                     >
                       {language === 'en' ? 'Delete' : 'Eliminar'}
                     </Button>
