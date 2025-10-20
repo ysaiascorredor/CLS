@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
 import { useToast } from './hooks/use-toast';
 import { Toaster } from './components/ui/sonner';
-import { CheckCircle, XCircle, BarChart3, FileText, Settings, LogOut, Camera, Shield, Building, Users, TrendingUp } from 'lucide-react';
+import { CheckCircle, XCircle, BarChart3, FileText, Settings, LogOut, Camera, Shield, Building, Users, User, TrendingUp } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TermsOfService, PrivacyPolicy } from './components/LegalTerms';
 import { JoinTeamPage } from './components/SubscriptionSuccess';
