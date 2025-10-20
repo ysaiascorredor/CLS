@@ -8,7 +8,7 @@ import json
 import sys
 
 def main():
-    base_url = "https://safetyscan-5.preview.emergentagent.com"
+    base_url = "https://safesitepro.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔍 DEBUG: Team Response Structure")

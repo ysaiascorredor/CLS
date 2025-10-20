@@ -2370,7 +2370,7 @@ async def invite_team_member(
     await db.team_invitations.insert_one(invitation.dict())
     
     # Generar enlace único de invitación  
-    invitation_link = f"https://safetyscan-5.preview.emergentagent.com/join-team/{invitation.id}"
+    invitation_link = f"https://safesitepro.preview.emergentagent.com/join-team/{invitation.id}"
     
     # Intentar enviar email automáticamente si está configurado
     email_sent = False

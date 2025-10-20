@@ -8,7 +8,7 @@ import bcrypt
 
 def test_owner_login_debug():
     """Debug the owner login issue"""
-    api_url = "https://safetyscan-5.preview.emergentagent.com/api"
+    api_url = "https://safesitepro.preview.emergentagent.com/api"
     
     print("🔍 Debugging Owner Login Issue")
     print("=" * 50)

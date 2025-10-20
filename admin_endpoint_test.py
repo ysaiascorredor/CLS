@@ -6,7 +6,7 @@ import requests
 import json
 
 def test_admin_endpoints():
-    base_url = "https://safetyscan-5.preview.emergentagent.com"
+    base_url = "https://safesitepro.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔐 Testing Admin Endpoints with Admin Credentials")
