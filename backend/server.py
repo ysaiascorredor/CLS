@@ -1284,7 +1284,7 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
     
     story.append(Paragraph("---", footer_style))
     story.append(Paragraph(f"Report generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", footer_style))
-    story.append(Paragraph(f"Construction Labor Solution LLC | Safety Audit System", footer_style))
+    story.append(Paragraph("Construction Labor Solution LLC | Safety Audit System", footer_style))
     story.append(Paragraph("This report contains confidential information", footer_style))
     
     # Build PDF
