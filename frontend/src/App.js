@@ -869,6 +869,42 @@ function Dashboard() {
                 </Card>
               </div>
               
+              {/* Free Trial Banner */}
+              {!user.subscription_plan && (
+                <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="text-4xl">⚠️</div>
+                        <div>
+                          <h3 className="text-lg font-bold text-yellow-800">
+                            {language === 'en' ? 'Free Trial Active' : 'Trial Gratuito Activo'}
+                          </h3>
+                          <p className="text-yellow-700">
+                            {language === 'en' 
+                              ? `${user.audits_used_this_month || 0} / ${FREE_TRIAL_AUDITS} free audits used`
+                              : `${user.audits_used_this_month || 0} / ${FREE_TRIAL_AUDITS} auditorías gratuitas usadas`}
+                          </p>
+                          {(user.audits_used_this_month || 0) >= FREE_TRIAL_AUDITS && (
+                            <p className="text-red-600 font-bold mt-2">
+                              {language === 'en' 
+                                ? '🚫 Trial limit reached! Subscribe to continue creating audits.'
+                                : '🚫 ¡Límite alcanzado! Suscríbete para continuar creando auditorías.'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={() => setActiveTab('subscription')}
+                        className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                      >
+                        {language === 'en' ? '⭐ Upgrade Now' : '⭐ Mejorar Ahora'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* All Audits with Search */}
               <Card className="hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:scale-105">
                 <CardHeader className="space-y-4">
