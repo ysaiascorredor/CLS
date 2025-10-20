@@ -914,7 +914,7 @@ async def complete_audit(audit_id: str, current_user: User = Depends(require_aut
         if applicable_findings:
             compliant_count = sum(1 for f in applicable_findings 
                                 if f.get("compliance_status") == "compliant" 
-                                or (f.get("compliance_status") is None and f.get("is_compliant") == True))
+                                or (f.get("compliance_status") is None and f.get("is_compliant")))
             compliance_score = (compliant_count / len(applicable_findings)) * 100
         else:
             compliance_score = 0.0
