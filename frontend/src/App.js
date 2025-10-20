@@ -2567,7 +2567,7 @@ function TeamManagement() {
         <CardContent>
           <div className="space-y-4">
             {teamData?.team_members.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={member.user_id || member.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center space-x-4">
                   <img 
                     src={member.user?.picture || 'https://via.placeholder.com/40'} 
