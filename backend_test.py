@@ -6174,6 +6174,199 @@ class CSABackendTester:
             self.log_test("Registration Duplicate Email", False, str(e))
             return False
 
+    def test_specific_user_registration_issue(self):
+        """🚨 URGENT: Test specific user registration issue with amazon.corredor123@gmail.com"""
+        print("\n🚨 URGENT INVESTIGATION: amazon.corredor123@gmail.com Registration Issue")
+        print("=" * 80)
+        
+        target_email = "amazon.corredor123@gmail.com"
+        target_name = "Amazon Corredor"
+        target_password = "TestPassword123"
+        
+        try:
+            # Step 1: Check if user already exists in database by attempting login
+            print(f"🔍 Step 1: Checking if user {target_email} already exists...")
+            login_data = {
+                "email": target_email,
+                "password": target_password
+            }
+            
+            login_response = requests.post(f"{self.api_url}/auth/login", 
+                                         json=login_data, timeout=10)
+            
+            user_exists = login_response.status_code == 200
+            login_error = None
+            user_details = None
+            
+            if user_exists:
+                print(f"✅ User EXISTS in database")
+                user_data = login_response.json()
+                user_details = user_data.get("user", {})
+                print(f"   📋 User Details:")
+                print(f"      - ID: {user_details.get('id', 'N/A')}")
+                print(f"      - Email: {user_details.get('email', 'N/A')}")
+                print(f"      - Name: {user_details.get('name', 'N/A')}")
+                print(f"      - Created: {user_details.get('created_at', 'N/A')}")
+                print(f"      - Role: {user_details.get('role', 'N/A')}")
+                print(f"      - Subscription: {user_details.get('subscription_plan', 'N/A')}")
+                print(f"      - Organization: {user_details.get('organization_id', 'N/A')}")
+            else:
+                print(f"❌ User does NOT exist in database")
+                try:
+                    login_error = login_response.json().get('detail', 'Unknown error')
+                    print(f"   🔍 Login Error: {login_error}")
+                except:
+                    login_error = f"HTTP {login_response.status_code}"
+                    print(f"   🔍 Login Status: {login_response.status_code}")
+            
+            # Step 2: Attempt registration with the target email
+            print(f"\n🔍 Step 2: Attempting registration with {target_email}...")
+            registration_data = {
+                "email": target_email,
+                "name": target_name,
+                "password": target_password
+            }
+            
+            registration_response = requests.post(f"{self.api_url}/auth/register", 
+                                                json=registration_data, timeout=10)
+            
+            registration_success = registration_response.status_code == 200
+            registration_error = None
+            registration_details = None
+            
+            print(f"   📊 Registration Response Status: {registration_response.status_code}")
+            
+            if registration_success:
+                print(f"✅ Registration SUCCESSFUL")
+                registration_details = registration_response.json()
+                print(f"   📋 Registration Response:")
+                print(f"      - Message: {registration_details.get('message', 'N/A')}")
+                print(f"      - Token Type: {registration_details.get('token_type', 'N/A')}")
+                print(f"      - Has Access Token: {'access_token' in registration_details}")
+                if 'user' in registration_details:
+                    new_user = registration_details['user']
+                    print(f"      - New User ID: {new_user.get('id', 'N/A')}")
+                    print(f"      - New User Email: {new_user.get('email', 'N/A')}")
+            else:
+                print(f"❌ Registration FAILED")
+                try:
+                    registration_error = registration_response.json().get('detail', 'Unknown error')
+                    print(f"   🔍 Registration Error: {registration_error}")
+                except:
+                    registration_error = f"HTTP {registration_response.status_code}"
+                    print(f"   🔍 Registration Response: {registration_response.text[:200]}")
+            
+            # Step 3: Check for "email already registered" error specifically
+            print(f"\n🔍 Step 3: Analyzing registration error...")
+            is_email_already_registered = False
+            if registration_error:
+                is_email_already_registered = "already registered" in registration_error.lower() or "email already" in registration_error.lower()
+                print(f"   📊 'Email Already Registered' Error: {is_email_already_registered}")
+                if is_email_already_registered:
+                    print(f"   🎯 ROOT CAUSE IDENTIFIED: Email {target_email} is already registered in the system")
+                    print(f"   💡 SOLUTION: User should use 'Forgot Password' or try logging in instead")
+            
+            # Step 4: Test with a different email to verify registration endpoint works
+            print(f"\n🔍 Step 4: Testing registration endpoint with different email...")
+            test_email = f"test.registration.{datetime.now().strftime('%Y%m%d_%H%M%S')}@example.com"
+            test_registration_data = {
+                "email": test_email,
+                "name": "Test Registration User",
+                "password": "TestPassword123"
+            }
+            
+            test_registration_response = requests.post(f"{self.api_url}/auth/register", 
+                                                     json=test_registration_data, timeout=10)
+            
+            test_registration_works = test_registration_response.status_code == 200
+            print(f"   📊 Test Registration Status: {test_registration_response.status_code}")
+            print(f"   ✅ Registration Endpoint Working: {test_registration_works}")
+            
+            # Step 5: Check backend logs for registration attempts (if admin token available)
+            print(f"\n🔍 Step 5: Checking backend logs for registration attempts...")
+            if hasattr(self, 'admin_token') and self.admin_token:
+                try:
+                    headers = {"Authorization": f"Bearer {self.admin_token}"}
+                    logs_response = requests.get(f"{self.api_url}/admin/logs", 
+                                               headers=headers, timeout=15)
+                    
+                    if logs_response.status_code == 200:
+                        logs_data = logs_response.json()
+                        logs_content = logs_data.get("logs", "")
+                        
+                        # Search for registration-related entries
+                        registration_mentions = logs_content.lower().count("register")
+                        email_mentions = logs_content.lower().count(target_email.lower())
+                        
+                        print(f"   📊 Backend Logs Analysis:")
+                        print(f"      - Registration mentions: {registration_mentions}")
+                        print(f"      - Target email mentions: {email_mentions}")
+                        
+                        if email_mentions > 0:
+                            print(f"   🎯 FOUND: Target email appears in backend logs")
+                        else:
+                            print(f"   ❌ Target email not found in recent backend logs")
+                    else:
+                        print(f"   ❌ Could not retrieve backend logs (Status: {logs_response.status_code})")
+                except Exception as e:
+                    print(f"   ❌ Error checking backend logs: {str(e)}")
+            else:
+                print(f"   ⚠️  No admin token available to check backend logs")
+            
+            # Step 6: Final diagnosis and recommendations
+            print(f"\n🎯 FINAL DIAGNOSIS:")
+            print("=" * 50)
+            
+            if user_exists and is_email_already_registered:
+                print(f"✅ ISSUE CONFIRMED: Email {target_email} is already registered")
+                print(f"📋 USER STATUS: Active user account exists in database")
+                print(f"💡 SOLUTION OPTIONS:")
+                print(f"   1. User should try logging in with existing credentials")
+                print(f"   2. User should use 'Forgot Password' if password is forgotten")
+                print(f"   3. Admin can reset user password if needed")
+                success = True
+                details = f"User exists, registration correctly blocked with 'email already registered' error"
+                
+            elif not user_exists and registration_success:
+                print(f"✅ ISSUE RESOLVED: Registration completed successfully")
+                print(f"📋 NEW USER: Account created for {target_email}")
+                print(f"💡 USER CAN NOW: Log in with the new account credentials")
+                success = True
+                details = f"Registration successful, new user account created"
+                
+            elif not user_exists and not registration_success and not is_email_already_registered:
+                print(f"❌ REGISTRATION SYSTEM ISSUE: Registration failed for unknown reason")
+                print(f"📋 ERROR: {registration_error}")
+                print(f"💡 INVESTIGATION NEEDED: Backend registration endpoint has issues")
+                success = False
+                details = f"Registration failed with error: {registration_error}"
+                
+            elif user_exists and not is_email_already_registered:
+                print(f"⚠️  INCONSISTENT STATE: User exists but registration didn't return proper error")
+                print(f"📋 ISSUE: Registration error handling may be broken")
+                print(f"💡 BACKEND FIX NEEDED: Registration should return 'email already registered' error")
+                success = False
+                details = f"User exists but registration error handling is inconsistent"
+                
+            else:
+                print(f"❓ UNCLEAR STATE: Need further investigation")
+                print(f"📋 User exists: {user_exists}")
+                print(f"📋 Registration success: {registration_success}")
+                print(f"📋 Email already registered error: {is_email_already_registered}")
+                success = False
+                details = f"Unclear state requiring manual investigation"
+            
+            print(f"\n📊 REGISTRATION ENDPOINT STATUS: {'✅ Working' if test_registration_works else '❌ Broken'}")
+            
+            self.log_test("URGENT: amazon.corredor123@gmail.com Registration Issue", success, details)
+            return success
+            
+        except Exception as e:
+            error_msg = f"Investigation failed: {str(e)}"
+            print(f"❌ INVESTIGATION ERROR: {error_msg}")
+            self.log_test("URGENT: amazon.corredor123@gmail.com Registration Issue", False, error_msg)
+            return False
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
