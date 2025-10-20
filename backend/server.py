@@ -798,6 +798,13 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
             if package and package["audits_per_month"] != -1:
                 if org["audits_used_this_month"] >= package["audits_per_month"]:
                     raise HTTPException(status_code=403, detail="Organization monthly audit limit reached")
+        else:
+            # Organization without subscription - check free trial limit
+            if org.get("audits_used_this_month", 0) >= FREE_TRIAL_AUDITS:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
+                )
     else:
         # Individual user - check personal limits
         if current_user.subscription_plan:
@@ -805,6 +812,13 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
             if package and package["audits_per_month"] != -1:
                 if current_user.audits_used_this_month >= package["audits_per_month"]:
                     raise HTTPException(status_code=403, detail="Monthly audit limit reached")
+        else:
+            # User without subscription - check free trial limit
+            if current_user.audits_used_this_month >= FREE_TRIAL_AUDITS:
+                raise HTTPException(
+                    status_code=403, 
+                    detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
+                )
     
     # Validate selected work types
     if len(audit_data.selected_work_types) == 0:
