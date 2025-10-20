@@ -53,10 +53,13 @@ axios.interceptors.response.use(
   }
 );
 
-// Subscription packages reference (should match backend) - Single unlimited plan
+// Subscription packages reference (should match backend)
 const SUBSCRIPTION_PACKAGES = {
-  "unlimited": {"price": 49.99, "name": "CSA Safety Pro", "audits_per_month": -1, "team_members": -1}
+  "personal": {"price": 5.99, "name": "CSA Safety Personal", "audits_per_month": -1, "team_members": 1},
+  "corporate": {"price": 49.99, "name": "CSA Safety Corporate", "audits_per_month": -1, "team_members": -1}
 };
+
+const FREE_TRIAL_AUDITS = 5; // Users get 5 free audits before requiring subscription
 
 // Language context
 const LanguageContext = React.createContext();
