@@ -467,14 +467,14 @@ SUBSCRIPTION_PACKAGES = {
         "name": "CSA Safety Personal", 
         "audits_per_month": -1,  # unlimited audits
         "team_members": 1,  # single user only
-        "stripe_price_id": "price_PERSONAL_PLACEHOLDER"  # UPDATE THIS with your Stripe Price ID
+        "stripe_price_id": "price_1SKGWA1VJAmV9iei4dqpfsH3"  # Stripe Price ID for Personal plan
     },
     "corporate": {
         "price": 49.99, 
         "name": "CSA Safety Corporate", 
         "audits_per_month": -1,  # unlimited audits
         "team_members": -1,  # unlimited team members
-        "stripe_price_id": "price_CORPORATE_PLACEHOLDER"  # UPDATE THIS with your Stripe Price ID
+        "stripe_price_id": "price_1SKGWB1VJAmV9iei4qDG5foh"  # Stripe Price ID for Corporate plan
     }
 }
 
