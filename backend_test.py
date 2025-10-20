@@ -6373,6 +6373,12 @@ class CSABackendTester:
         print(f"🌐 Testing against: {self.base_url}")
         print("=" * 60)
         
+        # 🚨 URGENT: Test specific user registration issue first (review request priority)
+        print("\n🚨 URGENT PRIORITY: Specific User Registration Issue Investigation")
+        print("=" * 80)
+        self.test_specific_user_registration_issue()
+        print("=" * 40)
+        
         # 🚨 CRITICAL: Test registration first (review request priority)
         print("\n🚨 CRITICAL PRIORITY: Testing User Registration (Review Request)")
         print("=" * 80)
