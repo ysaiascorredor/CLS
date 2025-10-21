@@ -7400,5 +7400,10 @@ if __name__ == "__main__":
         tester = CSABackendTester()
         success = tester.run_review_request_tests()
         sys.exit(0 if success else 1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "audit-flow":
+        # Run the specific audit flow test for the review request
+        tester = CSABackendTester()
+        success = tester.run_review_request_test()
+        sys.exit(0 if success else 1)
     else:
         sys.exit(main())
