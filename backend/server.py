@@ -789,10 +789,14 @@ async def generate_questions(request: QuestionsRequest):
 async def create_audit(audit_data: AuditCreate, current_user: User = Depends(require_auth)):
     """Create a new safety audit"""
     
+    # DEBUG: Log user info
+    print(f"DEBUG CREATE AUDIT - User: {current_user.email}, Role: {current_user.role}, Plan: {current_user.subscription_plan}, Org: {current_user.organization_id}")
+    
     # Check subscription limits (individual or organization)
     # OWNER/ADMIN BYPASS: Admins get unlimited access
     if current_user.role == "admin":
         # Allow unlimited audits for admin users
+        print(f"DEBUG: Admin bypass activated for {current_user.email}")
         pass
     elif current_user.organization_id:
         # User is part of an organization - check org limits
