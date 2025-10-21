@@ -789,50 +789,44 @@ async def generate_questions(request: QuestionsRequest):
 async def create_audit(audit_data: AuditCreate, current_user: User = Depends(require_auth)):
     """Create a new safety audit"""
     
-    # DEBUG: Log user info
-    print(f"DEBUG CREATE AUDIT - User: {current_user.email}, Role: {current_user.role}, Plan: {current_user.subscription_plan}, Org: {current_user.organization_id}")
-    
-    # Check subscription limits (individual or organization)
-    # OWNER/ADMIN BYPASS: Admins get unlimited access
-    if current_user.role == "admin":
-        # Allow unlimited audits for admin users
-        print(f"DEBUG: Admin bypass activated for {current_user.email}")
-        pass
-    elif current_user.organization_id:
-        # User is part of an organization - check org limits
-        org = await db.organizations.find_one({"id": current_user.organization_id})
-        if org and org.get("subscription_plan"):
-            package = SUBSCRIPTION_PACKAGES.get(org["subscription_plan"])
-            # If unlimited (-1) or no limit, skip check
-            if package and package.get("audits_per_month", -1) > 0:
-                if org.get("audits_used_this_month", 0) >= package["audits_per_month"]:
-                    raise HTTPException(status_code=403, detail="Organization monthly audit limit reached")
-        else:
-            # Organization without subscription - check free trial limit
-            if org and org.get("audits_used_this_month", 0) >= FREE_TRIAL_AUDITS:
-                raise HTTPException(
-                    status_code=403, 
-                    detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
-                )
-    else:
-        # Individual user - check personal limits
-        if current_user.subscription_plan:
-            package = SUBSCRIPTION_PACKAGES.get(current_user.subscription_plan)
-            # If unlimited (-1) or no limit, skip check
-            if package and package.get("audits_per_month", -1) > 0:
-                if current_user.audits_used_this_month >= package["audits_per_month"]:
-                    raise HTTPException(status_code=403, detail="Monthly audit limit reached")
-        else:
-            # User without subscription - check free trial limit
-            if current_user.audits_used_this_month >= FREE_TRIAL_AUDITS:
-                raise HTTPException(
-                    status_code=403, 
-                    detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
-                )
-    
-    # Validate selected work types
+    # Validate selected work types first
     if len(audit_data.selected_work_types) == 0:
         raise HTTPException(status_code=400, detail="Must select at least 1 work type")
+    
+    # OWNER/ADMIN BYPASS: Admins get unlimited access - skip all subscription checks
+    if current_user.role != "admin":
+        # Check subscription limits (individual or organization) - ONLY for non-admins
+        if current_user.organization_id:
+            # User is part of an organization - check org limits
+            org = await db.organizations.find_one({"id": current_user.organization_id})
+            if org and org.get("subscription_plan"):
+                package = SUBSCRIPTION_PACKAGES.get(org["subscription_plan"])
+                # If unlimited (-1) or no limit, skip check
+                if package and package.get("audits_per_month", -1) > 0:
+                    if org.get("audits_used_this_month", 0) >= package["audits_per_month"]:
+                        raise HTTPException(status_code=403, detail="Organization monthly audit limit reached")
+            else:
+                # Organization without subscription - check free trial limit
+                if org and org.get("audits_used_this_month", 0) >= FREE_TRIAL_AUDITS:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
+                    )
+        else:
+            # Individual user - check personal limits
+            if current_user.subscription_plan:
+                package = SUBSCRIPTION_PACKAGES.get(current_user.subscription_plan)
+                # If unlimited (-1) or no limit, skip check
+                if package and package.get("audits_per_month", -1) > 0:
+                    if current_user.audits_used_this_month >= package["audits_per_month"]:
+                        raise HTTPException(status_code=403, detail="Monthly audit limit reached")
+            else:
+                # User without subscription - check free trial limit
+                if current_user.audits_used_this_month >= FREE_TRIAL_AUDITS:
+                    raise HTTPException(
+                        status_code=403, 
+                        detail=f"Free trial limit reached ({FREE_TRIAL_AUDITS} audits). Please upgrade to continue."
+                    )
     
     audit = Audit(
         user_id=current_user.id,
