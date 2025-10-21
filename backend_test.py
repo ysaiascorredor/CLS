@@ -6367,6 +6367,176 @@ class CSABackendTester:
             self.log_test("URGENT: amazon.corredor123@gmail.com Registration Issue", False, error_msg)
             return False
 
+    def test_review_request_audit_flow(self):
+        """Test the complete audit creation and question flow for user ysaias.corredor@gmail.com with password Clave.01"""
+        try:
+            # Step 1: Login with specified credentials
+            login_data = {
+                "email": "ysaias.corredor@gmail.com",
+                "password": "Clave.01"
+            }
+            
+            login_response = requests.post(f"{self.api_url}/auth/login", 
+                                         json=login_data, timeout=10)
+            
+            if login_response.status_code != 200:
+                try:
+                    error_data = login_response.json()
+                    details = f"Login failed - Status: {login_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Login failed - Status: {login_response.status_code}, Response: {login_response.text[:200]}"
+                self.log_test("Review Request - Login", False, details)
+                return False
+            
+            # Extract token and user data
+            login_data_response = login_response.json()
+            token = login_data_response.get("access_token")
+            user_data = login_data_response.get("user", {})
+            
+            if not token:
+                self.log_test("Review Request - Login", False, "No access token received")
+                return False
+            
+            headers = {"Authorization": f"Bearer {token}"}
+            user_id = user_data.get("id")
+            
+            self.log_test("Review Request - Login", True, f"Login successful, User ID: {user_id}, Role: {user_data.get('role')}")
+            
+            # Step 2: Create a new audit with specified parameters
+            audit_data = {
+                "site_name": "Test Site",
+                "auditor_name": "Ysaias Test",
+                "selected_work_types": ["excavation"],
+                "language": "en"
+            }
+            
+            audit_response = requests.post(f"{self.api_url}/audits", 
+                                         json=audit_data, headers=headers, timeout=10)
+            
+            if audit_response.status_code != 200:
+                try:
+                    error_data = audit_response.json()
+                    details = f"Audit creation failed - Status: {audit_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Audit creation failed - Status: {audit_response.status_code}, Response: {audit_response.text[:200]}"
+                self.log_test("Review Request - Create Audit", False, details)
+                return False
+            
+            # Extract audit data
+            audit_response_data = audit_response.json()
+            audit_id = audit_response_data.get("id")
+            
+            if not audit_id:
+                self.log_test("Review Request - Create Audit", False, "No audit ID returned")
+                return False
+            
+            # Verify audit data
+            audit_site_name = audit_response_data.get("site_name")
+            audit_auditor_name = audit_response_data.get("auditor_name")
+            audit_work_types = audit_response_data.get("selected_work_types", [])
+            audit_language = audit_response_data.get("language")
+            
+            audit_data_correct = (
+                audit_site_name == "Test Site" and
+                audit_auditor_name == "Ysaias Test" and
+                "excavation" in audit_work_types and
+                audit_language == "en"
+            )
+            
+            if not audit_data_correct:
+                details = f"Audit data mismatch - Site: {audit_site_name}, Auditor: {audit_auditor_name}, Work Types: {audit_work_types}, Language: {audit_language}"
+                self.log_test("Review Request - Create Audit", False, details)
+                return False
+            
+            self.log_test("Review Request - Create Audit", True, f"Audit created successfully, ID: {audit_id}")
+            
+            # Step 3: Get questions for the audit
+            questions_data = {
+                "work_types": ["excavation"],
+                "language": "en"
+            }
+            
+            questions_response = requests.post(f"{self.api_url}/audits/questions", 
+                                             json=questions_data, headers=headers, timeout=10)
+            
+            if questions_response.status_code != 200:
+                try:
+                    error_data = questions_response.json()
+                    details = f"Questions request failed - Status: {questions_response.status_code}, Error: {error_data.get('detail', 'Unknown error')}"
+                except:
+                    details = f"Questions request failed - Status: {questions_response.status_code}, Response: {questions_response.text[:200]}"
+                self.log_test("Review Request - Get Questions", False, details)
+                return False
+            
+            # Verify questions data
+            questions_response_data = questions_response.json()
+            questions = questions_response_data.get("questions", [])
+            
+            if not questions:
+                self.log_test("Review Request - Get Questions", False, "No questions returned")
+                return False
+            
+            # Verify questions structure and content
+            questions_valid = True
+            for question in questions:
+                if not isinstance(question, dict) or "question" not in question or "work_type" not in question:
+                    questions_valid = False
+                    break
+            
+            excavation_questions = [q for q in questions if q.get("work_type") == "excavation"]
+            
+            if not questions_valid:
+                self.log_test("Review Request - Get Questions", False, "Invalid question structure")
+                return False
+            
+            if len(excavation_questions) == 0:
+                self.log_test("Review Request - Get Questions", False, "No excavation questions found")
+                return False
+            
+            # Check if questions contain expected safety content
+            first_question = excavation_questions[0].get("question", "")
+            has_safety_content = any(keyword in first_question.lower() for keyword in ["excavation", "slope", "shore", "cave", "safety"])
+            
+            success = len(questions) > 0 and questions_valid and len(excavation_questions) > 0 and has_safety_content
+            details = f"Questions returned: {len(questions)}, Excavation questions: {len(excavation_questions)}, Safety content: {has_safety_content}, First question: '{first_question[:50]}...'"
+            
+            self.log_test("Review Request - Get Questions", success, details)
+            
+            # Overall test result
+            overall_success = success
+            overall_details = f"Complete audit flow tested successfully - Login ✅, Audit Creation ✅, Questions ✅"
+            
+            self.log_test("Review Request - Complete Audit Flow", overall_success, overall_details)
+            return overall_success
+            
+        except Exception as e:
+            self.log_test("Review Request - Complete Audit Flow", False, str(e))
+            return False
+
+    def run_review_request_test(self):
+        """Run only the review request test"""
+        print("🎯 Starting Review Request Test - Audit Creation and Question Flow")
+        print("=" * 80)
+        print("Testing with user: ysaias.corredor@gmail.com")
+        print("Backend URL:", self.api_url)
+        print("=" * 80)
+        
+        # Run the specific review request test
+        success = self.test_review_request_audit_flow()
+        
+        # Print summary
+        print("=" * 80)
+        print(f"🏁 Review Request Test Complete: {self.tests_passed}/{self.tests_run} tests passed")
+        success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
+        print(f"📊 Success Rate: {success_rate:.1f}%")
+        
+        if success:
+            print("🎉 Review request test passed! Audit creation and question flow is working correctly.")
+        else:
+            print("❌ Review request test failed. Please check the issues above.")
+        
+        return success
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🔍 Starting CSA Construction Safety Audit Backend Tests")
