@@ -790,9 +790,9 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
     """Create a new safety audit"""
     
     # Check subscription limits (individual or organization)
-    # OWNER/ADMIN BYPASS: Admins with corporate plan get unlimited access
-    if current_user.role == "admin" and current_user.subscription_plan == "corporate":
-        # Allow unlimited audits for corporate admin users
+    # OWNER/ADMIN BYPASS: Admins get unlimited access
+    if current_user.role == "admin":
+        # Allow unlimited audits for admin users
         pass
     elif current_user.organization_id:
         # User is part of an organization - check org limits
