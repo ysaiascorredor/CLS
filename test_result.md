@@ -591,12 +591,13 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Review Request - Complete Audit Creation and Question Flow Testing - COMPLETED SUCCESSFULLY"
     - "N/A OPTION FOR AUDIT QUESTIONS - NEW FEATURE"
     - "Audit Counting Investigation - Pending User Clarification"
     - "COMPLETE DELETE USER FLOW TESTING - COMPLETED SUCCESSFULLY"
   stuck_tasks: []
   test_all: false
-  test_priority: "delete_flow_testing_complete"
+  test_priority: "review_request_audit_flow_complete"
 
 backend:
   - task: "Review Request - Complete Audit Creation and Question Flow Testing"
