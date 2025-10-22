@@ -1268,13 +1268,27 @@ async def get_user_statistics(current_user: User = Depends(require_auth)):
 
 @api_router.get("/statistics/charts", response_model=ChartData)
 async def get_chart_data(current_user: User = Depends(require_auth)):
-    """Get data for charts and graphs in statistics"""
-    # Get all completed audits with dates
-    audits = await db.audits.find({
-        "user_id": current_user.id, 
-        "status": "completed",
-        "completed_at": {"$exists": True}
-    }).sort("completed_at", 1).to_list(1000)
+    """Get data for charts and graphs - Organization-wide if user belongs to an org"""
+    
+    # Build query based on organization membership
+    if current_user.organization_id:
+        # Get all users in the organization
+        org_users = await db.users.find({"organization_id": current_user.organization_id}).to_list(1000)
+        user_ids = [u["id"] for u in org_users]
+        query = {
+            "user_id": {"$in": user_ids},
+            "status": "completed",
+            "completed_at": {"$exists": True}
+        }
+    else:
+        # Personal audits only
+        query = {
+            "user_id": current_user.id,
+            "status": "completed",
+            "completed_at": {"$exists": True}
+        }
+    
+    audits = await db.audits.find(query).sort("completed_at", 1).to_list(1000)
     
     if not audits:
         return ChartData(
