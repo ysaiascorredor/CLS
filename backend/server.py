@@ -570,10 +570,27 @@ class Finding(BaseModel):
     comment: Optional[str] = None
     action_taken: Optional[str] = None
 
+class JobSite(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    organization_id: str  # Organization that owns this site
+    name: str  # Site name
+    location: Optional[str] = None  # Address or location
+    description: Optional[str] = None
+    created_by: str  # User who created the site
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class JobSiteCreate(BaseModel):
+    name: str
+    location: Optional[str] = None
+    description: Optional[str] = None
+
 class Audit(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    site_name: str
+    job_site_id: Optional[str] = None  # Link to JobSite (NEW)
+    site_name: str  # Keep for backward compatibility
     auditor_name: str
     selected_work_types: List[str]  # 3 work type IDs
     findings: List[Finding] = []
@@ -588,6 +605,7 @@ class AuditCreate(BaseModel):
     auditor_name: str
     selected_work_types: List[str]
     language: str = "en"
+    job_site_id: Optional[str] = None  # NEW: Optional job site ID
 
 class FindingCreate(BaseModel):
     question: str
