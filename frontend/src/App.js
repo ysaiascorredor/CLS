@@ -2313,7 +2313,6 @@ function TeamManagement() {
     if (window.confirm(confirmMessage)) {
       console.log('✅ User confirmed deletion, proceeding...');
       console.log('🔗 DELETE URL:', `${API}/organization/remove-user/${memberId}`);
-      console.log('🔗 Full URL:', `${import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL}/api/organization/remove-user/${memberId}`);
       
       try {
         console.log('🚀 Making DELETE request...');
