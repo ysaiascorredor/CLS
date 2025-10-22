@@ -1040,6 +1040,75 @@ async def get_site_statistics(site_id: str, current_user: User = Depends(require
         "compliance_trend": compliance_trend
     }
 
+
+
+@api_router.get("/job-sites/statistics/combined")
+async def get_combined_statistics(current_user: User = Depends(require_auth)):
+    """Get combined compliance statistics for all job sites in the organization"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    # Get all active job sites for the organization
+    sites = await db.job_sites.find({
+        "organization_id": current_user.organization_id,
+        "is_active": True
+    }).to_list(1000)
+    
+    if not sites:
+        return {
+            "total_sites": 0,
+            "total_audits": 0,
+            "completed_audits": 0,
+            "average_compliance": 0,
+            "site_statistics": [],
+            "overall_trend": []
+        }
+    
+    site_statistics = []
+    all_audits = []
+    
+    for site in sites:
+        site_audits = await db.audits.find({"job_site_id": site["id"]}).to_list(1000)
+        completed = [a for a in site_audits if a.get("status") == "completed" and a.get("overall_compliance_score") is not None]
+        
+        avg_compliance = 0
+        if completed:
+            avg_compliance = sum(a["overall_compliance_score"] for a in completed) / len(completed)
+        
+        site_statistics.append({
+            "site_id": site["id"],
+            "site_name": site["name"],
+            "total_audits": len(site_audits),
+            "completed_audits": len(completed),
+            "average_compliance": round(avg_compliance, 2)
+        })
+        
+        all_audits.extend(completed)
+    
+    # Overall statistics
+    overall_avg = 0
+    if all_audits:
+        overall_avg = sum(a["overall_compliance_score"] for a in all_audits) / len(all_audits)
+    
+    # Overall trend
+    overall_trend = []
+    for audit in sorted(all_audits, key=lambda x: x.get("created_at", "")):
+        overall_trend.append({
+            "date": audit.get("created_at"),
+            "compliance_score": audit.get("overall_compliance_score"),
+            "site_name": next((s["name"] for s in sites if s["id"] == audit.get("job_site_id")), "Unknown")
+        })
+    
+    return {
+        "total_sites": len(sites),
+        "total_audits": sum(stat["total_audits"] for stat in site_statistics),
+        "completed_audits": sum(stat["completed_audits"] for stat in site_statistics),
+        "average_compliance": round(overall_avg, 2),
+        "site_statistics": site_statistics,
+        "overall_trend": overall_trend
+    }
+
 # ===== AUDIT MANAGEMENT =====
 
 @api_router.get("/audits", response_model=List[Audit])
