@@ -738,3 +738,142 @@ agent_communication:
       message: "🚨 URGENT AUDIT COUNTING DISCREPANCY INVESTIGATION COMPLETE - CRITICAL DATA INCONSISTENCY FOUND: Comprehensive investigation of user ysaias.corredor@gmail.com audit counting issue completed. SHOCKING DISCOVERY: User reports having 12 audits but backend shows ZERO audits. DETAILED FINDINGS: ✅ User login working perfectly (ID: 8cae593f-f1ee-4bd6-acf4-dde1e777ddf8, enterprise plan, organization: 84826630-0df0-4ce3-8f4b-dcbf8d411061), ❌ GET /api/audits returns 0 audits (expected 12), ❌ GET /api/statistics shows 0 total_audits (expected 12), ❌ Database shows audits_used_this_month: 0 (doesn't match user report of 12 or dashboard display of 9), ✅ Global system has 60 total audits across 66 users. CRITICAL ANALYSIS: This is NOT a filtering issue or API bug - the user genuinely has NO audits in the system despite claiming 12. POSSIBLE CAUSES: 1) User counting audits from different account/system, 2) Audits associated with organization instead of individual user, 3) Data loss during migration, 4) User confusion about audit ownership. BUSINESS IMPACT: SEVERE - Customer believes they lost 12 audits, potential data integrity issue. RECOMMENDATION: Manual database investigation required to locate missing audits or clarify user's audit history."
     - agent: "testing"
       message: "🎯 N/A OPTION IMPLEMENTATION TESTING COMPLETE - ALL REVIEW REQUEST REQUIREMENTS VERIFIED: Comprehensive testing of N/A option implementation for audit questions completed successfully. ALL REQUIREMENTS FULFILLED: ✅ 1) LOGIN: ysaias.corredor@gmail.com/Clave.01 working perfectly, ✅ 2) AUDIT CREATION: Created audit with 3 work types (excavation, height_work, ppe), ✅ 3) ALL 3 COMPLIANCE STATUSES: Successfully added findings with compliance_status: 'compliant', 'non_compliant', and 'n/a', ✅ 4) N/A REQUIREMENTS: N/A findings do not require comment/action_taken fields (working correctly), ✅ 5) BACKWARD COMPATIBILITY: Old is_compliant: true format still works and gets converted to compliance_status: 'compliant', ✅ 6) COMPLIANCE SCORE CALCULATION: Score excludes N/A responses correctly (66.67% from 2 compliant + 1 non-compliant, N/A excluded from calculation), ✅ 7) AUDIT DETAILS: All 4 findings stored correctly with proper compliance_status values and backward compatibility conversion, ✅ 8) PDF GENERATION: Includes N/A findings with proper formatting (3960 bytes, valid PDF with signature). BACKEND N/A OPTION FUNCTIONALITY IS 100% OPERATIONAL. The 3-state compliance system (Compliant, Non-Compliant, N/A) is fully implemented and ready for production use."
+#====================================================================================================
+# NEW FEATURE IMPLEMENTATION - Job Sites & Multi-Organization Support
+#====================================================================================================
+
+user_problem_statement: |
+  User requested 4 main improvements:
+  1. Fix delete auditor button (not responding)
+  2. Grant unlimited access to all users in owner's organization (ysaias.corredor@gmail.com)
+  3. Allow auditors to be added to multiple organizations independently
+  4. Implement Job Sites system with:
+     - Multiple sites per organization
+     - Independent statistics per site  
+     - Option to combine all site statistics
+     - Site-specific audit tracking
+
+backend:
+  - task: "Fix delete auditor button - Backend URL configuration"
+    implemented: true
+    working: true
+    file: "/app/frontend/.env"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "Button delete not responding. Investigation showed frontend was using incorrect backend URL (safesitepro.preview.emergentagent.com instead of a.appclsolution.online)"
+        - working: true
+          agent: "main"
+          comment: "Fixed by updating REACT_APP_BACKEND_URL in frontend/.env to https://a.appclsolution.online. Frontend restarted. Backend endpoint /api/organization/remove-user/{user_id} tested successfully via API."
+
+  - task: "Grant unlimited access to owner's organization members"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Modified audit creation bypass logic to include all members of owner's organization (Cls - ID: 84826630-0df0-4ce3-8f4b-dcbf8d411061). Updated line 815: if current_user.email == 'ysaias.corredor@gmail.com' or current_user.role == 'admin' or current_user.organization_id == owner_org_id. All members of this organization now have unlimited audit creation."
+
+  - task: "Allow users in multiple organizations"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Modified /api/organization/create-user endpoint (line 1643-1675) to handle existing users. Instead of raising 'User already exists' error, now checks if user is already member of the organization. If not, adds them as team member via team_members table. This allows same user email to be in multiple organizations independently."
+
+  - task: "Job Sites Model and CRUD Endpoints"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Created complete Job Sites system:
+            - Models: JobSite, JobSiteCreate (lines 573-585)
+            - CRUD Endpoints:
+              * POST /api/job-sites - Create new site
+              * GET /api/job-sites - List all sites for organization
+              * GET /api/job-sites/{site_id} - Get specific site
+              * PUT /api/job-sites/{site_id} - Update site
+              * DELETE /api/job-sites/{site_id} - Soft delete site
+              * GET /api/job-sites/{site_id}/audits - Get audits for site
+              * GET /api/job-sites/{site_id}/statistics - Site-specific stats
+              * GET /api/job-sites/statistics/combined - Combined stats for all sites
+            - Modified Audit model to include optional job_site_id field
+            - Modified AuditCreate to accept optional job_site_id
+            - Backend restarted successfully
+
+frontend:
+  - task: "Job Sites UI - Create/Manage Sites"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NOT YET IMPLEMENTED. Need to add UI for: 1) Job Sites management page, 2) Site selector in New Audit form, 3) Site-specific statistics dashboard, 4) Combined statistics view"
+
+  - task: "Dashboard - Site Statistics Views"
+    implemented: false
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "NOT YET IMPLEMENTED. Need to add: 1) Site selector dropdown in dashboard, 2) Independent charts per site, 3) 'View All Sites Combined' option, 4) Comparison charts between sites"
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  priority_order:
+    - "Test delete auditor button functionality"
+    - "Test unlimited access for owner's organization members"
+    - "Test adding existing user to multiple organizations"
+    - "Test Job Sites CRUD operations"
+    - "Test site-specific audit creation"
+    - "Test site statistics endpoints"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Completed backend implementation for all 4 requested features:
+      1. ✅ Fixed delete button - Updated frontend .env with correct backend URL
+      2. ✅ Unlimited access for owner org - Modified audit creation bypass
+      3. ✅ Multi-organization support - Modified create-user to add existing users
+      4. ✅ Job Sites backend - Complete CRUD + statistics endpoints
+      
+      READY FOR TESTING: Backend endpoints are ready to test
+      NOT IMPLEMENTED: Frontend UI for Job Sites still needs to be built
+      
+      Next steps:
+      - Test backend functionality
+      - Build frontend UI for Job Sites management
+      - Add site selector to dashboard and audit creation
+      - Implement site-specific and combined statistics views
+
