@@ -2884,6 +2884,87 @@ async def decline_invitation(invitation_id: str, current_user: User = Depends(re
     
     return {"message": "Invitation declined"}
 
+
+
+# ===== ORGANIZATION BRANDING & MULTI-TENANT =====
+
+@api_router.get("/organization/branding")
+async def get_organization_branding(current_user: User = Depends(require_auth)):
+    """Get organization branding configuration"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    org = await db.organizations.find_one({"id": current_user.organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    return {
+        "organization_id": org["id"],
+        "name": org["name"],
+        "company_name": org.get("company_name", org["name"]),
+        "logo_url": org.get("logo_url"),
+        "brand_color": org.get("brand_color", "#3B82F6"),
+        "secondary_color": org.get("secondary_color", "#10B981")
+    }
+
+@api_router.put("/organization/branding")
+async def update_organization_branding(
+    branding_data: OrganizationBrandingUpdate,
+    current_user: User = Depends(require_auth)
+):
+    """Update organization branding - Only owners can do this"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization")
+    
+    if current_user.organization_role != "owner":
+        raise HTTPException(status_code=403, detail="Only organization owners can update branding")
+    
+    # Build update dict with only provided fields
+    update_data = {}
+    if branding_data.company_name is not None:
+        update_data["company_name"] = branding_data.company_name
+    if branding_data.logo_url is not None:
+        update_data["logo_url"] = branding_data.logo_url
+    if branding_data.brand_color is not None:
+        # Validate color format (hex)
+        if not branding_data.brand_color.startswith("#") or len(branding_data.brand_color) != 7:
+            raise HTTPException(status_code=400, detail="Brand color must be in hex format (#RRGGBB)")
+        update_data["brand_color"] = branding_data.brand_color
+    if branding_data.secondary_color is not None:
+        if not branding_data.secondary_color.startswith("#") or len(branding_data.secondary_color) != 7:
+            raise HTTPException(status_code=400, detail="Secondary color must be in hex format (#RRGGBB)")
+        update_data["secondary_color"] = branding_data.secondary_color
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.organizations.update_one(
+        {"id": current_user.organization_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Return updated branding
+    org = await db.organizations.find_one({"id": current_user.organization_id})
+    
+    return {
+        "message": "Branding updated successfully",
+        "branding": {
+            "company_name": org.get("company_name", org["name"]),
+            "logo_url": org.get("logo_url"),
+            "brand_color": org.get("brand_color", "#3B82F6"),
+            "secondary_color": org.get("secondary_color", "#10B981")
+        }
+    }
+
+# ===== TEAM MANAGEMENT =====
+
 @api_router.get("/organization/team")
 async def get_team_members(current_user: User = Depends(require_auth)):
     """Ver miembros del equipo de la organización"""
