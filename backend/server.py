@@ -875,6 +875,172 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
     
     return audit
 
+
+# ===== JOB SITE MANAGEMENT =====
+
+@api_router.post("/job-sites", response_model=JobSite)
+async def create_job_site(site_data: JobSiteCreate, current_user: User = Depends(require_auth)):
+    """Create a new job site"""
+    
+    if not current_user.organization_id:
+        raise HTTPException(status_code=400, detail="User must belong to an organization to create job sites")
+    
+    new_site = JobSite(
+        organization_id=current_user.organization_id,
+        name=site_data.name,
+        location=site_data.location,
+        description=site_data.description,
+        created_by=current_user.id
+    )
+    
+    await db.job_sites.insert_one(new_site.dict())
+    return new_site
+
+@api_router.get("/job-sites", response_model=List[JobSite])
+async def get_job_sites(current_user: User = Depends(require_auth)):
+    """Get all job sites for the user's organization"""
+    
+    if not current_user.organization_id:
+        return []
+    
+    sites = await db.job_sites.find({
+        "organization_id": current_user.organization_id,
+        "is_active": True
+    }).to_list(1000)
+    
+    return [JobSite(**site) for site in sites]
+
+@api_router.get("/job-sites/{site_id}", response_model=JobSite)
+async def get_job_site(site_id: str, current_user: User = Depends(require_auth)):
+    """Get a specific job site"""
+    
+    site = await db.job_sites.find_one({
+        "id": site_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not site:
+        raise HTTPException(status_code=404, detail="Job site not found")
+    
+    return JobSite(**site)
+
+@api_router.put("/job-sites/{site_id}", response_model=JobSite)
+async def update_job_site(site_id: str, site_data: JobSiteCreate, current_user: User = Depends(require_auth)):
+    """Update a job site"""
+    
+    site = await db.job_sites.find_one({
+        "id": site_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not site:
+        raise HTTPException(status_code=404, detail="Job site not found")
+    
+    update_data = {
+        "name": site_data.name,
+        "location": site_data.location,
+        "description": site_data.description,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.job_sites.update_one({"id": site_id}, {"$set": update_data})
+    
+    updated_site = await db.job_sites.find_one({"id": site_id})
+    return JobSite(**updated_site)
+
+@api_router.delete("/job-sites/{site_id}")
+async def delete_job_site(site_id: str, current_user: User = Depends(require_auth)):
+    """Soft delete a job site"""
+    
+    site = await db.job_sites.find_one({
+        "id": site_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not site:
+        raise HTTPException(status_code=404, detail="Job site not found")
+    
+    # Soft delete
+    await db.job_sites.update_one(
+        {"id": site_id},
+        {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": f"Job site {site['name']} deleted successfully"}
+
+@api_router.get("/job-sites/{site_id}/audits")
+async def get_site_audits(site_id: str, current_user: User = Depends(require_auth)):
+    """Get all audits for a specific job site"""
+    
+    # Verify site belongs to user's organization
+    site = await db.job_sites.find_one({
+        "id": site_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not site:
+        raise HTTPException(status_code=404, detail="Job site not found")
+    
+    # Get audits for this site
+    audits = await db.audits.find({"job_site_id": site_id}).to_list(1000)
+    
+    return {
+        "site": JobSite(**site),
+        "audits": [Audit(**audit) for audit in audits],
+        "total_audits": len(audits),
+        "completed_audits": sum(1 for a in audits if a.get("status") == "completed")
+    }
+
+@api_router.get("/job-sites/{site_id}/statistics")
+async def get_site_statistics(site_id: str, current_user: User = Depends(require_auth)):
+    """Get compliance statistics for a specific job site"""
+    
+    # Verify site belongs to user's organization
+    site = await db.job_sites.find_one({
+        "id": site_id,
+        "organization_id": current_user.organization_id
+    })
+    
+    if not site:
+        raise HTTPException(status_code=404, detail="Job site not found")
+    
+    # Get all audits for this site
+    audits = await db.audits.find({"job_site_id": site_id}).to_list(1000)
+    
+    if not audits:
+        return {
+            "site": JobSite(**site),
+            "total_audits": 0,
+            "completed_audits": 0,
+            "average_compliance": 0,
+            "compliance_trend": []
+        }
+    
+    # Calculate statistics
+    completed_audits = [a for a in audits if a.get("status") == "completed" and a.get("overall_compliance_score") is not None]
+    
+    avg_compliance = 0
+    if completed_audits:
+        avg_compliance = sum(a["overall_compliance_score"] for a in completed_audits) / len(completed_audits)
+    
+    # Compliance trend over time
+    compliance_trend = []
+    for audit in sorted(completed_audits, key=lambda x: x.get("created_at", "")):
+        compliance_trend.append({
+            "date": audit.get("created_at"),
+            "compliance_score": audit.get("overall_compliance_score")
+        })
+    
+    return {
+        "site": JobSite(**site),
+        "total_audits": len(audits),
+        "completed_audits": len(completed_audits),
+        "average_compliance": round(avg_compliance, 2),
+        "compliance_trend": compliance_trend
+    }
+
+# ===== AUDIT MANAGEMENT =====
+
 @api_router.get("/audits", response_model=List[Audit])
 async def get_user_audits(current_user: User = Depends(require_auth)):
     """Get all audits for the current user"""
