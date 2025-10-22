@@ -533,7 +533,13 @@ class Organization(BaseModel):
     subscription_expires: Optional[datetime] = None
     audits_used_this_month: int = 0
     team_members_count: int = 1
+    # Multi-tenant branding fields
+    company_name: Optional[str] = None  # Display name for white-label
+    logo_url: Optional[str] = None  # Company logo
+    brand_color: Optional[str] = "#3B82F6"  # Primary brand color (default blue)
+    secondary_color: Optional[str] = "#10B981"  # Secondary color (default green)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TeamInvitation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
