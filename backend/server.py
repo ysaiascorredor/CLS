@@ -538,6 +538,13 @@ class Organization(BaseModel):
     logo_url: Optional[str] = None  # Company logo
     brand_color: Optional[str] = "#3B82F6"  # Primary brand color (default blue)
     secondary_color: Optional[str] = "#10B981"  # Secondary color (default green)
+
+class OrganizationBrandingUpdate(BaseModel):
+    company_name: Optional[str] = None
+    logo_url: Optional[str] = None
+    brand_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
