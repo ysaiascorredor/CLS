@@ -853,6 +853,7 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
     
     audit = Audit(
         user_id=current_user.id,
+        job_site_id=audit_data.job_site_id,  # NEW: Link to job site
         site_name=audit_data.site_name,
         auditor_name=audit_data.auditor_name,
         selected_work_types=audit_data.selected_work_types,
