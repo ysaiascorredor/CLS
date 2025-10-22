@@ -793,14 +793,10 @@ async def create_audit(audit_data: AuditCreate, current_user: User = Depends(req
     if len(audit_data.selected_work_types) == 0:
         raise HTTPException(status_code=400, detail="Must select at least 1 work type")
     
-    # DEBUG
-    import logging
-    logging.warning(f"CREATE AUDIT - Email: {current_user.email}, Role: {current_user.role}")
-    
-    # OWNER BYPASS: Owner email gets unlimited access
-    if current_user.email == "ysaias.corredor@gmail.com" or current_user.role == "admin":
-        # Skip all subscription checks for owner/admin
-        logging.warning(f"BYPASS ACTIVATED for {current_user.email}")
+    # OWNER ORGANIZATION BYPASS: Users in owner's organization (Cls - ID: 84826630-0df0-4ce3-8f4b-dcbf8d411061) get unlimited access
+    owner_org_id = "84826630-0df0-4ce3-8f4b-dcbf8d411061"
+    if current_user.email == "ysaias.corredor@gmail.com" or current_user.role == "admin" or current_user.organization_id == owner_org_id:
+        # Skip all subscription checks for owner/admin/owner's organization members
         pass
     else:
         logging.warning(f"CHECKING LIMITS for {current_user.email}")
