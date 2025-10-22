@@ -1126,8 +1126,17 @@ async def get_combined_statistics(current_user: User = Depends(require_auth)):
 
 @api_router.get("/audits", response_model=List[Audit])
 async def get_user_audits(current_user: User = Depends(require_auth)):
-    """Get all audits for the current user"""
-    audits = await db.audits.find({"user_id": current_user.id}).to_list(1000)
+    """Get all audits - Organization-wide if user belongs to an org, otherwise personal"""
+    
+    if current_user.organization_id:
+        # Get all users in the organization
+        org_users = await db.users.find({"organization_id": current_user.organization_id}).to_list(1000)
+        user_ids = [u["id"] for u in org_users]
+        audits = await db.audits.find({"user_id": {"$in": user_ids}}).to_list(1000)
+    else:
+        # Personal audits only
+        audits = await db.audits.find({"user_id": current_user.id}).to_list(1000)
+    
     return [Audit(**audit) for audit in audits]
 
 @api_router.get("/audits/{audit_id}", response_model=Audit)
