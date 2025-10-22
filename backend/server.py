@@ -1640,10 +1640,40 @@ async def create_team_user_directly(
             if current_members >= package["team_members"]:
                 raise HTTPException(status_code=403, detail="Team member limit reached for current plan")
     
-    # Verificar que el email no exista ya
+    # Verificar si el usuario ya existe
     existing_user = await db.users.find_one({"email": email})
     if existing_user:
-        raise HTTPException(status_code=400, detail="User with this email already exists")
+        # Usuario ya existe - agregarlo a esta organización como miembro adicional
+        # Verificar si ya es miembro de esta organización
+        existing_member = await db.team_members.find_one({
+            "user_id": existing_user["id"],
+            "organization_id": current_user.organization_id
+        })
+        
+        if existing_member:
+            raise HTTPException(status_code=400, detail="User is already a member of this organization")
+        
+        # Agregar como miembro de esta organización
+        team_member = {
+            "id": str(uuid.uuid4()),
+            "organization_id": current_user.organization_id,
+            "user_id": existing_user["id"],
+            "role": role,
+            "invited_by": current_user.id,
+            "joined_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.team_members.insert_one(team_member)
+        
+        return {
+            "message": f"Existing user {name} added to organization successfully",
+            "user_id": existing_user["id"],
+            "email": email,
+            "name": name,
+            "role": role,
+            "temp_password": None,  # No password needed for existing users
+            "is_existing_user": True
+        }
     
     # Usar contraseña personalizada o generar una temporal
     if custom_password:
