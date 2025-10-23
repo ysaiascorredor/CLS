@@ -1873,7 +1873,7 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
             question_text = f"<b>Question:</b> {finding.get('question', 'N/A')}"
             story.append(Paragraph(question_text, styles['Normal']))
             
-            # Photo if available
+            # Photo if available - Show for ALL findings regardless of compliance status
             if finding.get('photo_url'):
                 try:
                     # Add photo to PDF
@@ -1894,15 +1894,30 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
                     # If image fails, just continue without it
                     print(f"Failed to add image to PDF: {e}")
             
-            # Non-compliant details
-            if not finding.get('is_compliant', True):
-                if finding.get('comment'):
-                    comment_text = f"<b>Issue Description:</b> {finding.get('comment')}"
-                    story.append(Paragraph(comment_text, styles['Normal']))
-                
-                if finding.get('action_taken'):
-                    action_text = f"<b>Corrective Action:</b> {finding.get('action_taken')}"
-                    story.append(Paragraph(action_text, styles['Normal']))
+            # Details - Show comment and action for any finding that has them
+            if finding.get('comment'):
+                comment_text = f"<b>Issue Description:</b> {finding.get('comment')}"
+                story.append(Paragraph(comment_text, styles['Normal']))
+            
+            if finding.get('action_taken'):
+                action_text = f"<b>Corrective Action:</b> {finding.get('action_taken')}"
+                story.append(Paragraph(action_text, styles['Normal']))
+            
+            # Show assignment info if assigned
+            if finding.get('assigned_to'):
+                # Get assigned user name
+                assigned_user = await db.users.find_one({"id": finding.get('assigned_to')})
+                assigned_name = assigned_user.get('name', 'Unknown') if assigned_user else 'Unknown'
+                assignment_text = f"<b>Assigned To:</b> {assigned_name}"
+                story.append(Paragraph(assignment_text, styles['Normal']))
+            
+            if finding.get('status'):
+                status_text = f"<b>Status:</b> {finding.get('status', 'open').title()}"
+                story.append(Paragraph(status_text, styles['Normal']))
+            
+            if finding.get('priority'):
+                priority_text = f"<b>Priority:</b> {finding.get('priority', 'medium').title()}"
+                story.append(Paragraph(priority_text, styles['Normal']))
             
             story.append(Spacer(1, 15))
     
