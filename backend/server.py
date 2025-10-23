@@ -582,6 +582,13 @@ class Finding(BaseModel):
     photo_url: Optional[str] = None
     comment: Optional[str] = None
     action_taken: Optional[str] = None
+    # NEW: Finding assignment and tracking
+    assigned_to: Optional[str] = None  # User ID of person assigned
+    status: str = "open"  # "open", "in_progress", "closed"
+    priority: Optional[str] = "medium"  # "low", "medium", "high", "critical"
+    due_date: Optional[datetime] = None
+    closed_at: Optional[datetime] = None
+    closed_by: Optional[str] = None  # User ID who closed it
 
 class JobSite(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
