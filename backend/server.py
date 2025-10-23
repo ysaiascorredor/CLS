@@ -1649,6 +1649,63 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
     if audit["user_id"] != current_user.id:
         # Check if user is in same organization as audit creator
         audit_creator = await db.users.find_one({"id": audit["user_id"]})
+
+
+@api_router.get("/statistics/findings")
+async def get_findings_statistics(current_user: User = Depends(require_auth)):
+    """Get comprehensive findings statistics - open vs closed"""
+    
+    # Build query based on organization
+    if current_user.organization_id:
+        org_users = await db.users.find({"organization_id": current_user.organization_id}).to_list(1000)
+        user_ids = [u["id"] for u in org_users]
+        query = {"user_id": {"$in": user_ids}}
+    else:
+        query = {"user_id": current_user.id}
+    
+    audits = await db.audits.find(query).to_list(1000)
+    
+    total_findings = 0
+    open_findings = 0
+    closed_findings = 0
+    compliant = 0
+    non_compliant = 0
+    na_findings = 0
+    by_priority = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+    
+    for audit in audits:
+        findings = audit.get("findings", [])
+        for finding in findings:
+            total_findings += 1
+            
+            # Status count
+            if finding.get("compliance_status") == "non_compliant":
+                non_compliant += 1
+                status = finding.get("status", "open")
+                if status == "closed":
+                    closed_findings += 1
+                else:
+                    open_findings += 1
+                
+                # Priority
+                priority = finding.get("priority", "medium")
+                by_priority[priority] = by_priority.get(priority, 0) + 1
+            elif finding.get("compliance_status") == "compliant":
+                compliant += 1
+            elif finding.get("compliance_status") == "n/a":
+                na_findings += 1
+    
+    return {
+        "total_findings": total_findings,
+        "compliant": compliant,
+        "non_compliant": non_compliant,
+        "na": na_findings,
+        "open_findings": open_findings,
+        "closed_findings": closed_findings,
+        "by_priority": by_priority,
+        "completion_rate": round((closed_findings / non_compliant * 100) if non_compliant > 0 else 0, 2)
+    }
+
         if not audit_creator or not current_user.organization_id or audit_creator.get("organization_id") != current_user.organization_id:
             raise HTTPException(status_code=403, detail="Access denied")
     
