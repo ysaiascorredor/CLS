@@ -501,6 +501,7 @@ class User(BaseModel):
     organization_role: str = "owner"  # "owner", "auditor", "viewer"
     company_name: Optional[str] = None
     company_logo: Optional[str] = None
+    job_title: Optional[str] = None  # NEW: User's job title/position
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserRegister(BaseModel):
