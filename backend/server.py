@@ -1277,6 +1277,188 @@ async def complete_audit(audit_id: str, current_user: User = Depends(require_aut
     return {"message": "Audit completed", "compliance_score": compliance_score}
 
 # Statistics endpoints
+
+
+# ===== FINDINGS MANAGEMENT & ASSIGNMENT =====
+
+class FindingUpdate(BaseModel):
+    assigned_to: Optional[str] = None
+    status: Optional[str] = None  # "open", "in_progress", "closed"
+    priority: Optional[str] = None
+    due_date: Optional[datetime] = None
+    action_taken: Optional[str] = None
+    comment: Optional[str] = None
+
+@api_router.put("/audits/{audit_id}/findings/{finding_id}")
+async def update_finding(
+    audit_id: str,
+    finding_id: str,
+    finding_data: FindingUpdate,
+    current_user: User = Depends(require_auth)
+):
+    """Update a finding - assign to user, change status, etc."""
+    
+    # Get audit
+    audit = await db.audits.find_one({"id": audit_id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    # Verify access (same organization)
+    audit_creator = await db.users.find_one({"id": audit["user_id"]})
+    if current_user.organization_id != audit_creator.get("organization_id"):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Find and update the finding
+    findings = audit.get("findings", [])
+    finding_updated = False
+    
+    for finding in findings:
+        if finding["id"] == finding_id:
+            # Update fields
+            if finding_data.assigned_to is not None:
+                # Verify assigned user exists and is in organization
+                assigned_user = await db.users.find_one({"id": finding_data.assigned_to})
+                if not assigned_user or assigned_user.get("organization_id") != current_user.organization_id:
+                    raise HTTPException(status_code=400, detail="Invalid user assignment")
+                
+                old_assigned = finding.get("assigned_to")
+                finding["assigned_to"] = finding_data.assigned_to
+                
+                # Create notification for assigned user if changed
+                if old_assigned != finding_data.assigned_to:
+                    notification = Notification(
+                        user_id=finding_data.assigned_to,
+                        type="finding_assigned",
+                        title="New Finding Assigned",
+                        message=f"You have been assigned a finding: {finding.get('question', 'N/A')}",
+                        finding_id=finding_id,
+                        audit_id=audit_id
+                    )
+                    await db.notifications.insert_one(notification.dict())
+            
+            if finding_data.status is not None:
+                finding["status"] = finding_data.status
+                if finding_data.status == "closed":
+                    finding["closed_at"] = datetime.now(timezone.utc).isoformat()
+                    finding["closed_by"] = current_user.id
+            
+            if finding_data.priority is not None:
+                finding["priority"] = finding_data.priority
+            
+            if finding_data.due_date is not None:
+                finding["due_date"] = finding_data.due_date.isoformat()
+            
+            if finding_data.action_taken is not None:
+                finding["action_taken"] = finding_data.action_taken
+            
+            if finding_data.comment is not None:
+                finding["comment"] = finding_data.comment
+            
+            finding_updated = True
+            break
+    
+    if not finding_updated:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    
+    # Update audit
+    await db.audits.update_one(
+        {"id": audit_id},
+        {"$set": {"findings": findings}}
+    )
+    
+    return {"message": "Finding updated successfully", "finding": finding}
+
+@api_router.get("/audits/{audit_id}/findings/open")
+async def get_open_findings(audit_id: str, current_user: User = Depends(require_auth)):
+    """Get all open findings for an audit"""
+    
+    audit = await db.audits.find_one({"id": audit_id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    findings = audit.get("findings", [])
+    open_findings = [f for f in findings if f.get("status", "open") != "closed" and f.get("compliance_status") == "non_compliant"]
+    
+    return {
+        "audit_id": audit_id,
+        "site_name": audit.get("site_name"),
+        "open_findings": open_findings,
+        "total_open": len(open_findings)
+    }
+
+@api_router.get("/findings/my-assignments")
+async def get_my_assigned_findings(current_user: User = Depends(require_auth)):
+    """Get all findings assigned to current user"""
+    
+    # Get all audits in user's organization
+    if not current_user.organization_id:
+        return {"assigned_findings": [], "total": 0}
+    
+    org_users = await db.users.find({"organization_id": current_user.organization_id}).to_list(1000)
+    user_ids = [u["id"] for u in org_users]
+    
+    audits = await db.audits.find({"user_id": {"$in": user_ids}}).to_list(1000)
+    
+    assigned_findings = []
+    for audit in audits:
+        findings = audit.get("findings", [])
+        for finding in findings:
+            if finding.get("assigned_to") == current_user.id and finding.get("status", "open") != "closed":
+                assigned_findings.append({
+                    **finding,
+                    "audit_id": audit["id"],
+                    "site_name": audit.get("site_name"),
+                    "auditor_name": audit.get("auditor_name")
+                })
+    
+    return {
+        "assigned_findings": assigned_findings,
+        "total": len(assigned_findings)
+    }
+
+# ===== NOTIFICATIONS =====
+
+@api_router.get("/notifications")
+async def get_user_notifications(current_user: User = Depends(require_auth)):
+    """Get all notifications for current user"""
+    
+    notifications = await db.notifications.find({"user_id": current_user.id}).sort("created_at", -1).to_list(100)
+    
+    unread_count = sum(1 for n in notifications if not n.get("is_read", False))
+    
+    return {
+        "notifications": [Notification(**n) for n in notifications],
+        "total": len(notifications),
+        "unread": unread_count
+    }
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: User = Depends(require_auth)):
+    """Mark a notification as read"""
+    
+    result = await db.notifications.update_one(
+        {"id": notification_id, "user_id": current_user.id},
+        {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification marked as read"}
+
+@api_router.put("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: User = Depends(require_auth)):
+    """Mark all notifications as read"""
+    
+    result = await db.notifications.update_many(
+        {"user_id": current_user.id, "is_read": False},
+        {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": f"{result.modified_count} notifications marked as read"}
+
+# ===== STATISTICS =====
+
 @api_router.get("/statistics", response_model=Statistics)
 async def get_user_statistics(current_user: User = Depends(require_auth)):
     """Get audit statistics - Organization-wide if user belongs to an org, otherwise personal"""
