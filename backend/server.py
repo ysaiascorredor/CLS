@@ -1233,6 +1233,20 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
         {"$push": {"findings": finding.dict()}}
     )
     
+    # Create notification if assigned to someone
+    if finding.assigned_to:
+        assigned_user = await db.users.find_one({"id": finding.assigned_to})
+        if assigned_user:
+            notification = Notification(
+                user_id=finding.assigned_to,
+                type="finding_assigned",
+                title="New Finding Assigned to You",
+                message=f"You have been assigned a {finding.compliance_status} finding from audit '{audit.get('site_name', 'Unknown Site')}'",
+                finding_id=finding.id,
+                audit_id=audit_id
+            )
+            await db.notifications.insert_one(notification.dict())
+    
     return {"message": "Finding added successfully", "finding": finding}
 
 @api_router.put("/audits/{audit_id}/complete")
