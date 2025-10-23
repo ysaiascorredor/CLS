@@ -650,7 +650,7 @@ class FindingCreate(BaseModel):
     comment: Optional[str] = None
     action_taken: Optional[str] = None
     assigned_to: Optional[str] = None  # User ID of person assigned
-    status: str = "open"  # "open", "in_progress", "closed"
+    status: Optional[str] = "open"  # "open", "in_progress", "closed"
     priority: Optional[str] = "medium"  # "low", "medium", "high", "critical"
     due_date: Optional[datetime] = None
 
