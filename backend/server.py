@@ -1214,11 +1214,8 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     if not audit:
         raise HTTPException(status_code=404, detail="Audit not found")
     
-    # Convert to dict and handle backward compatibility
-    finding_dict = finding_data.dict()
-    
-    # DEBUG: Print received data
-    print(f"DEBUG: Received finding_data: {finding_dict}")
+    # Convert to dict - exclude_none=False to keep all fields
+    finding_dict = finding_data.dict(exclude_none=False)
     
     # If compliance_status is not set but is_compliant is, convert it
     if not finding_dict.get('compliance_status') and finding_dict.get('is_compliant') is not None:
@@ -1230,13 +1227,10 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     
     finding = Finding(**finding_dict)
     
-    # DEBUG: Print created finding
-    print(f"DEBUG: Created finding: {finding.dict()}")
-    
     # Add finding to audit
     await db.audits.update_one(
         {"id": audit_id},
-        {"$push": {"findings": finding.dict()}}
+        {"$push": {"findings": finding.dict(exclude_none=False)}}
     )
     
     # Create notification if assigned to someone
