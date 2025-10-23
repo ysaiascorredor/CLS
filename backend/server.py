@@ -1636,21 +1636,6 @@ async def get_chart_data(current_user: User = Depends(require_auth)):
         monthly_summary=monthly_summary
     )
 
-@api_router.get("/audits/{audit_id}/pdf")
-async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require_auth)):
-    """Generate comprehensive PDF report for an audit"""
-    
-    # Get audit data - Allow access if user is in same organization
-    audit = await db.audits.find_one({"id": audit_id})
-    if not audit:
-        raise HTTPException(status_code=404, detail="Audit not found")
-    
-    # Verify access: either audit owner OR same organization member
-    if audit["user_id"] != current_user.id:
-        # Check if user is in same organization as audit creator
-        audit_creator = await db.users.find_one({"id": audit["user_id"]})
-
-
 @api_router.get("/statistics/findings")
 async def get_findings_statistics(current_user: User = Depends(require_auth)):
     """Get comprehensive findings statistics - open vs closed"""
