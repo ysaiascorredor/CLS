@@ -654,6 +654,7 @@ function Dashboard() {
   const [statistics, setStatistics] = useState(null);
   const [auditSearch, setAuditSearch] = useState('');
   const [currentAudit, setCurrentAudit] = useState(null);
+  const [jobSites, setJobSites] = useState([]);
   const { toast } = useToast();
   
   const t = language === 'en' ? translations.en : translations.es;
@@ -662,7 +663,17 @@ function Dashboard() {
     loadWorkTypes();
     loadAudits();
     loadStatistics();
+    loadJobSites();
   }, []);
+
+  const loadJobSites = async () => {
+    try {
+      const response = await axios.get(`${API}/job-sites`);
+      setJobSites(response.data);
+    } catch (error) {
+      console.error('Error loading job sites:', error);
+    }
+  };
 
   const loadWorkTypes = async () => {
     try {
