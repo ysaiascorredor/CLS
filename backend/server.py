@@ -792,6 +792,40 @@ async def get_current_user_info(current_user: User = Depends(require_auth)):
     """Get current authenticated user info"""
     return UserResponse(**current_user.dict())
 
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    job_title: Optional[str] = None
+    picture: Optional[str] = None
+
+@api_router.put("/auth/profile")
+async def update_user_profile(profile_data: UserProfileUpdate, current_user: User = Depends(require_auth)):
+    """Update current user's profile"""
+    
+    update_data = {}
+    if profile_data.name is not None:
+        update_data["name"] = profile_data.name
+    if profile_data.job_title is not None:
+        update_data["job_title"] = profile_data.job_title
+    if profile_data.picture is not None:
+        update_data["picture"] = profile_data.picture
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Return updated user
+    updated_user = await db.users.find_one({"id": current_user.id})
+    return UserResponse(**updated_user)
+
+
 @api_router.post("/auth/logout")
 async def logout():
     """Logout user (client should discard token)"""
