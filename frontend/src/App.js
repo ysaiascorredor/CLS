@@ -1247,7 +1247,7 @@ function NewAuditForm({ workTypes, jobSites, language, onAuditCreated, currentAu
     }
   };
 
-  const handleAnswerQuestion = async (complianceStatus, photo, comment, actionTaken) => {
+  const handleAnswerQuestion = async (complianceStatus, photo, comment, actionTaken, assignedTo, priority) => {
     const currentQ = auditQuestions[currentQuestionIndex];
     const finding = {
       question: currentQ?.question || currentQ,
@@ -1255,7 +1255,10 @@ function NewAuditForm({ workTypes, jobSites, language, onAuditCreated, currentAu
       compliance_status: complianceStatus,
       photo_url: photo,
       comment: comment,
-      action_taken: actionTaken
+      action_taken: actionTaken,
+      assigned_to: assignedTo || null,
+      priority: priority || 'medium',
+      status: assignedTo ? 'open' : 'open'  // Set to open if assigned
     };
 
     try {
