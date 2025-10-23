@@ -1215,6 +1215,7 @@ function NewAuditForm({ workTypes, jobSites, language, onAuditCreated, currentAu
         site_name: formData.siteName,
         auditor_name: formData.auditorName,
         selected_work_types: formData.selectedWorkTypes,
+        job_site_id: formData.selectedJobSite,
         language
       });
       
@@ -1222,6 +1223,7 @@ function NewAuditForm({ workTypes, jobSites, language, onAuditCreated, currentAu
         site_name: formData.siteName,
         auditor_name: formData.auditorName,
         selected_work_types: formData.selectedWorkTypes,
+        job_site_id: formData.selectedJobSite,
         language
       });
       
