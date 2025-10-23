@@ -777,6 +777,18 @@ function Dashboard() {
                 <TrendingUp className="w-4 h-4" />
                 <span>{t.statistics}</span>
               </TabsTrigger>
+              <TabsTrigger value="jobsites" className="flex items-center space-x-2">
+                <Building className="w-4 h-4" />
+                <span>{language === 'en' ? 'Job Sites' : 'Sitios'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="myfindings" className="flex items-center space-x-2">
+                <ClipboardList className="w-4 h-4" />
+                <span>{language === 'en' ? 'My Findings' : 'Mis Findings'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center space-x-2">
+                <Bell className="w-4 h-4" />
+                <span>{language === 'en' ? 'Notifications' : 'Notificaciones'}</span>
+              </TabsTrigger>
               <TabsTrigger value="team" className="flex items-center space-x-2">
                 <Users className="w-4 h-4" />
                 <span>{t.team || "Team"}</span>
