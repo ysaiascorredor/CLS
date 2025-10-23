@@ -1523,6 +1523,38 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
                 data-testid="action-taken-textarea"
               />
             </div>
+
+            <div>
+              <Label htmlFor="assignedTo">{language === 'en' ? 'Assign To (Optional)' : 'Asignar A (Opcional)'}</Label>
+              <Select value={assignedTo} onValueChange={setAssignedTo}>
+                <SelectTrigger>
+                  <SelectValue placeholder={language === 'en' ? 'Select team member' : 'Seleccionar miembro'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{language === 'en' ? 'None' : 'Ninguno'}</SelectItem>
+                  {teamMembers.map(member => (
+                    <SelectItem key={member.user_id} value={member.user_id}>
+                      {member.name} ({member.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="priority">{language === 'en' ? 'Priority' : 'Prioridad'}</Label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">{language === 'en' ? 'Low' : 'Baja'}</SelectItem>
+                  <SelectItem value="medium">{language === 'en' ? 'Medium' : 'Media'}</SelectItem>
+                  <SelectItem value="high">{language === 'en' ? 'High' : 'Alta'}</SelectItem>
+                  <SelectItem value="critical">{language === 'en' ? 'Critical' : 'Crítica'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </>
         )}
         
