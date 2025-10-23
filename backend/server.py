@@ -1706,6 +1706,19 @@ async def get_findings_statistics(current_user: User = Depends(require_auth)):
         "completion_rate": round((closed_findings / non_compliant * 100) if non_compliant > 0 else 0, 2)
     }
 
+@api_router.get("/audits/{audit_id}/pdf")
+async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require_auth)):
+    """Generate comprehensive PDF report for an audit"""
+    
+    # Get audit data - Allow access if user is in same organization
+    audit = await db.audits.find_one({"id": audit_id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    # Verify access: either audit owner OR same organization member
+    if audit["user_id"] != current_user.id:
+        # Check if user is in same organization as audit creator
+        audit_creator = await db.users.find_one({"id": audit["user_id"]})
         if not audit_creator or not current_user.organization_id or audit_creator.get("organization_id") != current_user.organization_id:
             raise HTTPException(status_code=403, detail="Access denied")
     
