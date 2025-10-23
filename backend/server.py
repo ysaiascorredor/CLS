@@ -1217,6 +1217,9 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     # Convert to dict and handle backward compatibility
     finding_dict = finding_data.dict()
     
+    # DEBUG: Print received data
+    print(f"DEBUG: Received finding_data: {finding_dict}")
+    
     # If compliance_status is not set but is_compliant is, convert it
     if not finding_dict.get('compliance_status') and finding_dict.get('is_compliant') is not None:
         finding_dict['compliance_status'] = 'compliant' if finding_dict['is_compliant'] else 'non_compliant'
@@ -1226,6 +1229,9 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
         raise HTTPException(status_code=400, detail="compliance_status is required")
     
     finding = Finding(**finding_dict)
+    
+    # DEBUG: Print created finding
+    print(f"DEBUG: Created finding: {finding.dict()}")
     
     # Add finding to audit
     await db.audits.update_one(
