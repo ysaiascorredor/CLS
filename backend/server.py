@@ -1214,8 +1214,8 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     if not audit:
         raise HTTPException(status_code=404, detail="Audit not found")
     
-    # Convert to dict - exclude_none=False to keep all fields
-    finding_dict = finding_data.dict(exclude_none=False)
+    # Convert to dict
+    finding_dict = finding_data.dict()
     
     # If compliance_status is not set but is_compliant is, convert it
     if not finding_dict.get('compliance_status') and finding_dict.get('is_compliant') is not None:
@@ -1225,12 +1225,18 @@ async def add_finding(audit_id: str, finding_data: FindingCreate, current_user: 
     if not finding_dict.get('compliance_status'):
         raise HTTPException(status_code=400, detail="compliance_status is required")
     
+    # Set default values if not provided
+    if 'status' not in finding_dict or finding_dict['status'] is None:
+        finding_dict['status'] = 'open'
+    if 'priority' not in finding_dict or finding_dict['priority'] is None:
+        finding_dict['priority'] = 'medium'
+    
     finding = Finding(**finding_dict)
     
     # Add finding to audit
     await db.audits.update_one(
         {"id": audit_id},
-        {"$push": {"findings": finding.dict(exclude_none=False)}}
+        {"$push": {"findings": finding.dict()}}
     )
     
     # Create notification if assigned to someone
