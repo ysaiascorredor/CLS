@@ -1031,7 +1031,8 @@ function Dashboard() {
             {/* New Audit Tab */}
             <TabsContent value="new-audit">
               <NewAuditForm 
-                workTypes={workTypes} 
+                workTypes={workTypes}
+                jobSites={jobSites}
                 language={language}
                 onAuditCreated={loadAudits}
                 currentAudit={currentAudit}
