@@ -646,7 +646,7 @@ function LandingPage() {
 
 // Main Dashboard Component  
 function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [language, setLanguage] = useState('en');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [workTypes, setWorkTypes] = useState([]);
