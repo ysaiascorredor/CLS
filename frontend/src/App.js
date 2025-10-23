@@ -26,7 +26,7 @@ import { TermsOfService, PrivacyPolicy } from './components/LegalTerms';
 import { JoinTeamPage } from './components/SubscriptionSuccess';
 import './App.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://a.appclsolution.online';
 const API = `${BACKEND_URL}/api`;
 
 // Stripe Configuration - Load from environment variables
