@@ -1277,6 +1277,47 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
         <CardTitle>{t.createAudit}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Job Site Selector */}
+        <div>
+          <Label htmlFor="jobSiteSelect">
+            {language === 'en' ? 'Select Job Site (Optional)' : 'Seleccionar Sitio (Opcional)'}
+          </Label>
+          <select
+            id="jobSiteSelect"
+            className="w-full border rounded px-3 py-2 bg-white"
+            value={formData.selectedJobSite || ''}
+            onChange={async (e) => {
+              const siteId = e.target.value;
+              setFormData({...formData, selectedJobSite: siteId});
+              
+              // If a site is selected, load its info
+              if (siteId) {
+                try {
+                  const response = await axios.get(`${API}/job-sites/${siteId}`);
+                  const site = response.data;
+                  setFormData({
+                    ...formData,
+                    selectedJobSite: siteId,
+                    siteName: site.name,
+                    siteLocation: site.location || ''
+                  });
+                } catch (error) {
+                  console.error('Error loading site:', error);
+                }
+              } else {
+                setFormData({...formData, selectedJobSite: '', siteName: '', siteLocation: ''});
+              }
+            }}
+          >
+            <option value="">{language === 'en' ? '-- Manual Entry --' : '-- Entrada Manual --'}</option>
+            {jobSites.map(site => (
+              <option key={site.id} value={site.id}>
+                {site.name} {site.location ? `(${site.location})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        
         <div>
           <Label htmlFor="siteName">{t.siteName}</Label>
           <Input
