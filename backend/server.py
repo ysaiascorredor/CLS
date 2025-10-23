@@ -599,7 +599,7 @@ class Finding(BaseModel):
     action_taken: Optional[str] = None
     # NEW: Finding assignment and tracking
     assigned_to: Optional[str] = None  # User ID of person assigned
-    status: str = "open"  # "open", "in_progress", "closed"
+    status: Optional[str] = "open"  # "open", "in_progress", "closed"
     priority: Optional[str] = "medium"  # "low", "medium", "high", "critical"
     due_date: Optional[datetime] = None
     closed_at: Optional[datetime] = None
