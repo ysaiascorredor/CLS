@@ -1398,19 +1398,37 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
   const [photo, setPhoto] = useState('');
   const [comment, setComment] = useState('');
   const [actionTaken, setActionTaken] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  useEffect(() => {
+    loadTeamMembers();
+  }, []);
+
+  const loadTeamMembers = async () => {
+    try {
+      const response = await axios.get(`${API}/organization/team`);
+      setTeamMembers(response.data.team_members || []);
+    } catch (error) {
+      console.error('Error loading team members:', error);
+    }
+  };
 
   const handleSubmit = () => {
     if (complianceStatus === 'non_compliant' && (!comment || !actionTaken)) {
       return;
     }
     
-    onAnswer(complianceStatus, photo, comment, actionTaken);
+    onAnswer(complianceStatus, photo, comment, actionTaken, assignedTo, priority);
     
     // Reset form
     setComplianceStatus(null);
     setPhoto('');
     setComment('');
     setActionTaken('');
+    setAssignedTo('');
+    setPriority('medium');
   };
 
   return (
