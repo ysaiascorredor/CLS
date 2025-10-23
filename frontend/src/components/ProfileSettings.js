@@ -49,8 +49,21 @@ function ProfileSettings({ language, user, onUpdate }) {
     try {
       const response = await axios.put(`${API}/auth/profile`, formData);
       alert(t.saved);
-      if (onUpdate) {
-        onUpdate(response.data);
+      
+      // Update user context if onUpdate function is provided
+      if (onUpdate && typeof onUpdate === 'function') {
+        try {
+          onUpdate(response.data);
+        } catch (updateError) {
+          console.error('Error updating user context:', updateError);
+          // Reload page to refresh user data
+          window.location.reload();
+        }
+      } else {
+        // If no onUpdate function, reload to refresh user data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
