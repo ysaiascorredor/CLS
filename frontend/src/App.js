@@ -1129,7 +1129,9 @@ function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCu
   const [formData, setFormData] = useState({
     siteName: '',
     auditorName: '',
-    selectedWorkTypes: []
+    selectedWorkTypes: [],
+    selectedJobSite: null,
+    siteLocation: ''
   });
   const [auditQuestions, setAuditQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
