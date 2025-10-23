@@ -649,6 +649,10 @@ class FindingCreate(BaseModel):
     photo_url: Optional[str] = None
     comment: Optional[str] = None
     action_taken: Optional[str] = None
+    assigned_to: Optional[str] = None  # User ID of person assigned
+    status: str = "open"  # "open", "in_progress", "closed"
+    priority: Optional[str] = "medium"  # "low", "medium", "high", "critical"
+    due_date: Optional[datetime] = None
 
 class PaymentTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
