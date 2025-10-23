@@ -1033,6 +1033,21 @@ function Dashboard() {
               <StatisticsCharts language={language} />
             </TabsContent>
 
+            {/* Job Sites Tab */}
+            <TabsContent value="jobsites">
+              <JobSites language={language} />
+            </TabsContent>
+
+            {/* My Findings Tab */}
+            <TabsContent value="myfindings">
+              <MyFindings language={language} />
+            </TabsContent>
+
+            {/* Notifications Tab */}
+            <TabsContent value="notifications">
+              <Notifications language={language} />
+            </TabsContent>
+
             {/* Team Tab */}
             <TabsContent value="team">
               <TeamManagement />
@@ -1041,6 +1056,7 @@ function Dashboard() {
             {/* Settings Tab */}
             <TabsContent value="settings">
               <div className="space-y-6">
+                <ProfileSettings language={language} user={user} onUpdate={(updatedUser) => setUser(updatedUser)} />
                 <UserSettings />
                 <CompanySettings />
                 <SubscriptionSettings />
