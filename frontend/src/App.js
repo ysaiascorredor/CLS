@@ -1124,7 +1124,7 @@ function Dashboard() {
 }
 
 // New Audit Form Component
-function NewAuditForm({ workTypes, language, onAuditCreated, currentAudit, setCurrentAudit }) {
+function NewAuditForm({ workTypes, jobSites, language, onAuditCreated, currentAudit, setCurrentAudit }) {
   const { t } = React.useContext(LanguageContext);
   const [formData, setFormData] = useState({
     siteName: '',
