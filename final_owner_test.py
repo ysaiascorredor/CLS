@@ -7,7 +7,7 @@ import json
 
 def final_owner_test():
     """Final comprehensive test for owner login"""
-    api_url = "https://safesitepro.preview.emergentagent.com/api"
+    api_url = "https://safesitepro-1.preview.emergentagent.com/api"
     
     print("🎯 FINAL OWNER LOGIN COMPREHENSIVE TEST")
     print("=" * 50)

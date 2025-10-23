@@ -7,7 +7,7 @@ import json
 
 def create_owner_user():
     """Create the owner user account"""
-    api_url = "https://safesitepro.preview.emergentagent.com/api"
+    api_url = "https://safesitepro-1.preview.emergentagent.com/api"
     
     print("🔧 Creating Owner User Account")
     print("=" * 40)

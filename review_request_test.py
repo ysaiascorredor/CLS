@@ -8,7 +8,7 @@ import json
 import sys
 
 def main():
-    base_url = "https://safesitepro.preview.emergentagent.com"
+    base_url = "https://safesitepro-1.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🎯 REVIEW REQUEST: Delete User Functionality Setup")

@@ -6,7 +6,7 @@ import requests
 import json
 
 def test_organization_endpoints():
-    base_url = "https://safesitepro.preview.emergentagent.com"
+    base_url = "https://safesitepro-1.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🏢 FOCUSED ORGANIZATION ENDPOINT TESTING")
