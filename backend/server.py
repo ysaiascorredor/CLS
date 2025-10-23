@@ -1869,6 +1869,27 @@ async def generate_audit_pdf(audit_id: str, current_user: User = Depends(require
             question_text = f"<b>Question:</b> {finding.get('question', 'N/A')}"
             story.append(Paragraph(question_text, styles['Normal']))
             
+            # Photo if available
+            if finding.get('photo_url'):
+                try:
+                    # Add photo to PDF
+                    from reportlab.platypus import Image as RLImage
+                    import requests
+                    from io import BytesIO
+                    
+                    photo_url = finding.get('photo_url')
+                    # Download image
+                    img_response = requests.get(photo_url, timeout=5)
+                    if img_response.status_code == 200:
+                        img_data = BytesIO(img_response.content)
+                        img = RLImage(img_data, width=300, height=225)
+                        story.append(Spacer(1, 10))
+                        story.append(img)
+                        story.append(Spacer(1, 10))
+                except Exception as e:
+                    # If image fails, just continue without it
+                    print(f"Failed to add image to PDF: {e}")
+            
             # Non-compliant details
             if not finding.get('is_compliant', True):
                 if finding.get('comment'):
