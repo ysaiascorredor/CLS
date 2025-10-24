@@ -1405,16 +1405,18 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
   const [priority, setPriority] = useState('medium');
   const [teamMembers, setTeamMembers] = useState([]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     loadTeamMembers();
   }, []);
 
   const loadTeamMembers = async () => {
     try {
+      const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'https://safesitepro.preview.emergentagent.com/api';
       const response = await axios.get(`${API}/organization/team`);
       setTeamMembers(response.data.team_members || []);
     } catch (error) {
       console.error('Error loading team members:', error);
+      // If error, just continue without team members
     }
   };
 
