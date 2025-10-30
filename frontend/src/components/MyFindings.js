@@ -37,7 +37,14 @@ function MyFindings({ language }) {
       low: 'Low',
       medium: 'Medium',
       high: 'High',
-      critical: 'Critical'
+      critical: 'Critical',
+      messages: 'Messages',
+      viewMessages: 'View Messages',
+      sendMessage: 'Send Message',
+      typeMessage: 'Type your message...',
+      noMessages: 'No messages yet',
+      messageSent: 'Message sent!',
+      loadingMessages: 'Loading messages...'
     },
     es: {
       title: 'Mis Findings Asignados',
@@ -64,7 +71,14 @@ function MyFindings({ language }) {
       low: 'Baja',
       medium: 'Media',
       high: 'Alta',
-      critical: 'Crítica'
+      critical: 'Crítica',
+      messages: 'Mensajes',
+      viewMessages: 'Ver Mensajes',
+      sendMessage: 'Enviar Mensaje',
+      typeMessage: 'Escribe tu mensaje...',
+      noMessages: 'Sin mensajes aún',
+      messageSent: '¡Mensaje enviado!',
+      loadingMessages: 'Cargando mensajes...'
     }
   };
 
