@@ -775,50 +775,57 @@ function Dashboard() {
 
         <div className="container mx-auto px-6 py-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-7' : 'grid-cols-5'} mb-8 bg-white/80 backdrop-blur-sm shadow-lg rounded-xl border-0`}>
-              <TabsTrigger value="dashboard" className="flex items-center space-x-2">
-                <BarChart3 className="w-4 h-4" />
-                <span>{t.dashboard}</span>
+            <TabsList className={`grid w-full ${user?.role === 'admin' ? 'grid-cols-7' : 'grid-cols-6'} gap-2 mb-8 bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-2 border border-blue-100`}>
+              <TabsTrigger 
+                value="dashboard" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-blue-50"
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-xs font-medium">{t.dashboard}</span>
               </TabsTrigger>
-              <TabsTrigger value="new-audit" className="flex items-center space-x-2">
-                <FileText className="w-4 h-4" />
-                <span>{t.newAudit}</span>
+              <TabsTrigger 
+                value="new-audit" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-orange-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-orange-50"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-xs font-medium">{t.newAudit}</span>
               </TabsTrigger>
-              <TabsTrigger value="statistics" className="flex items-center space-x-2">
-                <TrendingUp className="w-4 h-4" />
-                <span>{t.statistics}</span>
+              <TabsTrigger 
+                value="jobsites" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-green-50"
+              >
+                <Building className="w-5 h-5" />
+                <span className="text-xs font-medium">{language === 'en' ? 'Job Sites' : 'Sitios'}</span>
               </TabsTrigger>
-              <TabsTrigger value="jobsites" className="flex items-center space-x-2">
-                <Building className="w-4 h-4" />
-                <span>{language === 'en' ? 'Job Sites' : 'Sitios'}</span>
+              <TabsTrigger 
+                value="myfindings" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-purple-50"
+              >
+                <ClipboardList className="w-5 h-5" />
+                <span className="text-xs font-medium">{language === 'en' ? 'My Findings' : 'Mis Findings'}</span>
               </TabsTrigger>
-              <TabsTrigger value="myfindings" className="flex items-center space-x-2">
-                <ClipboardList className="w-4 h-4" />
-                <span>{language === 'en' ? 'My Findings' : 'Mis Findings'}</span>
+              <TabsTrigger 
+                value="notifications" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-red-500 data-[state=active]:to-red-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-red-50"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="text-xs font-medium">{language === 'en' ? 'Notifications' : 'Notificaciones'}</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center space-x-2">
-                <Bell className="w-4 h-4" />
-                <span>{language === 'en' ? 'Notifications' : 'Notificaciones'}</span>
-              </TabsTrigger>
-              <TabsTrigger value="team" className="flex items-center space-x-2">
-                <Users className="w-4 h-4" />
-                <span>{t.team || "Team"}</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center space-x-2">
-                <Settings className="w-4 h-4" />
-                <span>{t.settings}</span>
+              <TabsTrigger 
+                value="settings" 
+                className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-gray-600 data-[state=active]:to-gray-700 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gray-50"
+              >
+                <Settings className="w-5 h-5" />
+                <span className="text-xs font-medium">{t.settings}</span>
               </TabsTrigger>
               {user?.role === 'admin' && (
-                <>
-                  <TabsTrigger value="admin" className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4" />
-                    <span>Admin</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="support" className="flex items-center space-x-2">
-                    <Building className="w-4 h-4" />
-                    <span>Support</span>
-                  </TabsTrigger>
-                </>
+                <TabsTrigger 
+                  value="admin" 
+                  className="flex flex-col items-center justify-center space-y-1 px-4 py-3 rounded-xl transition-all duration-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-indigo-50"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="text-xs font-medium">Admin</span>
+                </TabsTrigger>
               )}
             </TabsList>
 
