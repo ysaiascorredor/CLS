@@ -589,6 +589,13 @@ class UserSession(BaseModel):
     expires_at: datetime
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class FindingMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Who sent the message
+    user_name: str  # Name of sender
+    message: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Finding(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     question: str
@@ -604,6 +611,7 @@ class Finding(BaseModel):
     due_date: Optional[datetime] = None
     closed_at: Optional[datetime] = None
     closed_by: Optional[str] = None  # User ID who closed it
+    messages: List[dict] = []  # List of messages for this finding
 
 class JobSite(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
