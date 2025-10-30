@@ -1483,29 +1483,31 @@ function AuditProgressForm({ audit, questions, currentQuestion, onAnswer, langua
         </div>
         
         {complianceStatus === 'non_compliant' && (
-          <>
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="comment">{t.comment}</Label>
-              <Textarea
-                id="comment"
+              <label className="block text-sm font-medium mb-2">
+                {language === 'en' ? 'Comment (Required)' : 'Comentario (Requerido)'}
+              </label>
+              <textarea
+                className="w-full min-h-[100px] px-3 py-2 border rounded-md"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 required
-                data-testid="comment-textarea"
               />
             </div>
             
             <div>
-              <Label htmlFor="actionTaken">{t.actionTaken}</Label>
-              <Textarea
-                id="actionTaken"
+              <label className="block text-sm font-medium mb-2">
+                {language === 'en' ? 'Action Taken (Required)' : 'Acción Tomada (Requerido)'}
+              </label>
+              <textarea
+                className="w-full min-h-[100px] px-3 py-2 border rounded-md"
                 value={actionTaken}
                 onChange={(e) => setActionTaken(e.target.value)}
                 required
-                data-testid="action-taken-textarea"
               />
             </div>
-          </>
+          </div>
         )}
         
         <Button 
