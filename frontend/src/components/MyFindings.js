@@ -7,6 +7,9 @@ function MyFindings({ language }) {
   const [findings, setFindings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFinding, setSelectedFinding] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [showMessages, setShowMessages] = useState(false);
 
   const translations = {
     en: {
