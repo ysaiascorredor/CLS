@@ -195,12 +195,20 @@ function MyFindings({ language }) {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedFinding(finding)}
-                  className="text-blue-500 hover:text-blue-700 text-sm"
-                >
-                  {t.updateStatus}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openMessages(finding)}
+                    className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600"
+                  >
+                    💬 {t.messages}
+                  </button>
+                  <button
+                    onClick={() => {setSelectedFinding(finding); setShowMessages(false);}}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    {t.updateStatus}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mt-3">
