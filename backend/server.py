@@ -1448,6 +1448,105 @@ async def get_my_assigned_findings(current_user: User = Depends(require_auth)):
         "total": len(assigned_findings)
     }
 
+
+@api_router.post("/audits/{audit_id}/findings/{finding_id}/messages")
+async def add_finding_message(
+    audit_id: str, 
+    finding_id: str,
+    message_text: str,
+    current_user: User = Depends(require_auth)
+):
+    """Add a message to a finding"""
+    
+    # Get audit
+    audit = await db.audits.find_one({"id": audit_id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    # Verify user has access (auditor, assigned person, or admin)
+    findings = audit.get("findings", [])
+    finding = None
+    for f in findings:
+        if f.get("id") == finding_id:
+            finding = f
+            break
+    
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    
+    # Create message
+    message = FindingMessage(
+        user_id=current_user.id,
+        user_name=current_user.name,
+        message=message_text
+    )
+    
+    # Add message to finding
+    if "messages" not in finding:
+        finding["messages"] = []
+    finding["messages"].append(message.dict())
+    
+    # Update audit in database
+    await db.audits.update_one(
+        {"id": audit_id, "findings.id": finding_id},
+        {"$set": {"findings.$": finding}}
+    )
+    
+    # Create notification for the other party
+    if finding.get("assigned_to") and finding.get("assigned_to") != current_user.id:
+        # Notify assigned person
+        notification = Notification(
+            user_id=finding["assigned_to"],
+            type="finding_message",
+            title="New Message on Finding",
+            message=f"{current_user.name}: {message_text[:50]}...",
+            finding_id=finding_id,
+            audit_id=audit_id
+        )
+        await db.notifications.insert_one(notification.dict())
+    elif audit.get("user_id") != current_user.id:
+        # Notify auditor
+        notification = Notification(
+            user_id=audit["user_id"],
+            type="finding_message",
+            title="New Message on Finding",
+            message=f"{current_user.name}: {message_text[:50]}...",
+            finding_id=finding_id,
+            audit_id=audit_id
+        )
+        await db.notifications.insert_one(notification.dict())
+    
+    return {"message": "Message added successfully", "finding_message": message}
+
+@api_router.get("/audits/{audit_id}/findings/{finding_id}/messages")
+async def get_finding_messages(
+    audit_id: str, 
+    finding_id: str,
+    current_user: User = Depends(require_auth)
+):
+    """Get all messages for a finding"""
+    
+    audit = await db.audits.find_one({"id": audit_id})
+    if not audit:
+        raise HTTPException(status_code=404, detail="Audit not found")
+    
+    findings = audit.get("findings", [])
+    finding = None
+    for f in findings:
+        if f.get("id") == finding_id:
+            finding = f
+            break
+    
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    
+    messages = finding.get("messages", [])
+    
+    return {
+        "messages": messages,
+        "total": len(messages)
+    }
+
 # ===== NOTIFICATIONS =====
 
 @api_router.get("/notifications")
