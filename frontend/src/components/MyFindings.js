@@ -111,6 +111,38 @@ function MyFindings({ language }) {
     }
   };
 
+  const loadMessages = async (auditId, findingId) => {
+    try {
+      const response = await axios.get(`${API}/audits/${auditId}/findings/${findingId}/messages`);
+      setMessages(response.data.messages || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedFinding) return;
+    
+    try {
+      await axios.post(
+        `${API}/audits/${selectedFinding.audit_id}/findings/${selectedFinding.id}/messages?message_text=${encodeURIComponent(newMessage)}`
+      );
+      alert(t.messageSent);
+      setNewMessage('');
+      loadMessages(selectedFinding.audit_id, selectedFinding.id);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert(t.error + ': ' + (error.response?.data?.detail || error.message));
+    }
+  };
+
+  const openMessages = (finding) => {
+    setSelectedFinding(finding);
+    setShowMessages(true);
+    loadMessages(finding.audit_id, finding.id);
+  };
+
   const getPriorityColor = (priority) => {
     const colors = {
       low: 'bg-green-100 text-green-800',
